@@ -1,0 +1,26 @@
+<?php // lang/ms/entities.php
+return [
+    'entities'             => 'Entiti',
+    'subtitle'             => 'Entiti berdaftar SSM — Model Pelakon Kuantum',
+    'register'             => 'Daftar Entiti',
+    'name'                 => 'Nama',
+    'ssm'                  => 'No. SSM',
+    'type'                 => 'Jenis',
+    'roles'                => 'Peranan Aktif',
+    'credit_terms'         => 'Syarat Kredit',
+    'kyc_status'           => 'Status KYC',
+    'verified'             => 'Disahkan',
+    'unverified'           => 'Belum Disahkan',
+    'blacklisted'          => 'Disenarai Hitam',
+    'search_placeholder'   => 'Nama atau no. SSM...',
+    'no_entities'          => 'Tiada entiti ditemui.',
+    'registered_successfully' => 'Entiti berjaya didaftarkan.',
+    'kyc_approved'         => 'KYC entiti telah diluluskan.',
+    'blacklisted_msg'      => 'Entiti telah disenarai hitam.',
+    'unblacklisted'        => 'Entiti telah dikeluarkan daripada senarai hitam.',
+    'blacklisted_cannot_transact' => ':name disenarai hitam dan tidak boleh bertransaksi.',
+    'kyc_threshold_exceeded' => ':name belum disahkan KYC dan telah melebihi had :threshold.',
+    'validation' => [
+        'ssm_duplicate' => 'No. SSM ini telah didaftarkan untuk tenant ini.',
+    ],
+];

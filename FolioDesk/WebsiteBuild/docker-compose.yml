@@ -1,0 +1,20 @@
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: foliodesk
+      MYSQL_USER: foliodesk_user
+      MYSQL_PASSWORD: foliodesk_dev
+      MYSQL_ROOT_PASSWORD: foliodesk_root_dev
+    ports:
+      - "3306:3306"
+    volumes:
+      - foliodesk_mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pfoliodesk_root_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+volumes:
+  foliodesk_mysql:

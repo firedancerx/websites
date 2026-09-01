@@ -1,0 +1,26 @@
+<?php // lang/en/entities.php
+return [
+    'entities'             => 'Entities',
+    'subtitle'             => 'SSM-registered counterparties — Quantum Actor Model',
+    'register'             => 'Register Entity',
+    'name'                 => 'Name',
+    'ssm'                  => 'SSM No.',
+    'type'                 => 'Type',
+    'roles'                => 'Active Roles',
+    'credit_terms'         => 'Credit Terms',
+    'kyc_status'           => 'KYC Status',
+    'verified'             => 'Verified',
+    'unverified'           => 'Unverified',
+    'blacklisted'          => 'Blacklisted',
+    'search_placeholder'   => 'Name or SSM number...',
+    'no_entities'          => 'No entities found.',
+    'registered_successfully' => 'Entity registered successfully.',
+    'kyc_approved'         => 'Entity KYC approved.',
+    'blacklisted_msg'      => 'Entity has been blacklisted.',
+    'unblacklisted'        => 'Entity removed from blacklist.',
+    'blacklisted_cannot_transact' => ':name is blacklisted and cannot transact.',
+    'kyc_threshold_exceeded' => ':name has not completed KYC and has exceeded the :threshold limit.',
+    'validation' => [
+        'ssm_duplicate' => 'This SSM number is already registered for this tenant.',
+    ],
+];

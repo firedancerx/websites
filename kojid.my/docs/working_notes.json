@@ -1,0 +1,118 @@
+{
+  "project_overview": {
+    "system_definition": "KOJID is a controlled B2B trading system (not a full ERP) featuring gated onboarding, hierarchical quota verification, deposit discipline, and double-entry operational finance tracking.",
+    "core_control_chains": [
+      { "chain": "Tenant Activation Chain", "flow": "Applied -> Provisionary Workspace -> Tax Verification -> KYC/KYB Audit -> Active/Suspended/Rejected" },
+      { "chain": "Quota Verification Chain", "flow": "Provisional Claim -> Evidence Upload -> Parent Tenant Verification -> Confirmed Quota Balance" },
+      { "chain": "Trading & Settlement Chain", "flow": "Inbound PO Leg 1 -> Outbound Sales Leg 2 -> Fulfillment/QC -> Dispute Adjustment -> Settlement Cockpit" },
+      { "chain": "Deposit Control Chain", "flow": "Deposit Placement -> Human Receipt Confirmation -> Utilisation Mapping -> Deposit balance before top-up" },
+      { "chain": "Audit & Compliance Chain", "flow": "Double-Entry Ledger Log -> Reconciliation View -> Accounting Event Drill-Down -> Security Log" }
+    ]
+  },
+  "external_tenant_types": [
+    { "id": "actual_supplier", "name_ms": "Pembekal / Penjual Sebenar", "name_en": "Actual Seller (Physical Goods Supplier)" },
+    { "id": "virtual_seller", "name_ms": "Penjual Maya / Pemegang Kuota", "name_en": "Virtual Seller (Quota Release Holder)" },
+    { "id": "standard_buyer", "name_ms": "Pembeli Sebenar / Standard", "name_en": "Actual Buyer (Downstream Purchaser)" },
+    { "id": "buyer_with_quota", "name_ms": "Pembeli Maya / Pembeli Berkuota", "name_en": "Virtual Buyer (Quota-Gated Purchaser)" },
+    { "id": "mediator", "name_ms": "Mediator / Tenant Tingkat-1", "name_en": "Mediator (1st-Tier Intermediary Tenant under SuperAdmin)" },
+    { "id": "auditor", "name_ms": "Juruaudit", "name_en": "Auditor (Read-Only Compliance User)" }
+  ],
+  "tenant_statuses": [
+    { "id": "dummy", "name_ms": "Ujian (Dummy)" },
+    { "id": "provisional", "name_ms": "Sementara (Provisional)" },
+    { "id": "permanent", "name_ms": "Kekal (Permanent)" },
+    { "id": "suspended", "name_ms": "Digantung (Suspended)" }
+  ],
+  "ui_specification_matrix": [
+    {
+      "category": "1. Tenant Onboarding & Activation",
+      "screen_name": "Tenant Application Form",
+      "user_role": "Guest / Prospective Tenant",
+      "purpose": "Capture first application details for platform entry.",
+      "key_fields": ["Company Name", "Registration Number (SSM)", "Contact Emails/Phones", "Business Type", "Address", "Upload Files"],
+      "dependencies": "None",
+      "priority": "HIGH"
+    },
+    {
+      "category": "1. Tenant Onboarding & Activation",
+      "screen_name": "Provisionary Tenant Workspace",
+      "user_role": "Tenant Admin (Pending Approval)",
+      "purpose": "Restricted dashboard showing onboarding requirements status.",
+      "key_fields": ["Application Status", "Tax Verification Indicator", "KYC/KYB Blockers Checklist"],
+      "dependencies": "Tenant Application Form",
+      "priority": "HIGH"
+    },
+    {
+      "category": "1. Tenant Onboarding & Activation",
+      "screen_name": "Electronic Tax Record Verification",
+      "user_role": "Super Admin / Compliance Officer",
+      "purpose": "Collect and approve tax records electronically before activation.",
+      "key_fields": ["Tax ID Document", "Verification Status", "Notes", "Approval Timestamp", "Expiration Tracker"],
+      "dependencies": "Provisionary Tenant Workspace",
+      "priority": "HIGH"
+    },
+    {
+      "category": "1. Tenant Onboarding & Activation",
+      "screen_name": "KYC/KYB Verification Center",
+      "user_role": "Super Admin / Auditor",
+      "purpose": "Manage identity and business verification audits.",
+      "key_fields": ["Director NRIC Files", "Beneficial Owners", "Bank Account Proof", "Risk Indicator Status", "Completion %"],
+      "dependencies": "Electronic Tax Record Verification",
+      "priority": "HIGH"
+    },
+    {
+      "category": "2. User & Access Management",
+      "screen_name": "User Management Form",
+      "user_role": "Tenant Admin / Super Admin",
+      "purpose": "Create and manage tenant user profiles.",
+      "key_fields": ["Name", "Email", "Phone", "IC Number", "is_active Toggle", "Role Assignment"],
+      "dependencies": "KYC/KYB Verification Center",
+      "priority": "HIGH"
+    },
+    {
+      "category": "4. Quota Governance",
+      "screen_name": "Quota Claim Form",
+      "user_role": "Virtual Seller / Quota Holder",
+      "purpose": "Submit claims declaring possession of regulatory commodities quota.",
+      "key_fields": ["Commodity Type", "Claimed Quantity", "Quota Expiry", "References"],
+      "dependencies": "Tenant Activation",
+      "priority": "HIGH"
+    },
+    {
+      "category": "4. Quota Governance",
+      "screen_name": "Quota Verification Queue",
+      "user_role": "Parent Tenant / Auditor",
+      "purpose": "Manual verification of provisional claims by the parent tenant.",
+      "key_fields": ["Claimant", "Uploaded PDF/Image Evidence", "Approve/Reject Buttons", "Verifier Notes"],
+      "dependencies": "Quota Claim Form",
+      "priority": "HIGH"
+    },
+    {
+      "category": "6. Order Control",
+      "screen_name": "Order Workbench",
+      "user_role": "Procurement / Sales / Finance Officer",
+      "purpose": "Main single-page detail control interface for order operations.",
+      "key_fields": ["Order Header Info", "FIFO Stock Lot Logs", "SLA Timer Countdown", "Ledger Postings Link", "Verify Button"],
+      "dependencies": "Inbound / Outbound Order Creation",
+      "priority": "HIGH"
+    },
+    {
+      "category": "7. Deposit Control",
+      "screen_name": "Deposit confirmation screen",
+      "user_role": "Finance Officer",
+      "purpose": "Manual receipt check and verification to approve deposit escrows.",
+      "key_fields": ["Linked Order ID", "Gateway Payload", "Manually Approved By", "Timestamp"],
+      "dependencies": "Deposit Placement",
+      "priority": "HIGH"
+    },
+    {
+      "category": "9. Settlements & Ledger",
+      "screen_name": "Settlement Cockpit",
+      "user_role": "Finance Manager",
+      "purpose": "Enforce split calculation payments for 2/3/4-party settlements.",
+      "key_fields": ["Gross Inbound Cash", "Actual Supplier Payout", "Virtual Seller Share", "Logistics Share", "Tenant Net Profit"],
+      "dependencies": "Order Workbench / Dispute Resolution",
+      "priority": "HIGH"
+    }
+  ]
+}

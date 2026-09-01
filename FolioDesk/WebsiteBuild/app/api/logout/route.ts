@@ -1,0 +1,2 @@
+import {cookies} from "next/headers";import {NextResponse} from "next/server";import {createHash} from "node:crypto";import {db} from "../../../lib/db";import {getBaseUrl} from "../../../lib/auth";
+export async function POST(req:Request){const jar=await cookies(),token=jar.get("fd_session")?.value;if(token)await db().execute("DELETE FROM sessions WHERE token_hash=?",[createHash("sha256").update(token).digest("hex")]);jar.delete("fd_session");return NextResponse.redirect(new URL("/foliodesk/login",getBaseUrl(req)),303)}

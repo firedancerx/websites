@@ -1,0 +1,90 @@
+import { NextResponse } from "next/server";
+import { currentUser, getBaseUrl } from "../../../../lib/auth";
+import { db } from "../../../../lib/db";
+import { generateDealCode, checkProspectExclusivity, logFunnelStep } from "../../../../lib/funnel";
+
+export async function POST(req: Request) {
+  const user = await currentUser();
+  if (!user) {
+    return NextResponse.redirect(new URL("/foliodesk/login", getBaseUrl(req)), 303);
+  }
+
+  const [apps] = await db().execute<any[]>(
+    "SELECT id, status FROM affiliate_applications WHERE user_id=? ORDER BY submitted_at DESC LIMIT 1",
+    [user.id]
+  );
+  const app = apps[0];
+  if (!app) {
+    return NextResponse.redirect(new URL("/foliodesk/portal?error=No+affiliate+profile+found", getBaseUrl(req)), 303);
+  }
+
+  if (app.status === "RETRACTED" || app.status === "RETRACTION_ACKNOWLEDGED" || app.status === "SUSPENDED" || app.status === "TERMINATED") {
+    return NextResponse.redirect(
+      new URL("/foliodesk/portal/prospects?error=Your+affiliateship+is+not+active+for+naming+new+prospects", getBaseUrl(req)),
+      303
+    );
+  }
+
+  const f = await req.formData();
+  const customerName = String(f.get("customerName") || "").trim();
+  const customerEmail = String(f.get("customerEmail") || "").trim().toLowerCase();
+  const customerPhone = String(f.get("customerPhone") || "").trim() || null;
+  const packageName = String(f.get("packageName") || "FolioDesk Cloud Enterprise").trim();
+  const packageCount = Number(f.get("packageCount") || 1);
+  const contractValueMyr = parseFloat(String(f.get("contractValueMyr") || "60000.00"));
+  const initialNotes = String(f.get("notes") || "").trim();
+
+  if (!customerName || !customerEmail || isNaN(contractValueMyr) || contractValueMyr <= 0) {
+    return NextResponse.redirect(
+      new URL("/foliodesk/portal/prospects?error=Please+provide+valid+prospect+company+name,+email,+and+estimated+deal+value", getBaseUrl(req)),
+      303
+    );
+  }
+
+  // EXCLUSIVITY RULE: Check if prospect is actively logged by another affiliate
+  const exclusivity = await checkProspectExclusivity(customerName);
+  if (!exclusivity.isAvailable) {
+    const activeAffiliate = exclusivity.activeDeal?.affiliate_legal_name || "another affiliate";
+    return NextResponse.redirect(
+      new URL(
+        `/foliodesk/portal/prospects?error=Prospect+conflict:+The+company+'${encodeURIComponent(customerName)}'+is+currently+actively+registered+by+${encodeURIComponent(activeAffiliate)}.+Prospect+names+are+exclusively+protected+until+the+case+is+closed+or+stopped.`,
+        getBaseUrl(req)
+      ),
+      303
+    );
+  }
+
+  const dealCode = generateDealCode();
+  const [dealRes]: any = await db().execute(
+    `INSERT INTO deal_pipeline 
+      (affiliate_id, deal_code, customer_name, customer_email, customer_phone, package_name, package_count, contract_value_myr, status, status_note)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'LEAD_SUBMITTED', ?)`,
+    [
+      app.id,
+      dealCode,
+      customerName,
+      customerEmail,
+      customerPhone,
+      packageName,
+      packageCount,
+      contractValueMyr,
+      initialNotes || "Initial prospect named and registered by affiliate",
+    ]
+  );
+  const dealId = dealRes.insertId;
+
+  // Log initial step
+  await logFunnelStep({
+    dealId,
+    fromStage: null,
+    toStage: "LEAD_SUBMITTED",
+    stepTitle: "1. Prospect Named & Registered",
+    affiliateNotes: initialNotes || "Initial commercial introduction and account registration.",
+    submittedByUserId: user.id,
+  });
+
+  return NextResponse.redirect(
+    new URL(`/foliodesk/portal/prospects/${dealId}?success=Prospect+registered+successfully!+You+can+now+log+your+funnel+progression+updates.`, getBaseUrl(req)),
+    303
+  );
+}

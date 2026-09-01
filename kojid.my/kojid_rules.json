@@ -1,0 +1,43 @@
+{
+  "system_name": "KOJID (kojid.my)",
+  "learned_rules_and_corrections": {
+    "tenant_taxonomy": {
+      "Mediator": "Mediator (Intermediary Hub - 1st-Tier Intermediary tenants parent_id=1, 112, 113)",
+      "Virtual Seller": "Pembekal Maya (virtual_seller - quota allocation holder selling commodities)",
+      "Virtual Buyer": "Pembeli Maya (buyer_with_quota - quota allocation holder purchasing commodities)",
+      "Actual Seller": "Pembekal Fizikal (actual_supplier - physical mill, producer, or importer)",
+      "Actual Buyer": "Pembeli Fizikal (standard_buyer - downstream commercial wholesaler/retailer)"
+    },
+    "impersonation_rules": {
+      "exit_button": "Must dynamically display 'Kembali sebagai [Nama SuperAdmin]' / 'Return as [SuperAdmin Name]', fetching SuperAdmin's full name from database. NEVER hardcode SuperAdmin name.",
+      "sidebar_role_badge": "While impersonating a tenant, the sidebar peranan badge MUST resolve to the IMPERSONATED TENANT'S OPERATIONAL ROLE (e.g. Pembekal Maya / Pembeli Maya), NOT SUPERADMIN.",
+      "impersonated_profile": "Clicking My Profile & Hierarchy (/profile) under impersonation MUST render the IMPERSONATED TENANT'S PROFILE, SSM number, tenant role, and assigned Upline Master Mediator.",
+      "topbar_user_avatar": "Topbar user avatar MUST display the IMPERSONATED TENANT'S NAME with an [IMPERSONATING] badge and exit return button in the dropdown."
+    },
+    "superadmin_navigation_structure": {
+      "tier_1_platform_administration": ["Papan Pemuka Platform", "Pengurusan Tenant", "Tetapan Sistem Platform", "Sandaran Sistem", "Log Aktiviti Audit"],
+      "tier_2_mediator_operations": ["Penuntutan Kuota (Quota Claims)", "Pengurusan Escrow Deposit", "Pelesenan Entity & KYC", "Pesanan Masuk (MSK)", "Pesanan Keluar (KJD)"],
+      "tier_3_general_financial_ledgers": ["Buku Tunai & Bank (Cashbook)", "Inventori Komoditi", "Akaun Kena Bayar (AP)", "Akaun Kena Terima (AR)", "Penyata Untung Rugi (P&L)"]
+    },
+    "tenant_management_table": {
+      "action_buttons": "All Mediator and subtenant rows MUST display uniform clean text buttons: [ Lihat ] [ Edit ] [ Gantung ].",
+      "superadmin_mediator_exclusion": "Master Mediator #1 (Demo Trading Sdn Bhd), which is SuperAdmin's primary Mediator account line, MUST NOT have a Gantung (Suspend) button."
+    },
+    "interactive_column_header_sorting": {
+      "indicator": "Every table column header (<th>) MUST render interactive ▲▼ up & down sort indicators.",
+      "hierarchy_preservation_rule": "On hierarchical tables (/admin/tenants), sorting by column MUST pin Master Mediator parent rows (M1, M2, M3) at the top and re-sort ONLY subtenant child rows under each Master Mediator, 100% preserving parent-child hierarchy."
+    },
+    "deposits_and_escrow_discipline": {
+      "refunded_deposit_balance": "Deposits with status REFUNDED MUST display active balance = RM 0.00 (with original amount shown in strikethrough).",
+      "movements_drilldown": "Drilling down into a deposit MUST render the complete Deposit Movements Audit Trail (+ RM [Amount] Inbound, - RM [Amount] Refund Outbound, Ending Balance RM 0.00)."
+    },
+    "order_line_items_and_totals": {
+      "calculated_totals": "Order total amounts MUST be dynamically computed from line item inputs (Quantity × Unit Price + Quota Fees), NOT manually keyed-in values.",
+      "drilldown": "Every recent order line on the dashboard MUST be clickable (cursor-pointer) to drill down directly to order details."
+    },
+    "code_robustness": {
+      "nullable_user_signatures": "NavigationMenuService::resolveRole(?User $user, $tenant) MUST accept nullable User to prevent 500 errors when auth state is uninitialized.",
+      "report_controller_defaults": "ReportController methods MUST default null tenantId to 1 when TenantContextService::currentId() returns null for SuperAdmin."
+    }
+  }
+}
