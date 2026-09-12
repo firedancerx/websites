@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireAdmin } from "../../../lib/auth";
 import { db } from "../../../lib/db";
+import { getAdminDataMode } from "../../../lib/settings";
 import AdminNav from "../AdminNav";
 import CollectionsApprovalView from "./CollectionsApprovalView";
 import type { CollectionRecord } from "../../../lib/funnel";
@@ -20,6 +21,14 @@ export default async function AdminCollectionsPage({
   if (!admin) redirect("/login");
 
   const q = await searchParams;
+  const dataMode = await getAdminDataMode();
+
+  let whereClause = "";
+  if (dataMode === "TEST") {
+    whereClause = "WHERE dc.is_test = 1";
+  } else if (dataMode === "ACTUAL") {
+    whereClause = "WHERE dc.is_test = 0";
+  }
 
   const [collections] = await db().execute<any[]>(
     `SELECT dc.*,
@@ -32,8 +41,11 @@ export default async function AdminCollectionsPage({
      JOIN deal_pipeline dp ON dp.id = dc.deal_id
      JOIN affiliate_applications a ON a.id = dp.affiliate_id
      LEFT JOIN users u ON u.id = dc.approved_by
+     ${whereClause}
      ORDER BY dc.created_at DESC`
   );
+
+  const sanitizedCollections = JSON.parse(JSON.stringify(collections));
 
   return (
     <section className="admin-wrap" style={{ maxWidth: 1240, margin: "0 auto" }}>
@@ -45,12 +57,9 @@ export default async function AdminCollectionsPage({
             Review customer payment submissions, verify bank proofs, inspect locked commission rates, and grant final management approval.
           </p>
         </div>
-        <form action="/foliodesk/api/logout" method="post">
-          <button className="button secondary">Sign out</button>
-        </form>
       </div>
 
-      <AdminNav />
+      <AdminNav currentDataMode={dataMode} />
 
       {q.success && (
         <div className="notice" style={{ background: "rgba(16,185,129,0.1)", borderColor: "#10b981", color: "#065f46", marginBottom: 20 }}>
@@ -59,7 +68,7 @@ export default async function AdminCollectionsPage({
       )}
       {q.error && <div className="notice error" style={{ marginBottom: 20 }}>⚠️ {q.error}</div>}
 
-      <CollectionsApprovalView collections={collections as CollectionRecord[]} />
+      <CollectionsApprovalView collections={sanitizedCollections as CollectionRecord[]} />
     </section>
   );
 }

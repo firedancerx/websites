@@ -1,11 +1,13 @@
 import { redirect } from "next/navigation";
 import { requireAdmin } from "../../../lib/auth";
-import { getCommissionSettings } from "../../../lib/settings";
+import { getCommissionSettings, getAdminDataMode } from "../../../lib/settings";
+import { getAllPackages } from "../../../lib/packages";
 import AdminNav from "../AdminNav";
+import AdminPackagesView from "./AdminPackagesView";
 
 export const dynamic = "force-dynamic";
 export const metadata = {
-  title: "Admin | Commission Rates & Closure Settings",
+  title: "Admin | Commission Rates, Packages & Closure Settings",
   robots: { index: false, follow: false },
 };
 
@@ -18,6 +20,8 @@ export default async function AdminSettingsPage({
   if (!admin) redirect("/login");
 
   const settings = await getCommissionSettings();
+  const packages = await getAllPackages();
+  const dataMode = await getAdminDataMode();
   const q = await searchParams;
 
   return (
@@ -30,12 +34,9 @@ export default async function AdminSettingsPage({
             Configure standard commission rates and global prospect closure periods applied to all affiliates and unclosed transactions.
           </p>
         </div>
-        <form action="/foliodesk/api/logout" method="post">
-          <button className="button secondary">Sign out</button>
-        </form>
       </div>
 
-      <AdminNav />
+      <AdminNav currentDataMode={dataMode} />
 
       {q.success && (
         <div className="notice" style={{ background: "rgba(16,185,129,0.1)", borderColor: "#10b981", color: "#065f46", marginBottom: 20 }}>
@@ -227,6 +228,8 @@ export default async function AdminSettingsPage({
           </div>
         </div>
       </div>
+
+      <AdminPackagesView packages={packages} />
     </section>
   );
 }

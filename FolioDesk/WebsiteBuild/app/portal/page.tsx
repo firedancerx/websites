@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { currentUser } from "../../lib/auth";
 import { db } from "../../lib/db";
 import { getCountries, getStates } from "../../lib/db-locations";
+import { getActivePackages } from "../../lib/packages";
 import ProfileEditForm from "./ProfileEditForm";
 import RetractButton from "./RetractButton";
 import PortalTabsView, { type PortalDealItem, type PortalAdviceItem } from "./PortalTabsView";
@@ -30,16 +31,24 @@ export default async function Portal({
 
   const countries = await getCountries();
   const states = await getStates();
+  const packages = await getActivePackages();
 
   let deals: any[] = [];
   let advices: any[] = [];
   let batches: any[] = [];
   let directDownlinesCount = 0;
+  let latestProfileUpdate: any = null;
 
   if (a) {
+    const [upRows] = await db().execute<any[]>(
+      "SELECT * FROM affiliate_profile_updates WHERE application_id=? ORDER BY created_at DESC LIMIT 1",
+      [a.id]
+    );
+    latestProfileUpdate = upRows[0] || null;
+
     const [dRows] = await db().execute<any[]>(
       `SELECT dp.*, 
-         COALESCE((SELECT SUM(c.collected_amount_myr) FROM deal_collections c WHERE c.deal_id = dp.id), 0) AS total_collected_myr
+         COALESCE((SELECT SUM(c.collected_amount_myr) FROM deal_collections c WHERE c.deal_id = dp.id AND c.approval_status = 'APPROVED'), 0) AS total_collected_myr
        FROM deal_pipeline dp
        WHERE dp.affiliate_id = ?
        ORDER BY dp.created_at DESC`,
@@ -136,7 +145,7 @@ export default async function Portal({
       {q.error && <p className="notice error" style={{ marginBottom: 20 }}>⚠️ {q.error}</p>}
 
       {isEditing ? (
-        <ProfileEditForm user={user} application={a} countries={countries} states={states} error={q.error} success={q.success} />
+        <ProfileEditForm user={user} application={a} pendingUpdate={latestProfileUpdate} countries={countries} states={states} error={q.error} success={q.success} />
       ) : (
         <PortalTabsView
           deals={deals as PortalDealItem[]}
@@ -145,7 +154,118 @@ export default async function Portal({
           isRetracted={isRetracted}
           isSuspended={isSuspended}
           affiliateId={a?.id}
+          affiliateCode={a?.affiliate_code}
+          packages={packages}
+          initialTab={q.tab === "profile" ? "PROFILE" : "PIPELINE"}
         >
+          {/* PENDING eKYC PROFILE UPDATE NOTIFICATION BANNER & PROPOSED CHANGES CARD */}
+          {!isRetracted && latestProfileUpdate && latestProfileUpdate.status === "PENDING_APPROVAL" && (
+            <div
+              style={{
+                background: "#eff6ff",
+                border: "2px solid #3b82f6",
+                padding: "20px 24px",
+                borderRadius: 10,
+                marginBottom: 24,
+                boxShadow: "0 4px 14px rgba(59, 130, 246, 0.1)",
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginBottom: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <span style={{ fontSize: 26 }}>⏳</span>
+                  <div>
+                    <h3 style={{ color: "#1e40af", fontSize: 20, margin: 0 }}>
+                      Profile Update Pending Admin eKYC Review
+                    </h3>
+                    <p style={{ color: "#1d4ed8", fontSize: 13, margin: "2px 0 0 0" }}>
+                      Submitted {new Date(latestProfileUpdate.created_at).toLocaleDateString("en-MY", { dateStyle: "medium", timeStyle: "short" })}
+                    </p>
+                  </div>
+                </div>
+                <span
+                  style={{
+                    background: "#2563eb",
+                    color: "#ffffff",
+                    padding: "4px 14px",
+                    borderRadius: 99,
+                    fontSize: 12,
+                    fontWeight: 700,
+                    letterSpacing: "0.5px",
+                  }}
+                >
+                  PENDING eKYC REVIEW
+                </span>
+              </div>
+
+              <p style={{ color: "#1e3a8a", fontSize: 14, lineHeight: 1.6, margin: "0 0 16px 0" }}>
+                Your submitted profile changes are currently undergoing Admin eKYC verification. <b>Your active profile below remains unchanged until approved.</b>
+              </p>
+
+              {/* PROPOSED PENDING CHANGES COMPARISON */}
+              <div style={{ background: "#ffffff", border: "1px solid #bfdbfe", borderRadius: 8, padding: 16 }}>
+                <h4 style={{ margin: "0 0 12px 0", color: "#1e40af", fontSize: 15 }}>
+                  📝 Proposed Pending Changes (Under Review):
+                </h4>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, fontSize: 13 }}>
+                  {latestProfileUpdate.full_name !== user.full_name && (
+                    <div><small style={{ color: "#64748b" }}>Proposed Full Name</small><p style={{ fontWeight: 700, color: "#1e40af", margin: "2px 0" }}>{latestProfileUpdate.full_name}</p></div>
+                  )}
+                  {latestProfileUpdate.legal_name !== a.legal_name && (
+                    <div><small style={{ color: "#64748b" }}>Proposed Legal Name</small><p style={{ fontWeight: 700, color: "#1e40af", margin: "2px 0" }}>{latestProfileUpdate.legal_name}</p></div>
+                  )}
+                  {latestProfileUpdate.company_number !== a.company_number && (
+                    <div><small style={{ color: "#64748b" }}>Proposed ID / Reg No.</small><p style={{ fontWeight: 700, color: "#1e40af", margin: "2px 0" }}>{latestProfileUpdate.company_number || "N/A"}</p></div>
+                  )}
+                  {latestProfileUpdate.phone !== a.phone && (
+                    <div><small style={{ color: "#64748b" }}>Proposed Phone</small><p style={{ fontWeight: 700, color: "#1e40af", margin: "2px 0" }}>{latestProfileUpdate.phone}</p></div>
+                  )}
+                  {latestProfileUpdate.address_line1 !== a.address_line1 && (
+                    <div><small style={{ color: "#64748b" }}>Proposed Address 1</small><p style={{ fontWeight: 700, color: "#1e40af", margin: "2px 0" }}>{latestProfileUpdate.address_line1}</p></div>
+                  )}
+                  {latestProfileUpdate.town !== a.town && (
+                    <div><small style={{ color: "#64748b" }}>Proposed Town</small><p style={{ fontWeight: 700, color: "#1e40af", margin: "2px 0" }}>{latestProfileUpdate.town}</p></div>
+                  )}
+                  {latestProfileUpdate.state !== a.state && (
+                    <div><small style={{ color: "#64748b" }}>Proposed State</small><p style={{ fontWeight: 700, color: "#1e40af", margin: "2px 0" }}>{latestProfileUpdate.state}</p></div>
+                  )}
+                  {latestProfileUpdate.postcode !== a.postcode && (
+                    <div><small style={{ color: "#64748b" }}>Proposed Postcode</small><p style={{ fontWeight: 700, color: "#1e40af", margin: "2px 0" }}>{latestProfileUpdate.postcode}</p></div>
+                  )}
+                  {latestProfileUpdate.id_doc_path !== a.id_doc_path && (
+                    <div><small style={{ color: "#64748b" }}>New ID Document Uploaded</small><p style={{ fontWeight: 700, color: "#1e40af", margin: "2px 0" }}><a href={latestProfileUpdate.id_doc_path} target="_blank" rel="noreferrer">📄 View proposed ID doc</a></p></div>
+                  )}
+                  {latestProfileUpdate.holding_id_path !== a.holding_id_path && (
+                    <div><small style={{ color: "#64748b" }}>New Photo Holding ID Uploaded</small><p style={{ fontWeight: 700, color: "#1e40af", margin: "2px 0" }}><a href={latestProfileUpdate.holding_id_path} target="_blank" rel="noreferrer">📷 View proposed photo holding ID</a></p></div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* REJECTED eKYC PROFILE UPDATE BANNER */}
+          {!isRetracted && latestProfileUpdate && latestProfileUpdate.status === "REJECTED" && (
+            <div
+              style={{
+                background: "#fef2f2",
+                border: "2px solid #ef4444",
+                padding: 16,
+                borderRadius: 8,
+                marginBottom: 24,
+              }}
+            >
+              <h3 style={{ color: "#991b1b", fontSize: 18, margin: "0 0 6px 0", display: "flex", alignItems: "center", gap: 8 }}>
+                <span>❌</span> Previous Profile Update Rejected by Admin
+              </h3>
+              {latestProfileUpdate.admin_remarks && (
+                <p style={{ color: "#7f1d1d", fontSize: 14, margin: 0 }}>
+                  <b>Reason / Remarks:</b> {latestProfileUpdate.admin_remarks}
+                </p>
+              )}
+              <p style={{ color: "#991b1b", fontSize: 13, margin: "6px 0 0 0" }}>
+                Your active profile remains unchanged. You may click &quot;Edit profile&quot; to submit a revised update.
+              </p>
+            </div>
+          )}
           {/* RETRACTED AFFILIATESHIP NOTIFICATION BANNER */}
           {isRetracted && (
             <div

@@ -26,6 +26,7 @@ export default function ProspectJourneyView({
   const [resubmitTargetStep, setResubmitTargetStep] = useState<FunnelStepRecord | null>(null);
 
   const isClosed = deal.status === "ABORTED" || deal.is_force_closed === 1;
+  const isFullyCollected = deal.status === "FULLY_COLLECTED";
   const isUnderAppeal = deal.appeal_status === "APPEAL_SUBMITTED";
 
   function getStepBadge(status: StepReviewStatus) {
@@ -58,7 +59,26 @@ export default function ProspectJourneyView({
     return 0;
   }
 
-  const currentStageIdx = getStageIndex(deal.status);
+  // Calculate highest stage index approved or reflected by deal.status (handles leap-frogging and collection approvals)
+  const dealStatusIdx = getStageIndex(deal.status);
+  const acknowledgedSteps = steps.filter((s) => s.admin_review_status === "ACKNOWLEDGED");
+  const maxAckIdx = acknowledgedSteps.length > 0
+    ? Math.max(...acknowledgedSteps.map((s) => getStageIndex(s.to_stage as FunnelStatus)))
+    : -1;
+
+  const highestApprovedStageIdx = Math.max(dealStatusIdx, maxAckIdx);
+  const currentStageIdx = highestApprovedStageIdx;
+
+  // Set of all stage keys that were ACTUALLY executed and acknowledged in history (plus current deal.status)
+  const executedStageKeys = new Set<string>();
+  steps.forEach((s) => {
+    if (s.admin_review_status === "ACKNOWLEDGED") {
+      executedStageKeys.add(s.to_stage);
+    }
+  });
+  if (deal.status) {
+    executedStageKeys.add(deal.status);
+  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -78,8 +98,13 @@ export default function ProspectJourneyView({
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
               <span style={{ fontSize: 13, fontWeight: 800, color: "#2563eb", letterSpacing: "0.5px" }}>{deal.deal_code}</span>
               <span className="badge" style={{ background: "#0f766e", color: "#fff", fontWeight: 700, fontSize: 11 }}>
-                Active Stage: {deal.status.replaceAll("_", " ")}
+                Approved Active Stage: {STAGES_ORDER[currentStageIdx]?.label.replace(/^\d+\.\s*/, "") || deal.status.replaceAll("_", " ")}
               </span>
+              {deal.is_test === 1 && (
+                <span className="badge" style={{ background: "#fffbeb", color: "#b45309", border: "1px solid #fde68a", fontWeight: 700, fontSize: 11 }}>
+                  🧪 TESTER DATA
+                </span>
+              )}
             </div>
             <h1 style={{ fontSize: 24, margin: "2px 0 6px", color: "#0f172a" }}>
               {deal.customer_name}
@@ -90,7 +115,7 @@ export default function ProspectJourneyView({
           </div>
 
           {/* ACTION BUTTONS */}
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
             {deal.is_force_closed === 1 && !isUnderAppeal && (
               <button
                 className="button primary"
@@ -101,7 +126,11 @@ export default function ProspectJourneyView({
               </button>
             )}
 
-            {!isClosed && (
+            {isFullyCollected ? (
+              <span className="badge" style={{ background: "#dcfce7", color: "#166534", border: "1px solid #bbf7d0", padding: "8px 14px", fontSize: 13, fontWeight: 700 }}>
+                ✓ Commercial Funnel Fully Collected & Sealed
+              </span>
+            ) : !isClosed ? (
               <button
                 className="button primary"
                 onClick={() => setIsStepModalOpen(true)}
@@ -109,7 +138,7 @@ export default function ProspectJourneyView({
               >
                 <span>➕</span> Log Funnel Step / Stage Update
               </button>
-            )}
+            ) : null}
           </div>
         </div>
 
@@ -178,7 +207,7 @@ export default function ProspectJourneyView({
         <h3 style={{ fontSize: 16, margin: "0 0 14px", color: "#0f172a" }}>🗺️ Funnel Progression Path</h3>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative", padding: "10px 0" }}>
           {STAGES_ORDER.map((st, idx) => {
-            const isCompleted = idx <= currentStageIdx && !deal.is_force_closed;
+            const isExecuted = executedStageKeys.has(st.key) && !deal.is_force_closed;
             const isCurrent = idx === currentStageIdx;
 
             return (
@@ -188,8 +217,8 @@ export default function ProspectJourneyView({
                     width: 32,
                     height: 32,
                     borderRadius: "50%",
-                    background: isCompleted ? "#0f766e" : "#f1f5f9",
-                    color: isCompleted ? "#ffffff" : "#64748b",
+                    background: isExecuted ? "#0f766e" : "#f1f5f9",
+                    color: isExecuted ? "#ffffff" : "#64748b",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -201,7 +230,7 @@ export default function ProspectJourneyView({
                 >
                   {idx + 1}
                 </div>
-                <span style={{ fontSize: 11, fontWeight: isCurrent ? 700 : 500, color: isCompleted ? "#0f766e" : "#64748b", textAlign: "center" }}>
+                <span style={{ fontSize: 11, fontWeight: isCurrent ? 700 : 500, color: isExecuted ? "#0f766e" : "#64748b", textAlign: "center" }}>
                   {st.label.replace(/^\d+\.\s*/, "")}
                 </span>
               </div>
@@ -333,14 +362,18 @@ export default function ProspectJourneyView({
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                 <div>
                   <label style={{ fontWeight: 600, fontSize: 13 }}>Target Commercial Stage *</label>
-                  <select name="toStage" defaultValue={deal.status} style={{ width: "100%", padding: 8, borderRadius: 6, border: "1px solid #cbd5e1", fontWeight: 700 }}>
-                    <option value="LEAD_SUBMITTED">1. Lead / Initial Discussion</option>
-                    <option value="QUALIFIED">2. Budget & Technical Qualification</option>
-                    <option value="PROPOSAL_SENT">3. Proposal / Demonstration Delivered</option>
-                    <option value="SUSPENDED_EFFORT">4. Commercial Efforts Suspended (Temporary Freeze)</option>
-                    <option value="CONTRACT_SIGNED">5. Contract / Order Signed</option>
-                    <option value="INVOICED">6. Official Invoice Issued</option>
-                    <option value="ABORTED">7. Opportunity Aborted / Lost</option>
+                  <select name="toStage" defaultValue={STAGES_ORDER[currentStageIdx]?.key || deal.status} style={{ width: "100%", padding: 8, borderRadius: 6, border: "1px solid #cbd5e1", fontWeight: 700 }}>
+                    {STAGES_ORDER.map((st) => {
+                      const stIdx = getStageIndex(st.key);
+                      if (stIdx < highestApprovedStageIdx) return null;
+                      return (
+                        <option key={st.key} value={st.key}>
+                          {st.label}
+                        </option>
+                      );
+                    })}
+                    <option value="SUSPENDED_EFFORT">Commercial Efforts Suspended (Temporary Freeze)</option>
+                    <option value="ABORTED">Opportunity Aborted / Lost</option>
                   </select>
                 </div>
 

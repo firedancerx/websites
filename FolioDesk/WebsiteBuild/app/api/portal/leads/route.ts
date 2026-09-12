@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { currentUser, getBaseUrl } from "../../../../lib/auth";
 import { db } from "../../../../lib/db";
 import { generateDealCode } from "../../../../lib/funnel";
+import { isValidEmail, isValidPhone } from "../../../../lib/validation";
 
 export async function POST(req: Request) {
   const user = await currentUser();
@@ -30,13 +31,27 @@ export async function POST(req: Request) {
   const customerEmail = String(f.get("customerEmail") || "").trim().toLowerCase();
   const customerPhone = String(f.get("customerPhone") || "").trim() || null;
   const packageName = String(f.get("packageName") || "FolioDesk Cloud Enterprise").trim();
-  const packageCount = Number(f.get("packageCount") || 1);
+  const packageCount = Math.max(1, Number(f.get("packageCount") || 1));
   const contractValueMyr = parseFloat(String(f.get("contractValueMyr") || "60000.00"));
   const notes = String(f.get("notes") || "").trim();
 
   if (!customerName || !customerEmail || isNaN(contractValueMyr) || contractValueMyr <= 0) {
     return NextResponse.redirect(
       new URL("/foliodesk/portal?tab=pipeline&error=Please+provide+valid+customer+company+name,+email,+and+estimated+contract+value", getBaseUrl(req)),
+      303
+    );
+  }
+
+  if (!isValidEmail(customerEmail)) {
+    return NextResponse.redirect(
+      new URL("/foliodesk/portal?tab=pipeline&error=Invalid+email+format.+Please+enter+a+valid+email+address+(e.g.+contact%40company.com).", getBaseUrl(req)),
+      303
+    );
+  }
+
+  if (customerPhone && !isValidPhone(customerPhone)) {
+    return NextResponse.redirect(
+      new URL("/foliodesk/portal?tab=pipeline&error=Invalid+phone+number+format.+Phone+numbers+cannot+contain+letters.", getBaseUrl(req)),
       303
     );
   }

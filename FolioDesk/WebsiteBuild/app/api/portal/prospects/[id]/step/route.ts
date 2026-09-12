@@ -52,6 +52,50 @@ export async function POST(
     );
   }
 
+  if (deal.status === "FULLY_COLLECTED" || deal.status === "ABORTED") {
+    return NextResponse.redirect(
+      new URL(
+        `/foliodesk/portal/prospects/${dealId}?error=This+prospect+funnel+has+been+completed+or+closed.+Further+step+updates+are+sealed.`,
+        getBaseUrl(req)
+      ),
+      303
+    );
+  }
+
+  // Server-side validation against stage backtracking
+  const STAGES_ORDER = ["LEAD_SUBMITTED", "QUALIFIED", "PROPOSAL_SENT", "CONTRACT_SIGNED", "INVOICED", "FULLY_COLLECTED"];
+  function getStageIndex(status: string): number {
+    const idx = STAGES_ORDER.indexOf(status);
+    if (idx !== -1) return idx;
+    if (status === "PARTIAL_COLLECTED") return 4;
+    if (status === "SUSPENDED_EFFORT") return 2;
+    return 0;
+  }
+
+  const dealStatusIdx = getStageIndex(deal.status);
+  const [ackSteps] = await db().execute<any[]>(
+    "SELECT to_stage FROM deal_funnel_steps WHERE deal_id=? AND admin_review_status='ACKNOWLEDGED'",
+    [dealId]
+  );
+  let maxAckIdx = -1;
+  if (ackSteps.length > 0) {
+    maxAckIdx = Math.max(...ackSteps.map((s) => getStageIndex(s.to_stage)));
+  }
+  const effectiveApprovedIdx = Math.max(dealStatusIdx, maxAckIdx);
+
+  if (effectiveApprovedIdx >= 0 && STAGES_ORDER.includes(toStage)) {
+    const requestedIdx = getStageIndex(toStage);
+    if (requestedIdx < effectiveApprovedIdx) {
+      return NextResponse.redirect(
+        new URL(
+          `/foliodesk/portal/prospects/${dealId}?error=Backtracking+to+a+previous+stage+is+not+permitted+once+a+stage+has+passed+admin+review+or+been+collected.`,
+          getBaseUrl(req)
+        ),
+        303
+      );
+    }
+  }
+
   try {
     await logFunnelStep({
       dealId,

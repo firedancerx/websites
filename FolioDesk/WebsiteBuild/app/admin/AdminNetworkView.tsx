@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useMemo } from "react";
+import ToggleTestModeButton from "./ToggleTestModeButton";
 
 export interface AffiliateItem {
   id: number;
@@ -23,6 +24,10 @@ export interface AffiliateItem {
   updated_at?: string;
   email: string;
   customer_count: number;
+  active_prospects_count?: number;
+  active_clients_count?: number;
+  is_test?: number;
+  has_pending_profile_update?: number;
 }
 
 export interface TreeNode extends AffiliateItem {
@@ -161,7 +166,9 @@ export default function AdminNetworkView({ initialApps }: { initialApps: Affilia
 
   const count = (s: string) => initialApps.filter((a) => a.status === s).length;
   const downlineCount = initialApps.filter((a) => Boolean(a.upline_affiliate_code)).length;
-  const totalCustomersCount = initialApps.reduce((sum, a) => sum + Number(a.customer_count || 0), 0);
+  const totalActiveProspects = initialApps.reduce((sum, a) => sum + Number(a.active_prospects_count ?? 0), 0);
+  const totalActiveClients = initialApps.reduce((sum, a) => sum + Number(a.active_clients_count ?? 0), 0);
+  const pendingProfileUpdatesCount = initialApps.filter((a) => Boolean(a.has_pending_profile_update)).length;
   const matchingAppCount = useMemo(() => countMatchingNodes(filteredTree), [filteredTree]);
 
   function renderAffiliateNode(node: TreeNode, depth: number = 0) {
@@ -230,12 +237,82 @@ export default function AdminNetworkView({ initialApps }: { initialApps: Affilia
                       </span>
                     )}
 
-                    {/* ONBOARDED CUSTOMERS COUNT BADGE */}
-                    {node.customer_count > 0 ? (
+                    {/* ACTIVE PROSPECTS & ACTIVE CLIENTS REAL-TIME BADGES */}
+                    <Link href={`${detailUrl}#active-prospects`} style={{ textDecoration: "none" }} title={`Click to view Active Prospects for ${node.legal_name}`}>
+                      {Number(node.active_prospects_count || 0) > 0 ? (
+                        <span
+                          style={{
+                            background: "#e0e7ff",
+                            color: "#3730a3",
+                            padding: "2px 8px",
+                            borderRadius: 99,
+                            fontSize: 11,
+                            fontWeight: 700,
+                            border: "1px solid #c7d2fe",
+                            cursor: "pointer",
+                            boxShadow: "0 1px 3px rgba(55,48,163,0.12)",
+                          }}
+                        >
+                          🎯 {node.active_prospects_count} Active {node.active_prospects_count === 1 ? "Prospect" : "Prospects"}
+                        </span>
+                      ) : (
+                        <span style={{ background: "#f1f5f9", color: "#64748b", padding: "2px 8px", borderRadius: 99, fontSize: 11, fontWeight: 500, cursor: "pointer" }}>
+                          🎯 0 Prospects
+                        </span>
+                      )}
+                    </Link>
+
+                    <Link href={`${detailUrl}#active-clients`} style={{ textDecoration: "none" }} title={`Click to view Active Clients for ${node.legal_name}`}>
+                      {Number(node.active_clients_count ?? 0) > 0 ? (
+                        <span
+                          style={{
+                            background: "#dcfce7",
+                            color: "#166534",
+                            padding: "2px 8px",
+                            borderRadius: 99,
+                            fontSize: 11,
+                            fontWeight: 700,
+                            border: "1px solid #bbf7d0",
+                            cursor: "pointer",
+                            boxShadow: "0 1px 3px rgba(22,101,52,0.12)",
+                          }}
+                        >
+                          💼 {node.active_clients_count ?? 0} Active {Number(node.active_clients_count ?? 0) === 1 ? "Client" : "Clients"}
+                        </span>
+                      ) : (
+                        <span style={{ background: "#f1f5f9", color: "#64748b", padding: "2px 8px", borderRadius: 99, fontSize: 11, fontWeight: 500, cursor: "pointer" }}>
+                          💼 0 Clients
+                        </span>
+                      )}
+                    </Link>
+
+                    {hasDownlines && (
+                      <span style={{ background: "#ccfbf1", color: "#0f766e", padding: "2px 8px", borderRadius: 99, fontSize: 11, fontWeight: 700, border: "1px solid #99f6e4" }}>
+                        🌿 {totalNetworkCount} Downline{totalNetworkCount === 1 ? "" : "s"} ({node.downlines.length} Direct)
+                      </span>
+                    )}
+
+                    {node.is_test === 1 && (
                       <span
                         style={{
-                          background: "#dbeafe",
-                          color: "#1e40af",
+                          background: "#fffbeb",
+                          color: "#b45309",
+                          padding: "2px 8px",
+                          borderRadius: 99,
+                          fontSize: 11,
+                          fontWeight: 700,
+                          border: "1px solid #fde68a",
+                        }}
+                      >
+                        🧪 TESTER DATA
+                      </span>
+                    )}
+
+                    {node.has_pending_profile_update === 1 && (
+                      <span
+                        style={{
+                          background: "#eff6ff",
+                          color: "#1d4ed8",
                           padding: "2px 8px",
                           borderRadius: 99,
                           fontSize: 11,
@@ -243,17 +320,7 @@ export default function AdminNetworkView({ initialApps }: { initialApps: Affilia
                           border: "1px solid #bfdbfe",
                         }}
                       >
-                        👤 {node.customer_count} Onboarded {node.customer_count === 1 ? "Customer" : "Customers"}
-                      </span>
-                    ) : (
-                      <span style={{ background: "#f1f5f9", color: "#64748b", padding: "2px 8px", borderRadius: 99, fontSize: 11, fontWeight: 500 }}>
-                        👤 0 Customers
-                      </span>
-                    )}
-
-                    {hasDownlines && (
-                      <span style={{ background: "#ccfbf1", color: "#0f766e", padding: "2px 8px", borderRadius: 99, fontSize: 11, fontWeight: 700, border: "1px solid #99f6e4" }}>
-                        🌿 {totalNetworkCount} Downline{totalNetworkCount === 1 ? "" : "s"} ({node.downlines.length} Direct)
+                        ⏳ PENDING eKYC PROFILE UPDATE
                       </span>
                     )}
                   </div>
@@ -399,6 +466,7 @@ export default function AdminNetworkView({ initialApps }: { initialApps: Affilia
             <div>
               {!isVirtual && (
                 <div className="row-actions" style={{ display: "flex", gap: 6, alignItems: "center", justifyContent: "flex-end" }}>
+                  <ToggleTestModeButton entityType="affiliate" entityId={node.id} isTest={node.is_test} size="sm" />
                   <Link
                     className="button secondary"
                     style={{ padding: "5px 12px", fontSize: 12, whiteSpace: "nowrap" }}
@@ -490,13 +558,25 @@ export default function AdminNetworkView({ initialApps }: { initialApps: Affilia
           <small>Downlines</small>
           <strong style={{ color: "#0f766e" }}>{downlineCount}</strong>
         </div>
-        <div className="stat" style={{ border: "2px solid #bfdbfe", background: "#eff6ff" }}>
-          <small style={{ color: "#1d4ed8", fontWeight: 700 }}>Total Onboarded Customers</small>
-          <strong style={{ color: "#1e40af" }}>{totalCustomersCount}</strong>
+        <Link href="/admin/deals" style={{ textDecoration: "none" }} title="Click to view all Sales Funnel Deals & Prospects">
+          <div className="stat" style={{ border: "1.5px solid #c7d2fe", background: "#e0e7ff", cursor: "pointer" }}>
+            <small style={{ color: "#3730a3", fontWeight: 700 }}>Active Prospects</small>
+            <strong style={{ color: "#312e81" }}>🎯 {totalActiveProspects}</strong>
+          </div>
+        </Link>
+        <Link href="/admin/invoices" style={{ textDecoration: "none" }} title="Click to view all Tax Invoices & Active Paid Clients">
+          <div className="stat" style={{ border: "1.5px solid #bbf7d0", background: "#dcfce7", cursor: "pointer" }}>
+            <small style={{ color: "#166534", fontWeight: 700 }}>Active Clients (Paid)</small>
+            <strong style={{ color: "#14532d" }}>💼 {totalActiveClients}</strong>
+          </div>
+        </Link>
+        <div className="stat" style={{ border: count("SUBMITTED") > 0 ? "1.5px solid #fde68a" : undefined, background: count("SUBMITTED") > 0 ? "#fef3c7" : undefined }}>
+          <small style={{ color: count("SUBMITTED") > 0 ? "#92400e" : undefined, fontWeight: 700 }}>Applications Awaiting Review</small>
+          <strong style={{ color: count("SUBMITTED") > 0 ? "#b45309" : undefined }}>⏳ {count("SUBMITTED")}</strong>
         </div>
-        <div className="stat">
-          <small>Awaiting Review</small>
-          <strong>{count("SUBMITTED")}</strong>
+        <div className="stat" style={{ border: pendingProfileUpdatesCount > 0 ? "2px solid #3b82f6" : undefined, background: pendingProfileUpdatesCount > 0 ? "#eff6ff" : undefined }}>
+          <small style={{ color: pendingProfileUpdatesCount > 0 ? "#1d4ed8" : undefined, fontWeight: pendingProfileUpdatesCount > 0 ? 700 : undefined }}>Pending eKYC Updates</small>
+          <strong style={{ color: pendingProfileUpdatesCount > 0 ? "#1e40af" : undefined }}>{pendingProfileUpdatesCount}</strong>
         </div>
         <div className="stat">
           <small>Approved</small>

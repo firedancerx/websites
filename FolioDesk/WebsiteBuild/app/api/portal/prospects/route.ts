@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { currentUser, getBaseUrl } from "../../../../lib/auth";
 import { db } from "../../../../lib/db";
 import { generateDealCode, checkProspectExclusivity, logFunnelStep } from "../../../../lib/funnel";
+import { isValidEmail, isValidPhone } from "../../../../lib/validation";
 
 export async function POST(req: Request) {
   const user = await currentUser();
@@ -30,13 +31,28 @@ export async function POST(req: Request) {
   const customerEmail = String(f.get("customerEmail") || "").trim().toLowerCase();
   const customerPhone = String(f.get("customerPhone") || "").trim() || null;
   const packageName = String(f.get("packageName") || "FolioDesk Cloud Enterprise").trim();
-  const packageCount = Number(f.get("packageCount") || 1);
+  const packageCount = Math.max(1, Number(f.get("packageCount") || 1));
   const contractValueMyr = parseFloat(String(f.get("contractValueMyr") || "60000.00"));
   const initialNotes = String(f.get("notes") || "").trim();
+  const isTest = f.has("isTest") ? (f.get("isTest") === "1" || f.get("isTest") === "on" ? 1 : 0) : 1;
 
   if (!customerName || !customerEmail || isNaN(contractValueMyr) || contractValueMyr <= 0) {
     return NextResponse.redirect(
       new URL("/foliodesk/portal/prospects?error=Please+provide+valid+prospect+company+name,+email,+and+estimated+deal+value", getBaseUrl(req)),
+      303
+    );
+  }
+
+  if (!isValidEmail(customerEmail)) {
+    return NextResponse.redirect(
+      new URL("/foliodesk/portal/prospects?error=Invalid+email+format.+Please+enter+a+valid+email+address+(e.g.+contact%40company.com).", getBaseUrl(req)),
+      303
+    );
+  }
+
+  if (customerPhone && !isValidPhone(customerPhone)) {
+    return NextResponse.redirect(
+      new URL("/foliodesk/portal/prospects?error=Invalid+phone+number+format.+Phone+numbers+cannot+contain+letters.", getBaseUrl(req)),
       303
     );
   }
@@ -57,8 +73,8 @@ export async function POST(req: Request) {
   const dealCode = generateDealCode();
   const [dealRes]: any = await db().execute(
     `INSERT INTO deal_pipeline 
-      (affiliate_id, deal_code, customer_name, customer_email, customer_phone, package_name, package_count, contract_value_myr, status, status_note)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'LEAD_SUBMITTED', ?)`,
+      (affiliate_id, deal_code, customer_name, customer_email, customer_phone, package_name, package_count, contract_value_myr, status, status_note, is_test)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'LEAD_SUBMITTED', ?, ?)`,
     [
       app.id,
       dealCode,
@@ -69,6 +85,7 @@ export async function POST(req: Request) {
       packageCount,
       contractValueMyr,
       initialNotes || "Initial prospect named and registered by affiliate",
+      isTest,
     ]
   );
   const dealId = dealRes.insertId;
@@ -81,6 +98,7 @@ export async function POST(req: Request) {
     stepTitle: "1. Prospect Named & Registered",
     affiliateNotes: initialNotes || "Initial commercial introduction and account registration.",
     submittedByUserId: user.id,
+    isTest,
   });
 
   return NextResponse.redirect(

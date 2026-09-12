@@ -94,14 +94,12 @@ export async function POST(req: Request) {
     let idDocPath = app.id_doc_path;
     let holdingIdPath = app.holding_id_path;
 
-    // Check if uploads & upline code are editable (ONLY under CORRECTION_REQUIRED or INFORMATION_REQUIRED)
+    // Check if uploads & upline code are editable under CORRECTION_REQUIRED or INFORMATION_REQUIRED
     const canEditUploadsAndUpline =
       app.status === "CORRECTION_REQUIRED" || app.status === "INFORMATION_REQUIRED";
 
-    let updatedUplineCode = app.upline_affiliate_code;
-    if (canEditUploadsAndUpline) {
-      updatedUplineCode = uplineCode;
-
+    // Handle new file uploads if provided (allowed for initial correction or APPROVED profile updates)
+    if (canEditUploadsAndUpline || app.status === "APPROVED") {
       const uploadDir = join(process.cwd(), "public", "uploads", "id-documents");
       await mkdir(uploadDir, { recursive: true });
 
@@ -124,6 +122,116 @@ export async function POST(req: Request) {
       }
     }
 
+    if (app.status === "APPROVED") {
+      // eKYC Workflow: Create or update pending profile update request without touching active profile
+      const [existingPending] = await db().execute<any[]>(
+        "SELECT id FROM affiliate_profile_updates WHERE application_id=? AND status='PENDING_APPROVAL' LIMIT 1",
+        [app.id]
+      );
+
+      const proposedFullName = fullName || user.full_name;
+
+      if (existingPending.length > 0) {
+        await db().execute(
+          `UPDATE affiliate_profile_updates SET 
+            full_name=?, 
+            applicant_type=?, 
+            legal_name=?, 
+            company_number=?, 
+            country_code=?, 
+            state=?, 
+            town=?, 
+            postcode=?, 
+            currency=?, 
+            address_line1=?, 
+            address_line2=?, 
+            address_line3=?, 
+            phone=?, 
+            website_url=?, 
+            social_url=?, 
+            market_focus=?, 
+            audience_description=?, 
+            promotion_method=?, 
+            id_doc_path=?, 
+            holding_id_path=?,
+            admin_remarks=NULL,
+            updated_at=CURRENT_TIMESTAMP
+          WHERE id=?`,
+          [
+            proposedFullName,
+            applicantType,
+            legalName,
+            companyNumber,
+            countryCode,
+            state,
+            town,
+            postcode,
+            currency,
+            addressLine1,
+            addressLine2,
+            addressLine3,
+            phone,
+            websiteUrl,
+            socialUrl,
+            marketFocus,
+            audience,
+            promotion,
+            idDocPath,
+            holdingIdPath,
+            existingPending[0].id,
+          ]
+        );
+      } else {
+        await db().execute(
+          `INSERT INTO affiliate_profile_updates (
+            application_id, user_id, status, full_name, applicant_type, legal_name, company_number,
+            country_code, state, town, postcode, currency, address_line1, address_line2, address_line3,
+            phone, website_url, social_url, market_focus, audience_description, promotion_method,
+            id_doc_path, holding_id_path, upline_affiliate_code
+          ) VALUES (?, ?, 'PENDING_APPROVAL', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            app.id,
+            user.id,
+            proposedFullName,
+            applicantType,
+            legalName,
+            companyNumber,
+            countryCode,
+            state,
+            town,
+            postcode,
+            currency,
+            addressLine1,
+            addressLine2,
+            addressLine3,
+            phone,
+            websiteUrl,
+            socialUrl,
+            marketFocus,
+            audience,
+            promotion,
+            idDocPath,
+            holdingIdPath,
+            app.upline_affiliate_code,
+          ]
+        );
+      }
+
+      await db().execute(
+        "INSERT INTO audit_events (actor_user_id, action, entity_type, entity_id) VALUES (?, 'PROFILE_UPDATE_SUBMITTED', 'affiliate_profile_updates', ?)",
+        [user.id, String(app.id)]
+      );
+
+      return NextResponse.redirect(
+        new URL(
+          "/foliodesk/portal?success=Profile+update+submitted+for+Admin+eKYC+review.+Your+current+active+profile+remains+active+until+approved.",
+          getBaseUrl(req)
+        ),
+        303
+      );
+    }
+
+    // Initial Application Correction / Resubmission Flow (for non-APPROVED applications)
     const isAwaitingOrReturned =
       app.status === "CORRECTION_REQUIRED" ||
       app.status === "INFORMATION_REQUIRED" ||
@@ -133,120 +241,71 @@ export async function POST(req: Request) {
     const newStatus = isAwaitingOrReturned ? "SUBMITTED" : app.status;
     const newFlagIdDoc = isAwaitingOrReturned ? 0 : (app.flag_id_doc_unclear || 0);
     const newFlagHoldingId = isAwaitingOrReturned ? 0 : (app.flag_holding_id_unaccepted || 0);
+    let updatedUplineCode = canEditUploadsAndUpline ? uplineCode : app.upline_affiliate_code;
 
-    if (isAwaitingOrReturned) {
-      await db().execute(
-        `UPDATE affiliate_applications SET 
-          legal_name=?, 
-          applicant_type=?, 
-          company_number=?, 
-          country_code=?, 
-          state=?, 
-          town=?, 
-          postcode=?, 
-          currency=?, 
-          address_line1=?, 
-          address_line2=?, 
-          address_line3=?, 
-          phone=?, 
-          website_url=?, 
-          social_url=?, 
-          market_focus=?, 
-          audience_description=?, 
-          promotion_method=?, 
-          id_doc_path=?, 
-          holding_id_path=?, 
-          upline_affiliate_code=?,
-          status=?,
-          flag_id_doc_unclear=?,
-          flag_holding_id_unaccepted=?,
-          submitted_at=CURRENT_TIMESTAMP
-        WHERE id=?`,
-        [
-          legalName,
-          applicantType,
-          companyNumber,
-          countryCode,
-          state,
-          town,
-          postcode,
-          currency,
-          addressLine1,
-          addressLine2,
-          addressLine3,
-          phone,
-          websiteUrl,
-          socialUrl,
-          marketFocus,
-          audience,
-          promotion,
-          idDocPath,
-          holdingIdPath,
-          updatedUplineCode,
-          newStatus,
-          newFlagIdDoc,
-          newFlagHoldingId,
-          app.id,
-        ]
-      );
+    await db().execute(
+      `UPDATE affiliate_applications SET 
+        legal_name=?, 
+        applicant_type=?, 
+        company_number=?, 
+        country_code=?, 
+        state=?, 
+        town=?, 
+        postcode=?, 
+        currency=?, 
+        address_line1=?, 
+        address_line2=?, 
+        address_line3=?, 
+        phone=?, 
+        website_url=?, 
+        social_url=?, 
+        market_focus=?, 
+        audience_description=?, 
+        promotion_method=?, 
+        id_doc_path=?, 
+        holding_id_path=?, 
+        upline_affiliate_code=?,
+        status=?,
+        flag_id_doc_unclear=?,
+        flag_holding_id_unaccepted=?,
+        submitted_at=CURRENT_TIMESTAMP
+      WHERE id=?`,
+      [
+        legalName,
+        applicantType,
+        companyNumber,
+        countryCode,
+        state,
+        town,
+        postcode,
+        currency,
+        addressLine1,
+        addressLine2,
+        addressLine3,
+        phone,
+        websiteUrl,
+        socialUrl,
+        marketFocus,
+        audience,
+        promotion,
+        idDocPath,
+        holdingIdPath,
+        updatedUplineCode,
+        newStatus,
+        newFlagIdDoc,
+        newFlagHoldingId,
+        app.id,
+      ]
+    );
 
-      if (app.status === "CORRECTION_REQUIRED" || app.status === "INFORMATION_REQUIRED") {
-        await db().execute(
-          "INSERT INTO application_status_history (application_id, from_status, to_status, changed_by, public_message) VALUES (?, ?, 'SUBMITTED', ?, ?)",
-          [
-            app.id,
-            app.status,
-            user.id,
-            "Application improved and resubmitted by applicant for review.",
-          ]
-        );
-      }
-    } else {
+    if (app.status === "CORRECTION_REQUIRED" || app.status === "INFORMATION_REQUIRED") {
       await db().execute(
-        `UPDATE affiliate_applications SET 
-          legal_name=?, 
-          applicant_type=?, 
-          company_number=?, 
-          country_code=?, 
-          state=?, 
-          town=?, 
-          postcode=?, 
-          currency=?, 
-          address_line1=?, 
-          address_line2=?, 
-          address_line3=?, 
-          phone=?, 
-          website_url=?, 
-          social_url=?, 
-          market_focus=?, 
-          audience_description=?, 
-          promotion_method=?, 
-          id_doc_path=?, 
-          holding_id_path=?, 
-          upline_affiliate_code=?
-        WHERE id=?`,
+        "INSERT INTO application_status_history (application_id, from_status, to_status, changed_by, public_message) VALUES (?, ?, 'SUBMITTED', ?, ?)",
         [
-          legalName,
-          applicantType,
-          companyNumber,
-          countryCode,
-          state,
-          town,
-          postcode,
-          currency,
-          addressLine1,
-          addressLine2,
-          addressLine3,
-          phone,
-          websiteUrl,
-          socialUrl,
-          marketFocus,
-          audience,
-          promotion,
-          idDocPath,
-          holdingIdPath,
-          updatedUplineCode,
           app.id,
+          app.status,
+          user.id,
+          "Application improved and resubmitted by applicant for review.",
         ]
       );
     }

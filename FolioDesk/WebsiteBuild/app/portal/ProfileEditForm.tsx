@@ -36,6 +36,7 @@ interface ApplicationData {
 export default function ProfileEditForm({
   user,
   application,
+  pendingUpdate,
   countries,
   states,
   error,
@@ -43,6 +44,7 @@ export default function ProfileEditForm({
 }: {
   user: { id: number; full_name: string; email: string };
   application?: ApplicationData;
+  pendingUpdate?: any;
   countries: CountryItem[];
   states: StateItem[];
   error?: string;
@@ -103,9 +105,15 @@ export default function ProfileEditForm({
     }
   }, [password, confirmPassword, passwordTouched, confirmPasswordTouched]);
 
-  const canEditUploadsAndUpline =
+  const canEditUpline =
     application &&
     (application.status === "CORRECTION_REQUIRED" || application.status === "INFORMATION_REQUIRED");
+
+  const canEditUploads =
+    application &&
+    (application.status === "APPROVED" ||
+      application.status === "CORRECTION_REQUIRED" ||
+      application.status === "INFORMATION_REQUIRED");
 
   return (
     <form action="/foliodesk/api/profile/update" method="post" encType="multipart/form-data" className="form-card" style={{ maxWidth: "100%" }}>
@@ -283,7 +291,7 @@ export default function ProfileEditForm({
                 Upline Affiliate ID / Referral Code / <span style={{ color: "#475569", fontWeight: 500 }}>ID Rujukan Upline</span>{" "}
                 <small style={{ fontWeight: "normal", color: "#64748b" }}>(Optional / Pilihan)</small>
               </label>
-              {canEditUploadsAndUpline ? (
+              {canEditUpline ? (
                 <>
                   <input
                     id="uplineCode"
@@ -426,10 +434,10 @@ export default function ProfileEditForm({
             {/* ID DOCUMENT UPLOADS RULES */}
             <div className="field full" style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid var(--border,#e2e8f0)" }}>
               <h3 style={{ fontSize: 20, marginBottom: 6 }}>Identity Verification Documents / Dokumen Pengesahan Identiti</h3>
-              {canEditUploadsAndUpline ? (
-                <div className="notice" style={{ background: "#fef3c7", borderColor: "#f59e0b", color: "#92400e", marginBottom: 16 }}>
-                  <b>Action Required:</b> Your application is under <b>{application.status.replaceAll("_", " ")}</b>. You may re-upload your ID verification documents below.
-                </div>
+              {canEditUploads ? (
+                <p style={{ fontSize: 14, color: "#475569", marginBottom: 16 }}>
+                  You may re-upload your ID verification documents below if updated or required for eKYC.
+                </p>
               ) : (
                 <p style={{ fontSize: 14, color: "#64748b", marginBottom: 16 }}>
                   ID documents are <b>locked</b> in phase status <b>{application.status.replaceAll("_", " ")}</b> and cannot be modified unless additional information is requested by the review team.
@@ -439,7 +447,7 @@ export default function ProfileEditForm({
 
             <div className="field full">
               <label htmlFor="idDoc" style={{ fontWeight: 600 }}>1. Picture of ID Document / Gambar Dokumen Pengenalan Diri</label>
-              {canEditUploadsAndUpline ? (
+              {canEditUploads ? (
                 <>
                   <p style={{ fontSize: 13, color: "#64748b", marginTop: -2, marginBottom: 6 }}>
                     Re-upload a clear picture/scan of your official Government ID document.
@@ -455,7 +463,7 @@ export default function ProfileEditForm({
 
             <div className="field full">
               <label htmlFor="holdingId" style={{ fontWeight: 600 }}>2. Photo Holding ID Document / Foto Memegang Dokumen Pengenalan Diri</label>
-              {canEditUploadsAndUpline ? (
+              {canEditUploads ? (
                 <>
                   <p style={{ fontSize: 13, color: "#64748b", marginTop: -2, marginBottom: 6 }}>
                     Re-upload a clear photo of yourself holding your Government ID document next to your face.

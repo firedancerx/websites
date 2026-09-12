@@ -238,6 +238,8 @@ export async function POST(req: Request) {
       }
     }
 
+    const isTest = f.has("isTest") ? (f.get("isTest") === "1" || f.get("isTest") === "on" ? 1 : 0) : 1;
+
     const conn = await db().getConnection();
     try {
       await conn.beginTransaction();
@@ -251,8 +253,8 @@ export async function POST(req: Request) {
           user_id, application_number, applicant_type, legal_name, company_number, 
           country_code, state, town, postcode, currency, address_line1, address_line2, address_line3,
           phone, website_url, social_url, market_focus, audience_description, promotion_method,
-          id_doc_path, holding_id_path, affiliate_code, upline_affiliate_code
-        ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+          id_doc_path, holding_id_path, affiliate_code, upline_affiliate_code, is_test
+        ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
         [
           u.insertId,
           number,
@@ -277,6 +279,7 @@ export async function POST(req: Request) {
           holdingIdPath,
           affiliateCode,
           uplineCode,
+          isTest,
         ]
       );
       await conn.execute(

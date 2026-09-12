@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { FunnelStatus, AppealStatus } from "../../../lib/funnel";
+import type { PackageItem } from "../../../lib/packages";
+import PackageSelectForm, { ValidatedContactInputs } from "../../components/PackageSelectForm";
 
 export interface ProspectItem {
   id: number;
@@ -22,6 +24,7 @@ export interface ProspectItem {
   force_closed_reason: string | null;
   appeal_status: AppealStatus;
   appeal_reason: string | null;
+  is_test?: number;
   // Computed fields
   days_remaining: number;
   is_overdue: boolean;
@@ -36,11 +39,13 @@ export default function ProspectsListView({
   closurePeriodDays,
   isRetracted,
   isSuspended,
+  packages = [],
 }: {
   prospects: ProspectItem[];
   closurePeriodDays: number;
   isRetracted: boolean;
   isSuspended: boolean;
+  packages?: PackageItem[];
 }) {
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -169,6 +174,20 @@ export default function ProspectsListView({
                       >
                         {badge.label}
                       </span>
+                      {item.is_test === 1 && (
+                        <span
+                          className="badge"
+                          style={{
+                            fontSize: 10,
+                            fontWeight: 700,
+                            background: "#fffbeb",
+                            color: "#b45309",
+                            border: "1px solid #fde68a",
+                          }}
+                        >
+                          🧪 TESTER DATA
+                        </span>
+                      )}
                       {item.pending_steps_count > 0 && (
                         <span className="badge" style={{ background: "#fef3c7", color: "#92400e", fontSize: 10, fontWeight: 700 }}>
                           ⏳ {item.pending_steps_count} Update Awaiting Review
@@ -276,49 +295,9 @@ export default function ProspectsListView({
                   </small>
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                  <div>
-                    <label style={{ fontWeight: 600, fontSize: 13 }}>Customer Contact Email *</label>
-                    <input
-                      name="customerEmail"
-                      type="email"
-                      required
-                      placeholder="procurement@megamaju.my"
-                      style={{ width: "100%", padding: 8, borderRadius: 6, border: "1px solid #cbd5e1" }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ fontWeight: 600, fontSize: 13 }}>Contact Phone</label>
-                    <input
-                      name="customerPhone"
-                      placeholder="+60 12-345 6789"
-                      style={{ width: "100%", padding: 8, borderRadius: 6, border: "1px solid #cbd5e1" }}
-                    />
-                  </div>
-                </div>
+                <ValidatedContactInputs />
 
-                <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 12 }}>
-                  <div>
-                    <label style={{ fontWeight: 600, fontSize: 13 }}>Target FolioDesk Package</label>
-                    <input
-                      name="packageName"
-                      defaultValue="FolioDesk Cloud Enterprise"
-                      required
-                      style={{ width: "100%", padding: 8, borderRadius: 6, border: "1px solid #cbd5e1" }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ fontWeight: 600, fontSize: 13 }}>Est. Contract Value (MYR) *</label>
-                    <input
-                      name="contractValueMyr"
-                      type="number"
-                      step="0.01"
-                      defaultValue="60000.00"
-                      required
-                      style={{ width: "100%", padding: 8, borderRadius: 6, border: "1.5px solid #cbd5e1", fontWeight: 700 }}
-                    />
-                  </div>
-                </div>
+                <PackageSelectForm packages={packages} />
 
                 <div>
                   <label style={{ fontWeight: 600, fontSize: 13 }}>Initial Introduction Notes / Requirements</label>
@@ -328,6 +307,13 @@ export default function ProspectsListView({
                     placeholder="e.g. Met MD at CIDB convention. Interested in digitizing progress claims and ERP for 3 building projects..."
                     style={{ width: "100%", padding: 8, borderRadius: 6, border: "1px solid #cbd5e1" }}
                   />
+                </div>
+
+                <div style={{ background: "#fffbeb", padding: "10px 12px", borderRadius: 8, border: "1px solid #fde68a", display: "flex", alignItems: "center", gap: 8 }}>
+                  <input type="checkbox" id="isTest" name="isTest" value="1" defaultChecked={true} />
+                  <label htmlFor="isTest" style={{ fontSize: 13, fontWeight: 700, color: "#92400e", cursor: "pointer" }}>
+                    🧪 Mark as Tester Data (Default for testing & verification)
+                  </label>
                 </div>
               </div>
 

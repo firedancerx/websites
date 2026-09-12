@@ -67,7 +67,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   if (targetUserId) {
     const userStatus = (decision === "SUSPENDED" || decision === "TERMINATED") ? "SUSPENDED" : "ACTIVE";
-    await db().execute("UPDATE users SET status=? WHERE id=?", [userStatus, targetUserId]);
+    if (decision === "APPROVED") {
+      await db().execute("UPDATE users SET status=?, role='AFFILIATE' WHERE id=?", [userStatus, targetUserId]);
+    } else {
+      await db().execute("UPDATE users SET status=? WHERE id=?", [userStatus, targetUserId]);
+    }
   }
 
   await db().execute(

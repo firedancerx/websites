@@ -4,6 +4,7 @@ import { currentUser } from "../../../lib/auth";
 import { db } from "../../../lib/db";
 import { getCommissionSettings } from "../../../lib/settings";
 import { calculateClosureDeadline } from "../../../lib/funnel";
+import { getActivePackages } from "../../../lib/packages";
 import ProspectsListView, { type ProspectItem } from "./ProspectsListView";
 
 export const dynamic = "force-dynamic";
@@ -29,6 +30,7 @@ export default async function AffiliateProspectsPage({
   const isSuspended = user.status === "SUSPENDED" || a?.status === "SUSPENDED" || a?.status === "TERMINATED";
 
   const settings = await getCommissionSettings();
+  const packages = await getActivePackages();
   const q = await searchParams;
 
   let prospects: ProspectItem[] = [];
@@ -74,9 +76,6 @@ export default async function AffiliateProspectsPage({
         </div>
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           <Link className="button secondary" href="/portal">Back to Portal Home</Link>
-          <form action="/foliodesk/api/logout" method="post">
-            <button className="button secondary">Sign out</button>
-          </form>
         </div>
       </div>
 
@@ -92,6 +91,7 @@ export default async function AffiliateProspectsPage({
         closurePeriodDays={settings.closurePeriodDays || 90}
         isRetracted={isRetracted}
         isSuspended={isSuspended}
+        packages={packages}
       />
     </section>
   );

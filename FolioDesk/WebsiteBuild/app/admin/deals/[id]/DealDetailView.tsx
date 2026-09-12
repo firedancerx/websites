@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { DealRecord, FunnelStepRecord, ClosureLogRecord, CollectionRecord, FunnelStatus, StepReviewStatus } from "../../../../lib/funnel";
+import ToggleTestModeButton from "../../ToggleTestModeButton";
+import InvoiceDocumentModal from "../../../components/InvoiceDocumentModal";
 
 export default function DealDetailView({
   deal,
@@ -28,8 +30,16 @@ export default function DealDetailView({
   const [isForceCloseModalOpen, setIsForceCloseModalOpen] = useState(false);
   const [isAppealModalOpen, setIsAppealModalOpen] = useState(false);
   const [isCollectionModalOpen, setIsCollectionModalOpen] = useState(false);
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+  const [isInvoiceDocOpen, setIsInvoiceDocOpen] = useState(false);
 
-  const isClosed = deal.status === "ABORTED" || deal.is_force_closed === 1;
+  const isInvoiceIssued = Boolean(deal.invoice_number);
+  const invoiceTarget = deal.invoice_target || "PROSPECT";
+  const totalApprovedCollected = Number(deal.total_collected_myr || 0);
+  const contractVal = Number(deal.contract_value_myr || 0);
+  const isFullyCollected = deal.status === "FULLY_COLLECTED" || (contractVal > 0 && totalApprovedCollected >= contractVal);
+  const isFullyFinalized = isFullyCollected || (deal.status as string) === "CLIENT_ONBOARDED" || (deal.status as string) === "CLOSED_WON";
+  const isClosed = deal.status === "ABORTED" || deal.is_force_closed === 1 || isFullyFinalized;
   const hasAppeal = deal.appeal_status === "APPEAL_SUBMITTED";
 
   function getStepBadge(status: StepReviewStatus) {
@@ -61,8 +71,13 @@ export default function DealDetailView({
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
               <span style={{ fontSize: 13, fontWeight: 800, color: "#2563eb" }}>{deal.deal_code}</span>
               <span className="badge" style={{ background: "#0f766e", color: "#fff", fontWeight: 700, fontSize: 11 }}>
-                {deal.status.replaceAll("_", " ")}
+                Approved Stage: {deal.status.replaceAll("_", " ")}
               </span>
+              {deal.is_test === 1 && (
+                <span className="badge" style={{ background: "#fffbeb", color: "#b45309", border: "1px solid #fde68a", fontWeight: 700, fontSize: 11 }}>
+                  🧪 TESTER DATA
+                </span>
+              )}
               {hasAppeal && (
                 <span className="badge" style={{ background: "#fef3c7", color: "#92400e", fontWeight: 700, fontSize: 11 }}>
                   ⚖️ Extension Appeal Pending
@@ -78,7 +93,8 @@ export default function DealDetailView({
           </div>
 
           {/* ADMIN MANAGEMENT ACTION BUTTONS */}
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+            <ToggleTestModeButton entityType="deal" entityId={deal.id} isTest={deal.is_test} size="md" />
             {hasAppeal && (
               <button
                 className="button primary"
@@ -89,31 +105,79 @@ export default function DealDetailView({
               </button>
             )}
 
-            <button
-              className="button secondary"
-              onClick={() => setIsExtendModalOpen(true)}
-              style={{ fontWeight: 700 }}
-            >
-              ⏳ Extend Closure Deadline
-            </button>
-
-            {!isClosed && (
-              <button
-                className="button secondary"
-                onClick={() => setIsForceCloseModalOpen(true)}
-                style={{ color: "#991b1b", borderColor: "#fca5a5" }}
+            {isFullyFinalized ? (
+              <span
+                className="badge"
+                style={{
+                  background: "#dcfce7",
+                  color: "#166534",
+                  border: "1.5px solid #bbf7d0",
+                  fontWeight: 800,
+                  padding: "8px 14px",
+                  fontSize: 13,
+                  borderRadius: 8,
+                }}
               >
-                🛑 Force Close Attempt
-              </button>
-            )}
+                ✓ Payment Fully Received & Sealed (RM {contractVal.toLocaleString("en-MY", { minimumFractionDigits: 2 })})
+              </span>
+            ) : (
+              <>
+                <button
+                  className="button secondary"
+                  onClick={() => setIsExtendModalOpen(true)}
+                  style={{ fontWeight: 700 }}
+                >
+                  ⏳ Extend Closure Deadline
+                </button>
 
-            <button
-              className="button primary"
-              onClick={() => setIsCollectionModalOpen(true)}
-              style={{ background: "#0f766e", borderColor: "#0d655e", fontWeight: 700 }}
-            >
-              💰 Record Collection
-            </button>
+                {!isClosed && (
+                  <button
+                    className="button secondary"
+                    onClick={() => setIsForceCloseModalOpen(true)}
+                    style={{ color: "#991b1b", borderColor: "#fca5a5" }}
+                  >
+                    🛑 Force Close Attempt
+                  </button>
+                )}
+
+                {isInvoiceIssued ? (
+                  <>
+                    <button
+                      className="button secondary"
+                      onClick={() => setIsInvoiceDocOpen(true)}
+                      style={{ background: "#f3e8ff", color: "#6b21a8", borderColor: "#6b21a8", fontWeight: 700 }}
+                    >
+                      📄 View Invoice #{deal.invoice_number}
+                    </button>
+                    <button
+                      className="button secondary"
+                      onClick={() => setIsInvoiceModalOpen(true)}
+                      style={{ background: "#faf5ff", color: "#6b21a8", borderColor: "#c084fc", fontWeight: 700 }}
+                    >
+                      ✏️ Re-issue / Replace Invoice
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    className="button secondary"
+                    onClick={() => setIsInvoiceModalOpen(true)}
+                    style={{ background: "#6b21a8", color: "#ffffff", borderColor: "#6b21a8", fontWeight: 700 }}
+                  >
+                    📄 Issue Official Invoice
+                  </button>
+                )}
+
+                {isInvoiceIssued && (
+                  <button
+                    className="button primary"
+                    onClick={() => setIsCollectionModalOpen(true)}
+                    style={{ background: "#0f766e", borderColor: "#0d655e", fontWeight: 700 }}
+                  >
+                    💰 Record Collection
+                  </button>
+                )}
+              </>
+            )}
           </div>
         </div>
 
@@ -124,7 +188,9 @@ export default function DealDetailView({
             <p style={{ margin: "2px 0 0", fontWeight: 800, fontSize: 16, color: "#0f172a" }}>
               RM {Number(deal.contract_value_myr).toLocaleString("en-MY", { minimumFractionDigits: 2 })}
             </p>
-            <small style={{ color: "#475569" }}>{deal.package_name} ({deal.package_count} unit)</small>
+            <small style={{ color: "#475569", fontWeight: 600 }}>
+              {deal.package_name} ({deal.package_count} {deal.package_name.includes("5-User") ? (Number(deal.package_count) > 1 ? `Blocks · ${Number(deal.package_count) * 5} Seats` : "Block · 5 Seats") : (Number(deal.package_count) > 1 ? "Units" : "Unit")})
+            </small>
           </div>
 
           <div>
@@ -162,6 +228,95 @@ export default function DealDetailView({
               </small>
             )}
           </div>
+        </div>
+
+        {/* INVOICING TARGET & BILLING ENTITY SWITCH CARD */}
+        <div
+          style={{
+            background: invoiceTarget === "AFFILIATE" ? "#f5f3ff" : "#f0fdf4",
+            border: invoiceTarget === "AFFILIATE" ? "1.5px solid #ddd6fe" : "1.5px solid #bbf7d0",
+            borderRadius: 10,
+            padding: "16px 20px",
+            marginTop: 18,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: 16,
+          }}
+        >
+          <div>
+            <small style={{ color: "#64748b", fontSize: 11, fontWeight: 700, textTransform: "uppercase" }}>
+              Invoicing Target & Recipient Configuration
+            </small>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4 }}>
+              <span
+                style={{
+                  fontWeight: 800,
+                  fontSize: 15,
+                  color: invoiceTarget === "AFFILIATE" ? "#6b21a8" : "#166534",
+                }}
+              >
+                {invoiceTarget === "AFFILIATE" ? "🤝 Invoicing Billed to Introducing Affiliate" : "🏢 Invoicing Billed to Customer / Prospect"}
+              </span>
+              <span
+                className="badge"
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  background: invoiceTarget === "AFFILIATE" ? "#e9d5ff" : "#dcfce7",
+                  color: invoiceTarget === "AFFILIATE" ? "#581c87" : "#14532d",
+                }}
+              >
+                Target: {invoiceTarget}
+              </span>
+            </div>
+            <p style={{ margin: "4px 0 0", fontSize: 13, color: "#475569" }}>
+              <b>Billed Recipient:</b> {invoiceTarget === "AFFILIATE" ? `${deal.affiliate_legal_name} (${deal.affiliate_code})` : `${deal.customer_name} (${deal.customer_email})`}
+            </p>
+          </div>
+
+          <form action="/foliodesk/api/admin/deals" method="POST" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <input type="hidden" name="action" value="TOGGLE_INVOICE_TARGET" />
+            <input type="hidden" name="dealId" value={deal.id} />
+            <span style={{ fontSize: 12, fontWeight: 600, color: "#64748b" }}>Switch Invoicing Target:</span>
+            <button
+              type="submit"
+              name="invoiceTarget"
+              value="PROSPECT"
+              disabled={invoiceTarget === "PROSPECT"}
+              className="button secondary"
+              style={{
+                fontSize: 12,
+                padding: "6px 12px",
+                background: invoiceTarget === "PROSPECT" ? "#166534" : "#ffffff",
+                color: invoiceTarget === "PROSPECT" ? "#ffffff" : "#334155",
+                borderColor: invoiceTarget === "PROSPECT" ? "#166534" : "#cbd5e1",
+                fontWeight: 700,
+                opacity: invoiceTarget === "PROSPECT" ? 0.7 : 1,
+              }}
+            >
+              🏢 Bill Prospect
+            </button>
+            <button
+              type="submit"
+              name="invoiceTarget"
+              value="AFFILIATE"
+              disabled={invoiceTarget === "AFFILIATE"}
+              className="button secondary"
+              style={{
+                fontSize: 12,
+                padding: "6px 12px",
+                background: invoiceTarget === "AFFILIATE" ? "#6b21a8" : "#ffffff",
+                color: invoiceTarget === "AFFILIATE" ? "#ffffff" : "#334155",
+                borderColor: invoiceTarget === "AFFILIATE" ? "#6b21a8" : "#cbd5e1",
+                fontWeight: 700,
+                opacity: invoiceTarget === "AFFILIATE" ? 0.7 : 1,
+              }}
+            >
+              🤝 Bill Affiliate
+            </button>
+          </form>
         </div>
       </div>
 
@@ -273,13 +428,15 @@ export default function DealDetailView({
               Collections recorded against this customer contract.
             </p>
           </div>
-          <button
-            className="button primary"
-            onClick={() => setIsCollectionModalOpen(true)}
-            style={{ fontSize: 13, fontWeight: 700 }}
-          >
-            ➕ Record New Collection
-          </button>
+          {isInvoiceIssued && (
+            <button
+              className="button primary"
+              onClick={() => setIsCollectionModalOpen(true)}
+              style={{ fontSize: 13, fontWeight: 700 }}
+            >
+              ➕ Record New Collection
+            </button>
+          )}
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -568,6 +725,82 @@ export default function DealDetailView({
             </form>
           </div>
         </div>
+      )}
+      {/* MODAL 6: ISSUE OFFICIAL INVOICE */}
+      {isInvoiceModalOpen && (
+        <div className="modal-overlay" style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+          <div style={{ background: "#fff", borderRadius: 12, width: "100%", maxWidth: 540, padding: 26, boxShadow: "0 10px 25px rgba(0,0,0,0.2)" }}>
+            <h3 style={{ margin: "0 0 6px", fontSize: 20, color: "#6b21a8" }}>
+              {isInvoiceIssued ? "📄 Re-issue / Replace Official Invoice" : "📄 Issue Official Invoice"}
+            </h3>
+            <p style={{ margin: "0 0 16px", color: "#64748b", fontSize: 13 }}>
+              {isInvoiceIssued
+                ? <>Re-issuing this invoice will <b>update and replace</b> the existing official invoice details for deal <b>{deal.deal_code}</b>. Existing collections remain linked with zero double counting.</>
+                : <>Issue official invoice for deal <b>{deal.deal_code}</b>. Payment collections can be recorded once this official invoice is issued.</>}
+            </p>
+
+            <form action="/foliodesk/api/admin/deals" method="POST">
+              <input type="hidden" name="action" value="UPDATE_STATUS" />
+              <input type="hidden" name="dealId" value={deal.id} />
+              <input type="hidden" name="targetStatus" value={deal.status === "LEAD_SUBMITTED" || deal.status === "QUALIFIED" || deal.status === "PROPOSAL_SENT" || deal.status === "CONTRACT_SIGNED" ? "INVOICED" : deal.status} />
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <div>
+                  <label style={{ fontWeight: 600, fontSize: 13 }}>Official Invoice Number *</label>
+                  <input
+                    name="invoiceNumber"
+                    required
+                    defaultValue={deal.invoice_number || `INV-${new Date().getFullYear()}-${String(deal.id).padStart(4, "0")}`}
+                    style={{ width: "100%", padding: 8, borderRadius: 6, border: "1.5px solid #6b21a8", fontWeight: 700 }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontWeight: 600, fontSize: 13 }}>Invoicing Target / Billed Entity *</label>
+                  <select
+                    name="invoiceTarget"
+                    defaultValue={invoiceTarget}
+                    style={{ width: "100%", padding: 8, borderRadius: 6, border: "1px solid #cbd5e1", background: "#f8fafc", fontWeight: 600 }}
+                  >
+                    <option value="PROSPECT">🏢 Bill Prospect: {deal.customer_name} ({deal.customer_email})</option>
+                    <option value="AFFILIATE">🤝 Bill Introducing Affiliate: {deal.affiliate_legal_name} ({deal.affiliate_code})</option>
+                  </select>
+                </div>
+
+                <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 8, padding: 14, fontSize: 12 }}>
+                  <p style={{ margin: 0, fontWeight: 700, color: "#334155" }}>Invoice Details & Billed Address:</p>
+                  <p style={{ margin: "4px 0 0", color: "#475569" }}>
+                    <b>Recipient:</b> {invoiceTarget === "AFFILIATE" ? `${deal.affiliate_legal_name} (Code: ${deal.affiliate_code})` : `${deal.customer_name}`}<br />
+                    <b>Contact Email:</b> {invoiceTarget === "AFFILIATE" ? (deal.affiliate_email || "N/A") : deal.customer_email}<br />
+                    <b>Package:</b> {deal.package_name} ({deal.package_count} units)<br />
+                    <b>Total Invoice Amount:</b> <b style={{ color: "#166534", fontSize: 13 }}>RM {Number(deal.contract_value_myr).toLocaleString("en-MY", { minimumFractionDigits: 2 })}</b>
+                  </p>
+                </div>
+              </div>
+
+              <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20, paddingTop: 14, borderTop: "1px solid #e2e8f0" }}>
+                <button type="button" className="button secondary" onClick={() => setIsInvoiceModalOpen(false)}>Cancel</button>
+                <button type="submit" className="button primary" style={{ background: "#6b21a8", borderColor: "#581c87", fontWeight: 700 }}>
+                  Issue Official Invoice
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* MODAL 7: VIEW/PRINT INVOICE DOCUMENT */}
+      {isInvoiceDocOpen && (
+        <InvoiceDocumentModal
+          deal={{
+            ...deal,
+            invoice_target: invoiceTarget as any,
+          }}
+          onClose={() => setIsInvoiceDocOpen(false)}
+          onRecordCollection={() => {
+            setIsInvoiceDocOpen(false);
+            setIsCollectionModalOpen(true);
+          }}
+        />
       )}
     </div>
   );

@@ -3,6 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { FunnelStatus, PayoutBatchRecord } from "../../lib/funnel";
+import type { PackageItem } from "../../lib/packages";
+import InvoiceDocumentModal from "../components/InvoiceDocumentModal";
+import CopyReferralLink from "./CopyReferralLink";
+import PackageSelectForm, { ValidatedContactInputs } from "../components/PackageSelectForm";
 
 export interface PortalDealItem {
   id: number;
@@ -19,6 +23,7 @@ export interface PortalDealItem {
   aborted_reason: string | null;
   signed_date: string | null;
   invoice_number: string | null;
+  invoice_target?: "PROSPECT" | "AFFILIATE" | null;
   created_at: string;
   total_collected_myr: number;
 }
@@ -52,6 +57,9 @@ export default function PortalTabsView({
   isRetracted,
   isSuspended,
   affiliateId,
+  affiliateCode,
+  packages = [],
+  initialTab = "PIPELINE",
   children,
 }: {
   deals: PortalDealItem[];
@@ -60,12 +68,18 @@ export default function PortalTabsView({
   isRetracted: boolean;
   isSuspended: boolean;
   affiliateId?: number;
-  children: React.ReactNode;
+  affiliateCode?: string;
+  packages?: PackageItem[];
+  initialTab?: "PROFILE" | "PIPELINE" | "INVOICES" | "ADVICES";
+  children?: React.ReactNode;
 }) {
-  const [activeTab, setActiveTab] = useState<"PROFILE" | "PIPELINE" | "ADVICES">("PROFILE");
+  const [activeTab, setActiveTab] = useState<"PROFILE" | "PIPELINE" | "INVOICES" | "ADVICES">(initialTab);
   const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
   const [viewAdvice, setViewAdvice] = useState<PortalAdviceItem | null>(null);
   const [viewBatch, setViewBatch] = useState<PayoutBatchRecord | null>(null);
+  const [viewInvoiceDeal, setViewInvoiceDeal] = useState<PortalDealItem | null>(null);
+
+  const issuedDeals = deals.filter((d) => Boolean(d.invoice_number) || ["INVOICED", "PARTIAL_COLLECTED", "FULLY_COLLECTED"].includes(d.status));
 
   const totalDirectComm = advices
     .filter((a) => a.beneficiary_type === "DIRECT_AFFILIATE")
@@ -163,6 +177,24 @@ export default function PortalTabsView({
 
         <button
           type="button"
+          onClick={() => setActiveTab("INVOICES")}
+          style={{
+            background: activeTab === "INVOICES" ? "#ffffff" : "transparent",
+            color: activeTab === "INVOICES" ? "#0f766e" : "#475569",
+            fontWeight: activeTab === "INVOICES" ? 700 : 500,
+            padding: "8px 18px",
+            borderRadius: 8,
+            border: activeTab === "INVOICES" ? "1px solid #cbd5e1" : "1px solid transparent",
+            boxShadow: activeTab === "INVOICES" ? "0 2px 6px rgba(0,0,0,0.06)" : "none",
+            fontSize: 13,
+            cursor: "pointer",
+          }}
+        >
+          📄 Issued Tax Invoices ({issuedDeals.length})
+        </button>
+
+        <button
+          type="button"
           onClick={() => setActiveTab("ADVICES")}
           style={{
             background: activeTab === "ADVICES" ? "#ffffff" : "transparent",
@@ -179,6 +211,10 @@ export default function PortalTabsView({
           💳 Payment Advices & Payouts ({advices.length})
         </button>
       </div>
+
+      {affiliateCode && !isRetracted && !isSuspended && (
+        <CopyReferralLink affiliateCode={affiliateCode} />
+      )}
 
       {/* TAB 1: PROFILE & IDENTITY STATUS */}
       {activeTab === "PROFILE" && children}
@@ -198,13 +234,14 @@ export default function PortalTabsView({
 
             {!isRetracted && !isSuspended && (
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                <Link
-                  href="/portal/prospects"
+                <button
+                  type="button"
                   className="button secondary"
+                  onClick={() => setActiveTab("PROFILE")}
                   style={{ display: "inline-flex", alignItems: "center", gap: 6, fontWeight: 700 }}
                 >
-                  <span>🗺️</span> Open Prospects Directory
-                </Link>
+                  <span>👤</span> My Profile
+                </button>
                 <button
                   className="button primary"
                   onClick={() => setIsLeadModalOpen(true)}
@@ -312,7 +349,125 @@ export default function PortalTabsView({
         </div>
       )}
 
-      {/* TAB 3: PAYMENT ADVICES & COMMISSIONS */}
+      {/* TAB 3: ISSUED TAX INVOICES */}
+      {activeTab === "INVOICES" && (
+        <div>
+          <div style={{ marginBottom: 20 }}>
+            <h2 style={{ fontSize: 22, margin: 0, color: "#0f172a" }}>
+              Issued Tax Invoices & Billing Records
+            </h2>
+            <p style={{ margin: "4px 0 0", color: "#64748b", fontSize: 14 }}>
+              Official FolioDesk Tax Invoices issued for your client contracts. View, download as A4 PDF, or send directly to client billing representatives.
+            </p>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            {issuedDeals.length > 0 ? (
+              issuedDeals.map((deal) => {
+                const contractVal = Number(deal.contract_value_myr || 0);
+                const collectedVal = Number(deal.total_collected_myr || 0);
+                const balanceDue = Math.max(0, contractVal - collectedVal);
+                const isFullyPaid = balanceDue <= 0.01 || deal.status === "FULLY_COLLECTED";
+                const isPartial = collectedVal > 0 && balanceDue > 0.01;
+                const isBilledToAffiliate = deal.invoice_target === "AFFILIATE";
+                const invoiceNumber = deal.invoice_number || `INV-2026-${String(deal.id).padStart(4, "0")}`;
+
+                return (
+                  <div
+                    key={deal.id}
+                    className="admin-card"
+                    style={{
+                      padding: "20px 24px",
+                      borderRadius: 12,
+                      border: "1.5px solid #e2e8f0",
+                      background: "#ffffff",
+                    }}
+                  >
+                    <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1.6fr 1.2fr 1fr auto", gap: 16, alignItems: "center" }}>
+                      <div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <span style={{ fontSize: 13, fontWeight: 800, color: "#6b21a8" }}>{invoiceNumber}</span>
+                          <span style={{ fontSize: 11, background: isBilledToAffiliate ? "#f3e8ff" : "#e0f2fe", color: isBilledToAffiliate ? "#6b21a8" : "#0369a1", padding: "2px 6px", borderRadius: 4, fontWeight: 700 }}>
+                            {isBilledToAffiliate ? "Billed to Partner" : "Billed to Client"}
+                          </span>
+                        </div>
+                        <h4 style={{ margin: "4px 0 2px", fontSize: 16, color: "#0f172a" }}>
+                          {deal.customer_name}
+                        </h4>
+                        <small style={{ color: "#64748b" }}>
+                          Ref Code: {deal.deal_code} · {deal.package_name} ({deal.package_count} units)
+                        </small>
+                      </div>
+
+                      <div>
+                        <small style={{ color: "#64748b", fontSize: 11 }}>Financial Summary</small>
+                        <div style={{ fontSize: 14, fontWeight: 700, color: "#0f172a", marginTop: 2 }}>
+                          Invoice Total: RM {contractVal.toLocaleString("en-MY", { minimumFractionDigits: 2 })}
+                        </div>
+                        <div style={{ fontSize: 12, color: "#166534" }}>
+                          Collected: RM {collectedVal.toLocaleString("en-MY", { minimumFractionDigits: 2 })}
+                        </div>
+                      </div>
+
+                      <div>
+                        <small style={{ color: "#64748b", fontSize: 11 }}>Balance Due</small>
+                        <div style={{ fontSize: 15, fontWeight: 800, color: balanceDue > 0 ? "#991b1b" : "#166534", marginTop: 2 }}>
+                          RM {balanceDue.toLocaleString("en-MY", { minimumFractionDigits: 2 })}
+                        </div>
+                      </div>
+
+                      <div style={{ textAlign: "center" }}>
+                        {isFullyPaid ? (
+                          <span style={{ background: "#dcfce7", color: "#166534", border: "1px solid #bbf7d0", padding: "4px 10px", borderRadius: 12, fontSize: 11, fontWeight: 800 }}>
+                            ✓ PAID IN FULL
+                          </span>
+                        ) : isPartial ? (
+                          <span style={{ background: "#fef3c7", color: "#92400e", border: "1px solid #fde68a", padding: "4px 10px", borderRadius: 12, fontSize: 11, fontWeight: 800 }}>
+                            ⏳ PARTIALLY PAID
+                          </span>
+                        ) : (
+                          <span style={{ background: "#fee2e2", color: "#991b1b", border: "1px solid #fca5a5", padding: "4px 10px", borderRadius: 12, fontSize: 11, fontWeight: 800 }}>
+                            ⚠️ UNCOLLECTED
+                          </span>
+                        )}
+                      </div>
+
+                      <div style={{ textAlign: "right" }}>
+                        <button
+                          type="button"
+                          onClick={() => setViewInvoiceDeal(deal)}
+                          style={{
+                            background: "#6b21a8",
+                            color: "#ffffff",
+                            border: "none",
+                            padding: "8px 14px",
+                            borderRadius: 8,
+                            fontSize: 13,
+                            fontWeight: 700,
+                            cursor: "pointer",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 6,
+                          }}
+                        >
+                          📄 View / Print Invoice
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="admin-card empty" style={{ textAlign: "center", padding: 40, color: "#64748b" }}>
+                <span style={{ fontSize: 28, display: "block", marginBottom: 6 }}>📄</span>
+                No official tax invoices issued yet for your introduced clients. Invoices are generated by FolioDesk Admin upon contract execution.
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: PAYMENT ADVICES & COMMISSIONS */}
       {activeTab === "ADVICES" && (
         <div>
           <div style={{ marginBottom: 20 }}>
@@ -352,74 +507,9 @@ export default function PortalTabsView({
             </div>
           </div>
 
-          {/* CONSOLIDATED PAYOUT BATCHES SECTION */}
-          {batches.length > 0 && (
-            <div style={{ marginBottom: 28 }}>
-              <h3 style={{ fontSize: 18, margin: "0 0 12px", color: "#0f766e", display: "flex", alignItems: "center", gap: 6 }}>
-                <span>📜</span> Consolidated Payout Receipts ({batches.length})
-              </h3>
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                {batches.map((batch) => (
-                  <div
-                    key={batch.id}
-                    className="admin-card"
-                    style={{
-                      padding: "16px 20px",
-                      borderRadius: 10,
-                      border: "1.5px solid #bbf7d0",
-                      background: "#f0fdf4",
-                    }}
-                  >
-                    <div style={{ display: "grid", gridTemplateColumns: "1.8fr 1.6fr 1.4fr auto", gap: 14, alignItems: "center" }}>
-                      <div>
-                        <span style={{ fontSize: 13, fontWeight: 800, color: "#166534" }}>{batch.batch_code}</span>
-                        <p style={{ margin: "2px 0 0", fontWeight: 700, fontSize: 15, color: "#0f172a" }}>
-                          Consolidated Bank Transfer Receipt
-                        </p>
-                        <small style={{ color: "#64748b" }}>
-                          Disbursed on {new Date(batch.disbursed_at).toLocaleDateString("en-MY", { dateStyle: "medium" })}
-                        </small>
-                      </div>
-
-                      <div>
-                        <small style={{ color: "#166534", fontWeight: 600 }}>Bank Transaction Proof</small>
-                        <p style={{ margin: "2px 0 0", fontWeight: 700, fontSize: 14, color: "#0f766e" }}>
-                          Ref: {batch.manual_bank_tx_ref}
-                        </p>
-                        {batch.bank_name && (
-                          <small style={{ color: "#475569" }}>
-                            {batch.bank_name} {batch.bank_account_number ? `· ${batch.bank_account_number}` : ""}
-                          </small>
-                        )}
-                      </div>
-
-                      <div>
-                        <small style={{ color: "#166534", fontWeight: 600 }}>Total Disbursed Sum</small>
-                        <p style={{ margin: "2px 0 0", fontWeight: 800, fontSize: 17, color: "#15803d" }}>
-                          RM {Number(batch.total_amount_myr).toLocaleString("en-MY", { minimumFractionDigits: 2 })}
-                        </p>
-                        <small style={{ color: "#64748b" }}>({batch.advice_count} constituent vouchers settled)</small>
-                      </div>
-
-                      <div style={{ textAlign: "right" }}>
-                        <button
-                          className="button secondary"
-                          style={{ fontSize: 12, padding: "6px 12px", background: "#ffffff" }}
-                          onClick={() => setViewBatch(batch)}
-                        >
-                          📄 View Consolidated Voucher
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
           {/* ITEMIZED PAYMENT ADVICES */}
           <h3 style={{ fontSize: 18, margin: "0 0 12px", color: "#0f172a" }}>
-            Itemized Payment Advice Vouchers ({advices.length})
+            Payment Advice Vouchers ({advices.length})
           </h3>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {advices.length > 0 ? (
@@ -529,27 +619,9 @@ export default function PortalTabsView({
                   <input name="customerName" required placeholder="e.g. Pembinaan Mega Maju Sdn Bhd" style={{ width: "100%", padding: 8, borderRadius: 6, border: "1px solid #cbd5e1" }} />
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                  <div>
-                    <label style={{ fontWeight: 600, fontSize: 13 }}>Customer Email Address *</label>
-                    <input name="customerEmail" type="email" required placeholder="contact@megamaju.my" style={{ width: "100%", padding: 8, borderRadius: 6, border: "1px solid #cbd5e1" }} />
-                  </div>
-                  <div>
-                    <label style={{ fontWeight: 600, fontSize: 13 }}>Contact Phone</label>
-                    <input name="customerPhone" placeholder="+60 12-345 6789" style={{ width: "100%", padding: 8, borderRadius: 6, border: "1px solid #cbd5e1" }} />
-                  </div>
-                </div>
+                <ValidatedContactInputs />
 
-                <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 12 }}>
-                  <div>
-                    <label style={{ fontWeight: 600, fontSize: 13 }}>Proposed FolioDesk Package</label>
-                    <input name="packageName" defaultValue="FolioDesk Cloud Enterprise" required style={{ width: "100%", padding: 8, borderRadius: 6, border: "1px solid #cbd5e1" }} />
-                  </div>
-                  <div>
-                    <label style={{ fontWeight: 600, fontSize: 13 }}>Est. Contract Value (MYR) *</label>
-                    <input name="contractValueMyr" type="number" step="0.01" defaultValue="60000.00" required style={{ width: "100%", padding: 8, borderRadius: 6, border: "1px solid #cbd5e1", fontWeight: 700 }} />
-                  </div>
-                </div>
+                <PackageSelectForm packages={packages} />
 
                 <div>
                   <label style={{ fontWeight: 600, fontSize: 13 }}>Introductory Notes / Requirements</label>
@@ -696,6 +768,20 @@ export default function PortalTabsView({
             </div>
           </div>
         </div>
+      )}
+      {/* MODAL: VIEW INVOICE DOCUMENT */}
+      {viewInvoiceDeal && (
+        <InvoiceDocumentModal
+          deal={{
+            ...viewInvoiceDeal,
+            affiliate_legal_name: (viewInvoiceDeal as any).affiliate_legal_name || "N/A",
+            affiliate_code: (viewInvoiceDeal as any).affiliate_code || "N/A",
+            affiliate_email: (viewInvoiceDeal as any).affiliate_email || viewInvoiceDeal.customer_email,
+            invoice_target: viewInvoiceDeal.invoice_target || "PROSPECT",
+            total_collected_myr: viewInvoiceDeal.total_collected_myr || 0,
+          }}
+          onClose={() => setViewInvoiceDeal(null)}
+        />
       )}
     </div>
   );

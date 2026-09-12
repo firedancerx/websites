@@ -41,3 +41,21 @@ export async function updateCommissionSettings(settings: CommissionSettings): Pr
     [String(settings.closurePeriodDays || 90)]
   );
 }
+
+export type DataModeFilter = "TEST" | "ACTUAL" | "ALL";
+
+export async function getAdminDataMode(): Promise<DataModeFilter> {
+  const [rows] = await db().execute<any[]>(
+    "SELECT setting_value FROM system_settings WHERE setting_key = 'admin_data_mode' LIMIT 1"
+  );
+  const val = String(rows[0]?.setting_value || "TEST").toUpperCase();
+  if (val === "ACTUAL" || val === "ALL") return val as DataModeFilter;
+  return "TEST";
+}
+
+export async function updateAdminDataMode(mode: DataModeFilter): Promise<void> {
+  await db().execute(
+    "INSERT INTO system_settings (setting_key, setting_value, description) VALUES ('admin_data_mode', ?, 'Active data mode filter for admin portal: TEST, ACTUAL, or ALL') ON DUPLICATE KEY UPDATE setting_value=VALUES(setting_value)",
+    [mode]
+  );
+}

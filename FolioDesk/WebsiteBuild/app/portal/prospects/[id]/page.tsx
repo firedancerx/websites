@@ -76,9 +76,6 @@ export default async function AffiliateProspectDetailPage({
         </div>
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           <Link className="button secondary" href="/portal/prospects">← All My Prospects</Link>
-          <form action="/foliodesk/api/logout" method="post">
-            <button className="button secondary">Sign out</button>
-          </form>
         </div>
       </div>
 

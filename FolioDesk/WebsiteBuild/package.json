@@ -28,6 +28,7 @@
     "eslint": "9.39.4",
     "eslint-config-next": "16.2.6",
     "postcss": "^8.5.25",
+    "puppeteer": "^25.10.0",
     "tailwindcss": "^4.3.3",
     "typescript": "5.9.3"
   },

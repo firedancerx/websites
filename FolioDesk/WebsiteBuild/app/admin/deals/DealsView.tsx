@@ -3,6 +3,10 @@
 import { useState, useMemo } from "react";
 import Link from "next/link";
 import type { FunnelStatus } from "../../../lib/funnel";
+import type { PackageItem } from "../../../lib/packages";
+import ToggleTestModeButton from "../ToggleTestModeButton";
+import InvoiceDocumentModal from "../../components/InvoiceDocumentModal";
+import PackageSelectForm, { ValidatedContactInputs } from "../../components/PackageSelectForm";
 
 export interface DealItem {
   id: number;
@@ -20,11 +24,14 @@ export interface DealItem {
   aborted_reason: string | null;
   signed_date: string | null;
   invoice_number: string | null;
+  invoice_target?: "PROSPECT" | "AFFILIATE";
   invoiced_at: string | null;
+  is_test?: number;
   created_at: string;
   updated_at: string;
   affiliate_legal_name: string;
   affiliate_code: string;
+  affiliate_email?: string;
   total_collected_myr: number;
 }
 
@@ -37,9 +44,11 @@ export interface AffiliateOption {
 export default function DealsView({
   deals,
   affiliates,
+  packages = [],
 }: {
   deals: DealItem[];
   affiliates: AffiliateOption[];
+  packages?: PackageItem[];
 }) {
   const [activeTab, setActiveTab] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -50,6 +59,7 @@ export default function DealsView({
   const [abortDeal, setAbortDeal] = useState<DealItem | null>(null);
   const [invoiceDeal, setInvoiceDeal] = useState<DealItem | null>(null);
   const [collectDeal, setCollectDeal] = useState<DealItem | null>(null);
+  const [viewInvoiceDeal, setViewInvoiceDeal] = useState<DealItem | null>(null);
 
   // Filter deals based on tab and search query
   const filteredDeals = useMemo(() => {
@@ -121,6 +131,15 @@ export default function DealsView({
       default:
         return { bg: "#f1f5f9", color: "#475569", border: "#cbd5e1" };
     }
+  }
+
+  function formatPackageLabel(name: string, count: number) {
+    const cnt = Number(count || 1);
+    if (name.includes("5-User")) {
+      const totalSeats = cnt * 5;
+      return `${name} (${cnt} ${cnt > 1 ? "Blocks" : "Block"} · ${totalSeats} Seats)`;
+    }
+    return `${name} (${cnt} ${cnt > 1 ? "Units" : "Unit"})`;
   }
 
   return (
@@ -288,6 +307,20 @@ export default function DealsView({
                       >
                         {deal.status.replaceAll("_", " ")}
                       </span>
+                      {deal.is_test === 1 && (
+                        <span
+                          className="badge"
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 700,
+                            background: "#fffbeb",
+                            color: "#b45309",
+                            border: "1px solid #fde68a",
+                          }}
+                        >
+                          🧪 TESTER DATA
+                        </span>
+                      )}
                     </div>
 
                     <h3 style={{ fontSize: 16, margin: "2px 0 4px", color: "#0f172a" }}>
@@ -325,7 +358,7 @@ export default function DealsView({
                     <p style={{ margin: "2px 0 0", fontWeight: 700, fontSize: 15, color: "#0f172a" }}>
                       RM {Number(deal.contract_value_myr).toLocaleString("en-MY", { minimumFractionDigits: 2 })}
                     </p>
-                    <small style={{ color: "#475569" }}>{deal.package_name}</small>
+                    <small style={{ color: "#475569", fontWeight: 600 }}>{formatPackageLabel(deal.package_name, deal.package_count)}</small>
                   </div>
 
                   {/* COLLECTION PROGRESS */}
@@ -347,6 +380,7 @@ export default function DealsView({
                   {/* STAGE PROGRESSION & ACTION BUTTONS */}
                   <div>
                     <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "flex-end", alignItems: "center" }}>
+                      <ToggleTestModeButton entityType="deal" entityId={deal.id} isTest={deal.is_test} size="sm" />
                       <Link
                         href={`/admin/deals/${deal.id}`}
                         className="button secondary"
@@ -420,7 +454,7 @@ export default function DealsView({
                         </form>
                       )}
 
-                      {deal.status === "CONTRACT_SIGNED" && (
+                      {deal.status === "CONTRACT_SIGNED" && !deal.invoice_number && (
                         <button
                           className="button primary"
                           style={{ fontSize: 12, padding: "5px 10px", background: "#7c3aed", borderColor: "#6d28d9" }}
@@ -430,7 +464,17 @@ export default function DealsView({
                         </button>
                       )}
 
-                      {["INVOICED", "PARTIAL_COLLECTED"].includes(deal.status) && (
+                      {deal.invoice_number && (
+                        <button
+                          className="button secondary"
+                          style={{ fontSize: 12, padding: "5px 10px", background: "#f3e8ff", color: "#6b21a8", borderColor: "#d8b4fe", fontWeight: 700 }}
+                          onClick={() => setViewInvoiceDeal(deal)}
+                        >
+                          📄 View Invoice #{deal.invoice_number}
+                        </button>
+                      )}
+
+                      {["INVOICED", "PARTIAL_COLLECTED"].includes(deal.status) && deal.invoice_number && (
                         <button
                           className="button primary"
                           style={{ fontSize: 12, padding: "5px 10px", background: "#059669", borderColor: "#047857" }}
@@ -478,27 +522,9 @@ export default function DealsView({
                   <input name="customerName" required placeholder="e.g. Pembinaan Mega Maju Sdn Bhd" style={{ width: "100%", padding: 8, borderRadius: 6, border: "1px solid #cbd5e1" }} />
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                  <div>
-                    <label style={{ fontWeight: 600, fontSize: 13 }}>Customer Email *</label>
-                    <input name="customerEmail" type="email" required placeholder="procurement@megamaju.my" style={{ width: "100%", padding: 8, borderRadius: 6, border: "1px solid #cbd5e1" }} />
-                  </div>
-                  <div>
-                    <label style={{ fontWeight: 600, fontSize: 13 }}>Customer Phone</label>
-                    <input name="customerPhone" placeholder="+60 12-345 6789" style={{ width: "100%", padding: 8, borderRadius: 6, border: "1px solid #cbd5e1" }} />
-                  </div>
-                </div>
+                <ValidatedContactInputs />
 
-                <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 12 }}>
-                  <div>
-                    <label style={{ fontWeight: 600, fontSize: 13 }}>FolioDesk Package</label>
-                    <input name="packageName" defaultValue="FolioDesk Cloud Enterprise" required style={{ width: "100%", padding: 8, borderRadius: 6, border: "1px solid #cbd5e1" }} />
-                  </div>
-                  <div>
-                    <label style={{ fontWeight: 600, fontSize: 13 }}>Est. Contract Value (MYR) *</label>
-                    <input name="contractValueMyr" type="number" step="0.01" defaultValue="60000.00" required style={{ width: "100%", padding: 8, borderRadius: 6, border: "1px solid #cbd5e1", fontWeight: 700 }} />
-                  </div>
-                </div>
+                <PackageSelectForm packages={packages} />
 
                 <div>
                   <label style={{ fontWeight: 600, fontSize: 13 }}>Initial Funnel Stage</label>
@@ -508,6 +534,13 @@ export default function DealsView({
                     <option value="PROPOSAL_SENT">3. Proposal / Demo Sent</option>
                     <option value="CONTRACT_SIGNED">4. Contract Signed</option>
                   </select>
+                </div>
+
+                <div style={{ background: "#fffbeb", padding: "10px 12px", borderRadius: 8, border: "1px solid #fde68a", display: "flex", alignItems: "center", gap: 8 }}>
+                  <input type="checkbox" id="isTest" name="isTest" value="1" defaultChecked={true} />
+                  <label htmlFor="isTest" style={{ fontSize: 13, fontWeight: 700, color: "#92400e", cursor: "pointer" }}>
+                    🧪 Mark as Tester Data (Default for testing & verification)
+                  </label>
                 </div>
               </div>
 
@@ -608,6 +641,18 @@ export default function DealsView({
                   defaultValue={`INV-${new Date().getFullYear()}-${String(invoiceDeal.id).padStart(4, "0")}`}
                   style={{ width: "100%", padding: 8, borderRadius: 6, border: "1px solid #cbd5e1", marginTop: 4, fontWeight: 700 }}
                 />
+              </div>
+
+              <div style={{ marginTop: 12 }}>
+                <label style={{ fontWeight: 600, fontSize: 13 }}>Invoicing Target / Billed Entity *</label>
+                <select
+                  name="invoiceTarget"
+                  defaultValue={invoiceDeal.invoice_target || "PROSPECT"}
+                  style={{ width: "100%", padding: 8, borderRadius: 6, border: "1px solid #cbd5e1", marginTop: 4, background: "#f8fafc", fontWeight: 600 }}
+                >
+                  <option value="PROSPECT">🏢 Bill Prospect: {invoiceDeal.customer_name} ({invoiceDeal.customer_email})</option>
+                  <option value="AFFILIATE">🤝 Bill Introducing Affiliate: {invoiceDeal.affiliate_legal_name} ({invoiceDeal.affiliate_code})</option>
+                </select>
               </div>
 
               <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 18 }}>
@@ -724,6 +769,25 @@ export default function DealsView({
             </form>
           </div>
         </div>
+      )}
+      {/* MODAL 6: VIEW/PRINT INVOICE DOCUMENT */}
+      {viewInvoiceDeal && (
+        <InvoiceDocumentModal
+          deal={{
+            ...viewInvoiceDeal,
+            affiliate_legal_name: viewInvoiceDeal.affiliate_legal_name || "N/A",
+            affiliate_code: viewInvoiceDeal.affiliate_code || "N/A",
+            affiliate_email: viewInvoiceDeal.affiliate_email || viewInvoiceDeal.customer_email,
+            invoice_target: (viewInvoiceDeal as any).invoice_target || "PROSPECT",
+            total_collected_myr: (viewInvoiceDeal as any).total_collected_myr || 0,
+          }}
+          onClose={() => setViewInvoiceDeal(null)}
+          onRecordCollection={() => {
+            const target = viewInvoiceDeal;
+            setViewInvoiceDeal(null);
+            setCollectDeal(target);
+          }}
+        />
       )}
     </>
   );

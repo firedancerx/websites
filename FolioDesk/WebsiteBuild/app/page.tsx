@@ -233,25 +233,42 @@ export default async function Home() {
       {/* 05. PRICING & 3-WEEK DEPLOYMENT */}
       <section id="pricing" className="section" style={{ background: "#fff" }}>
         <div className="section-kicker">TRANSPARENT COMMERCIAL MODEL</div>
-        <h2>Flat-Block Annual Subscription</h2>
+        <h2>Transparent Commercial Licensing</h2>
         <p className="section-intro">
-          SaaS-only, annual billing. Right-sized for engineering firms without hidden enterprise seat costs.
+          Enterprise software licensing for FolioDesk SaaS with integrated Affiliate Sales & CRM System.
         </p>
-        <div className="pricing-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 24, maxWidth: 900, margin: "32px auto 0" }}>
-          <article className="price-card featured">
-            <span className="pill">STANDARD TENANT</span>
-            <h3>5-User Operating Block</h3>
+        <div className="pricing-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16, maxWidth: 1100, margin: "32px auto 0" }}>
+          <article className="price-card">
+            <span className="pill" style={{ background: "#0f766e", color: "#fff" }}>ANNUAL ENTRY</span>
+            <h3>5-User Annual License</h3>
             <strong>RM 60,000<small>/year</small></strong>
-            <b>5 Full User Seats Included</b>
-            <p>Complete access to all 6 modules: EVM, Procurement 3-Way Match, Inventory, Timesheets, and Retention Ledgers.</p>
+            <b>5 User Seats Included</b>
+            <p>Standard annual subscription license for growing project teams and single-entity contractors.</p>
+            <Link href="/demo">Schedule a demo →</Link>
+          </article>
+          <article className="price-card featured">
+            <span className="pill">3-YEAR TERM</span>
+            <h3>3-Year 5-User License</h3>
+            <strong>RM 158,000<small> (3-Year Term)</small></strong>
+            <b>5 User Seats Included</b>
+            <p>Complete enterprise access to all system modules, 2-tier affiliate CRM, lead protection, and automated financial settlement.</p>
             <Link href="/demo">Schedule a demo →</Link>
           </article>
           <article className="price-card">
-            <h3>Master Tenant License</h3>
-            <strong>RM 120,000<small>/year</small></strong>
-            <b>Multi-Entity Consolidation</b>
-            <p>For engineering groups operating multiple legal sub-tenant entities under a single consolidated invoice.</p>
-            <Link href="/demo">Talk to FolioDesk →</Link>
+            <span className="pill" style={{ background: "#0284c7", color: "#fff" }}>MASTER RESELLER</span>
+            <h3>Master Reseller License</h3>
+            <strong>RM 1,200,000<small>/year</small></strong>
+            <b>Unlimited Users, Unlimited Companies</b>
+            <p>Unlimited users & unlimited multi-entity companies annual reseller license for corporate groups and regional distributor networks.</p>
+            <Link href="/demo">Contact Commercial Team →</Link>
+          </article>
+          <article className="price-card" style={{ background: "#f0fdf4", border: "2px solid #16a34a" }}>
+            <span className="pill" style={{ background: "#16a34a", color: "#fff" }}>DESIGN PARTNER</span>
+            <h3>Design Partner License</h3>
+            <strong>RM 300,000<small> (Perpetual)</small></strong>
+            <b>Unlimited Users, 1 Company</b>
+            <p>Exclusive perpetual license for a single company with unlimited users. Zero recurring annual SaaS fees (max 10 available).</p>
+            <Link href="/demo">Apply for Design Partner →</Link>
           </article>
         </div>
 

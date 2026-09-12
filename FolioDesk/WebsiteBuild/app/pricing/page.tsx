@@ -2,8 +2,8 @@ import Link from "next/link";
 import { currentUser } from "../../lib/auth";
 
 export const metadata = {
-  title: "Pricing | FolioDesk",
-  description: "Transparent annual flat-block pricing for engineering firms and SME construction contractors.",
+  title: "Pricing | FolioDesk Marketing & Affiliate CRM",
+  description: "Commercial licensing for FolioDesk SaaS & Affiliate CRM: 3-Year Annual License (RM 60,000) and Design Partner Lifetime License (RM 300,000).",
 };
 
 export default async function PricingPage() {
@@ -13,52 +13,88 @@ export default async function PricingPage() {
       <div className="admin-head" style={{ borderBottom: "1px solid #e2e8f0", paddingBottom: 24, marginBottom: 32 }}>
         <div>
           <div className="eyebrow">TRANSPARENT COMMERCIAL MODEL</div>
-          <h1>Right-Sized Pricing for Engineering Firms</h1>
+          <h1>Commercial Licensing for FolioDesk Platform</h1>
           <p style={{ color: "#64748b", fontSize: 16, marginTop: 8, maxWidth: 700 }}>
-            No surprise seat fees or fragile third-party add-ons. Cloud-native project financial intelligence priced for growing engineering firms—not enterprise software retrofitted downward.
+            Enterprise software licensing for the FolioDesk Platform with integrated Affiliate Sales & CRM System. Transparent flat-block licensing without surprise per-user penalties.
           </p>
         </div>
         <Link href="/demo" className="button primary">Request a demo</Link>
       </div>
 
       {/* PRICING CARDS */}
-      <div className="pricing-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 24, marginBottom: 48 }}>
-        <article className="price-card featured" style={{ border: "2px solid var(--teal,#0f766e)" }}>
-          <span className="pill">STANDARD TENANT BLOCK</span>
-          <h3>5-User Operating Block</h3>
+      <div className="pricing-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 20, marginBottom: 48 }}>
+        <article className="price-card" style={{ border: "2px solid #0f766e" }}>
+          <span className="pill" style={{ background: "#0f766e", color: "#fff" }}>ANNUAL ENTRY PLAN</span>
+          <h3>5-User Annual License</h3>
           <strong>RM 60,000<small>/year</small></strong>
-          <b>5 Core User Seats Included</b>
+          <b>5 User Seats Included</b>
           <p style={{ marginBottom: 20 }}>
-            Full platform access for engineering contractors. Scalable in additional 5-user block increments.
+            Standard annual subscription license for growing project teams and single-entity contractors.
           </p>
           <ul style={{ textAlign: "left", fontSize: 14, color: "#334155", paddingLeft: 18, marginBottom: 24, lineHeight: 1.6 }}>
-            <li>All 6 Core Modules included</li>
-            <li>Real-time EVM (CPI / SPI / EAC / VAC)</li>
-            <li>Automated 3-Way Match (PO / GRN / Invoice)</li>
-            <li>Retention Money Ledgers & DLP Tracking</li>
-            <li>CIPAA 30d & SOP 35d Statutory Clocks</li>
-            <li>Offline-First Mobile Field Timesheets</li>
-            <li>Vendor Scorecards & Tiering</li>
+            <li>5 Operating User Seats</li>
+            <li>Full Access to All Platform Features & Modules</li>
+            <li>Multi-Tier Affiliate CRM & Referral Tracking</li>
+            <li>3-Way PO Match & Retention Ledger</li>
+            <li>Standard Email & Knowledgebase Support</li>
           </ul>
-          <Link href="/demo">Request Standard License →</Link>
+          <Link href="/demo">Request Annual License →</Link>
         </article>
 
-        <article className="price-card">
-          <h3>Master Tenant License</h3>
-          <strong>RM 120,000<small>/year</small></strong>
-          <b>Multi-Entity Consolidation</b>
+        <article className="price-card featured" style={{ border: "2px solid var(--teal,#0f766e)" }}>
+          <span className="pill">BEST VALUE (3-YEAR TERM)</span>
+          <h3>3-Year 5-User License</h3>
+          <strong>RM 158,000<small> (3-Year Term)</small></strong>
+          <b>5 User Seats Included</b>
           <p style={{ marginBottom: 20 }}>
-            For established engineering groups managing multiple sub-tenant legal entities under one consolidated account.
+            Complete enterprise platform license for FolioDesk SaaS with multi-tier affiliate CRM, sales tracking, and project financial intelligence.
           </p>
           <ul style={{ textAlign: "left", fontSize: 14, color: "#334155", paddingLeft: 18, marginBottom: 24, lineHeight: 1.6 }}>
-            <li>Includes all Standard Tenant capabilities</li>
-            <li>Multi-company GL consolidation</li>
-            <li>Centralized master procurement & vendors</li>
-            <li>Cross-entity project performance reports</li>
-            <li>Single consolidated billing invoice</li>
-            <li>Dedicated onboarding specialist</li>
+            <li>5 Operating User Seats</li>
+            <li>Full Access to All Platform Features & Modules</li>
+            <li>Multi-Tier Affiliate CRM & Referral Tracking</li>
+            <li>SLA Protection & Lead Exclusivity Governance</li>
+            <li>2-Tier Immutable Commission Lock Engine</li>
+            <li>Real-Time Cash Cycle Visualizer Engine</li>
+          </ul>
+          <Link href="/demo">Request 3-Year License →</Link>
+        </article>
+
+        <article className="price-card" style={{ border: "2px solid #0284c7" }}>
+          <span className="pill" style={{ background: "#0284c7", color: "#fff" }}>ENTERPRISE RESELLER</span>
+          <h3>Unlimited Master Reseller License</h3>
+          <strong>RM 1,200,000<small>/year</small></strong>
+          <b>Unlimited Users, Unlimited Companies Annual License</b>
+          <p style={{ marginBottom: 20 }}>
+            Master commercial reseller license for corporate holding groups, conglomerate parent entities, and regional distributor networks.
+          </p>
+          <ul style={{ textAlign: "left", fontSize: 14, color: "#334155", paddingLeft: 18, marginBottom: 24, lineHeight: 1.6 }}>
+            <li>Unlimited Users & Unlimited Sub-Entities/Companies</li>
+            <li>Full Access to All Platform Features & Modules</li>
+            <li>Annual License Commitment (Billed Annually)</li>
+            <li>Master Multi-Company GL Consolidation</li>
+            <li>Custom Billing & Direct Reseller Invoicing</li>
+            <li>Dedicated Onboarding & 24/7 Priority SLA Support</li>
           </ul>
           <Link href="/demo">Contact Commercial Team →</Link>
+        </article>
+
+        <article className="price-card" style={{ background: "#f0fdf4", border: "2px solid #16a34a" }}>
+          <span className="pill" style={{ background: "#16a34a", color: "#fff" }}>LIMITED EXCLUSIVE (MAX 10)</span>
+          <h3>Design Partner License</h3>
+          <strong>RM 300,000<small> (Perpetual)</small></strong>
+          <b>Unlimited Users, 1 Company Perpetual License</b>
+          <p style={{ marginBottom: 20 }}>
+            Exclusive perpetual license for a single enterprise organization. Strictly limited to 10 founding design partners globally with zero recurring annual SaaS fees.
+          </p>
+          <ul style={{ textAlign: "left", fontSize: 14, color: "#334155", paddingLeft: 18, marginBottom: 24, lineHeight: 1.6 }}>
+            <li>Unlimited Users for 1 Single Operating Company</li>
+            <li>Full Access to All Platform Features & Modules</li>
+            <li>Perpetual License (Zero Annual Renewal SaaS Fees)</li>
+            <li>Executive VIP Support & SLA Guarantees</li>
+            <li>Strict Cap: Maximum 10 Licenses Worldwide</li>
+          </ul>
+          <Link href="/demo">Apply for Design Partner License →</Link>
         </article>
       </div>
 
@@ -87,11 +123,11 @@ export default async function PricingPage() {
         </div>
       </div>
 
-      {/* ROI CALCULATOR CALLOUT */}
+      {/* CALLOUT */}
       <div className="admin-card" style={{ background: "#0f766e", color: "#fff", padding: 32, borderRadius: 8, textAlign: "center" }}>
-        <h3 style={{ fontSize: 24, color: "#fff", marginBottom: 8 }}>Ready to Protect Your Project Margins?</h3>
+        <h3 style={{ fontSize: 24, color: "#fff", marginBottom: 8 }}>Ready to Transform Your Referral Network?</h3>
         <p style={{ color: "#ccfbf1", fontSize: 16, maxWidth: 650, margin: "0 auto 24px" }}>
-          See how FolioDesk pays for itself by catching a single untracked Variation Order or preventing invoice double-payments.
+          Schedule a product demonstration to explore FolioDesk's 3-Year License or apply for 1 of 10 global Design Partner Lifetime Licenses.
         </p>
         <Link href="/demo" className="button pale" style={{ display: "inline-block" }}>
           Schedule your product demonstration

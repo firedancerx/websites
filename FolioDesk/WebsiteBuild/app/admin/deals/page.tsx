@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { requireAdmin } from "../../../lib/auth";
 import { db } from "../../../lib/db";
+import { getAdminDataMode } from "../../../lib/settings";
+import { getActivePackages } from "../../../lib/packages";
 import AdminNav from "../AdminNav";
 import DealsView, { type DealItem, type AffiliateOption } from "./DealsView";
 
@@ -19,23 +21,41 @@ export default async function AdminDealsPage({
   if (!admin) redirect("/login");
 
   const q = await searchParams;
+  const dataMode = await getAdminDataMode();
+  const packages = await getActivePackages();
+
+  let dealWhereClause = "";
+  let affWhereClause = "";
+  if (dataMode === "TEST") {
+    dealWhereClause = "WHERE d.is_test = 1";
+    affWhereClause = "WHERE (a.is_test = 1 OR a.is_test IS NULL)";
+  } else if (dataMode === "ACTUAL") {
+    dealWhereClause = "WHERE d.is_test = 0";
+    affWhereClause = "WHERE a.is_test = 0";
+  }
 
   const [deals] = await db().execute<any[]>(
     `SELECT d.*, 
        a.legal_name AS affiliate_legal_name, 
        a.affiliate_code,
-       COALESCE((SELECT SUM(c.collected_amount_myr) FROM deal_collections c WHERE c.deal_id = d.id), 0) AS total_collected_myr
+       u.email AS affiliate_email,
+       COALESCE((SELECT SUM(c.collected_amount_myr) FROM deal_collections c WHERE c.deal_id = d.id AND c.approval_status = 'APPROVED'), 0) AS total_collected_myr
      FROM deal_pipeline d
      JOIN affiliate_applications a ON a.id = d.affiliate_id
+     LEFT JOIN users u ON u.id = a.user_id
+     ${dealWhereClause}
      ORDER BY d.created_at DESC`
   );
 
   const [affiliates] = await db().execute<any[]>(
     `SELECT id, legal_name, affiliate_code 
-     FROM affiliate_applications 
-     WHERE status='APPROVED' OR affiliate_code IS NOT NULL 
+     FROM affiliate_applications a
+     ${affWhereClause ? affWhereClause + " AND (status='APPROVED' OR affiliate_code IS NOT NULL)" : "WHERE status='APPROVED' OR affiliate_code IS NOT NULL"}
      ORDER BY legal_name ASC`
   );
+
+  const sanitizedDeals = JSON.parse(JSON.stringify(deals));
+  const sanitizedAffiliates = JSON.parse(JSON.stringify(affiliates));
 
   return (
     <section className="admin-wrap" style={{ maxWidth: 1240, margin: "0 auto" }}>
@@ -47,12 +67,9 @@ export default async function AdminDealsPage({
             Track opportunities from lead submission, suspension, and abortion through contract signing, invoicing, and collections.
           </p>
         </div>
-        <form action="/foliodesk/api/logout" method="post">
-          <button className="button secondary">Sign out</button>
-        </form>
       </div>
 
-      <AdminNav />
+      <AdminNav currentDataMode={dataMode} />
 
       {q.success && (
         <div className="notice" style={{ background: "rgba(16,185,129,0.1)", borderColor: "#10b981", color: "#065f46", marginBottom: 20 }}>
@@ -62,8 +79,9 @@ export default async function AdminDealsPage({
       {q.error && <div className="notice error" style={{ marginBottom: 20 }}>⚠️ {q.error}</div>}
 
       <DealsView
-        deals={deals as DealItem[]}
-        affiliates={affiliates as AffiliateOption[]}
+        deals={sanitizedDeals as DealItem[]}
+        affiliates={sanitizedAffiliates as AffiliateOption[]}
+        packages={packages}
       />
     </section>
   );

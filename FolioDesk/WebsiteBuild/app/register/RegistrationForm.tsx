@@ -65,6 +65,21 @@ export default function RegistrationForm({
   const countryStates = states.filter((s) => s.country_code === countryCode);
   const [stateVal, setStateVal] = useState(existingApp?.state || countryStates[0]?.name || "");
 
+  // Upline Referral Code state from URL GET variable
+  const [uplineCode, setUplineCode] = useState(initialUpline || existingApp?.upline_affiliate_code || "");
+  const [isAutoUpline, setIsAutoUpline] = useState(Boolean(initialUpline || existingApp?.upline_affiliate_code));
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const code = (params.get("upline") || params.get("ref") || params.get("ref_id") || "").toUpperCase().trim();
+      if (code) {
+        setUplineCode(code);
+        setIsAutoUpline(true);
+      }
+    }
+  }, [initialUpline]);
+
   // Email Validation State
   const [email, setEmail] = useState(existingUser?.email || "");
   const [emailTouched, setEmailTouched] = useState(false);
@@ -562,18 +577,36 @@ export default function RegistrationForm({
       <div className="field full">
         <label htmlFor="uplineCode" style={{ fontWeight: 600 }}>
           Upline Affiliate ID / Referral Code / <span style={{ color: "#475569", fontWeight: 500 }}>ID Rujukan Upline</span>{" "}
-          <small style={{ fontWeight: "normal", color: "#64748b" }}>(Optional 9-char code / Pilihan)</small>
+          <small style={{ fontWeight: "normal", color: isAutoUpline ? "#0f766e" : "#64748b" }}>
+            {isAutoUpline ? "(🔒 Auto-assigned from URL GET variable / Non-editable)" : "(Optional 9-char code / Pilihan)"}
+          </small>
         </label>
         <input
           id="uplineCode"
           name="uplineCode"
-          defaultValue={existingApp?.upline_affiliate_code || initialUpline}
+          value={uplineCode}
+          onChange={(e) => {
+            if (!isAutoUpline) {
+              setUplineCode(e.target.value.toUpperCase());
+            }
+          }}
+          readOnly={isAutoUpline}
           maxLength={9}
           placeholder="e.g. APEXENG99"
-          style={{ textTransform: "uppercase", letterSpacing: "1px", fontWeight: 600 }}
+          style={{
+            textTransform: "uppercase",
+            letterSpacing: "1px",
+            fontWeight: 700,
+            background: isAutoUpline ? "#f1f5f9" : "#ffffff",
+            color: isAutoUpline ? "#0f766e" : "#0f172a",
+            cursor: isAutoUpline ? "not-allowed" : "text",
+            border: isAutoUpline ? "1.5px solid #0d9488" : "1px solid #cbd5e1",
+          }}
         />
-        <p style={{ fontSize: 13, color: "#64748b", marginTop: 4 }}>
-          If referred by an existing affiliate, enter their 9-character code / Jika dirujuk oleh ahli gabungan sedia ada, masukkan kod 9-aksara di sini.
+        <p style={{ fontSize: 13, color: isAutoUpline ? "#0f766e" : "#64748b", marginTop: 4, fontWeight: isAutoUpline ? 600 : 400 }}>
+          {isAutoUpline
+            ? `🔒 Upline referrer auto-assigned from GET URL parameter (?upline=${uplineCode}). This referral code is locked.`
+            : "If referred by an existing affiliate, enter their 9-character code / Jika dirujuk oleh ahli gabungan sedia ada, masukkan kod 9-aksara di sini."}
         </p>
       </div>
 
@@ -829,6 +862,13 @@ export default function RegistrationForm({
 
       {/* SECTION 6: DECLARATION */}
       <div className="field full" style={{ marginTop: 8, paddingTop: 16, borderTop: "1px solid #e2e8f0" }}>
+        <label className="checkbox" style={{ display: "flex", gap: 10, alignItems: "center", cursor: "pointer", background: "#fffbeb", padding: "10px 14px", borderRadius: 8, border: "1px solid #fde68a", marginBottom: 12 }}>
+          <input type="checkbox" name="isTest" value="1" defaultChecked={true} />
+          <span style={{ fontSize: 13, fontWeight: 700, color: "#92400e" }}>
+            🧪 Mark as Tester Data Application / Tandakan Sebagai Data Ujian (Default for testing & verification)
+          </span>
+        </label>
+
         <label className="checkbox" style={{ display: "flex", gap: 10, alignItems: "flex-start", cursor: "pointer" }}>
           <input type="checkbox" name="declaration" value="yes" required style={{ marginTop: 4 }} />
           <span style={{ fontSize: 13, lineHeight: 1.5, color: "#334155" }}>

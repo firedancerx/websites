@@ -30,10 +30,11 @@ export default async function AdminDealDetailPage({
     `SELECT dp.*,
        a.legal_name AS affiliate_legal_name,
        a.affiliate_code AS affiliate_code,
-       a.email AS affiliate_email,
+       u.email AS affiliate_email,
        COALESCE((SELECT SUM(c.collected_amount_myr) FROM deal_collections c WHERE c.deal_id = dp.id AND c.approval_status='APPROVED'), 0) AS total_collected_myr
      FROM deal_pipeline dp
      JOIN affiliate_applications a ON a.id = dp.affiliate_id
+     LEFT JOIN users u ON u.id = a.user_id
      WHERE dp.id = ?
      LIMIT 1`,
     [dealId]
@@ -83,9 +84,6 @@ export default async function AdminDealDetailPage({
         </div>
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           <Link className="button secondary" href="/admin/deals">← All Deals Pipeline</Link>
-          <form action="/foliodesk/api/logout" method="post">
-            <button className="button secondary">Sign out</button>
-          </form>
         </div>
       </div>
 

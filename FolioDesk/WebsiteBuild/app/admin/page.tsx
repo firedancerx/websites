@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { requireAdmin } from "../../lib/auth";
 import { db } from "../../lib/db";
+import { getAdminDataMode } from "../../lib/settings";
 import AdminNav from "./AdminNav";
 import AdminNetworkView, { type AffiliateItem } from "./AdminNetworkView";
 
@@ -14,13 +15,27 @@ export default async function Admin() {
   const user = await requireAdmin();
   if (!user) redirect("/login");
 
+  const dataMode = await getAdminDataMode();
+  let whereClause = "";
+  if (dataMode === "TEST") {
+    whereClause = "WHERE a.is_test = 1";
+  } else if (dataMode === "ACTUAL") {
+    whereClause = "WHERE a.is_test = 0";
+  }
+
   const [apps] = await db().execute<any[]>(
     `SELECT a.*, u.email, 
-      (SELECT COUNT(*) FROM onboarded_customers c WHERE c.affiliate_id = a.id) AS customer_count 
+      (SELECT COUNT(*) FROM deal_pipeline dp WHERE dp.affiliate_id = a.id AND dp.status IN ('LEAD_SUBMITTED', 'QUALIFIED', 'PROPOSAL_SENT', 'CONTRACT_SIGNED', 'INVOICED')) AS active_prospects_count,
+      (SELECT COUNT(*) FROM deal_pipeline dp WHERE dp.affiliate_id = a.id AND dp.status IN ('PARTIAL_COLLECTED', 'FULLY_COLLECTED', 'CLIENT_ONBOARDED', 'CLOSED_WON')) AS active_clients_count,
+      (SELECT COUNT(*) FROM deal_pipeline dp WHERE dp.affiliate_id = a.id AND dp.status IN ('PARTIAL_COLLECTED', 'FULLY_COLLECTED', 'CLIENT_ONBOARDED', 'CLOSED_WON')) AS customer_count,
+      (SELECT COUNT(*) FROM affiliate_profile_updates pu WHERE pu.application_id = a.id AND pu.status = 'PENDING_APPROVAL') AS has_pending_profile_update
      FROM affiliate_applications a 
      JOIN users u ON u.id=a.user_id 
+     ${whereClause}
      ORDER BY a.submitted_at DESC`
   );
+
+  const sanitizedApps = JSON.parse(JSON.stringify(apps));
 
   return (
     <section className="admin-wrap" style={{ maxWidth: 1240, margin: "0 auto" }}>
@@ -32,14 +47,11 @@ export default async function Admin() {
             Uplines with downline networks and directly onboarded customer metrics.
           </p>
         </div>
-        <form action="/foliodesk/api/logout" method="post">
-          <button className="button secondary">Sign out</button>
-        </form>
       </div>
 
-      <AdminNav />
+      <AdminNav currentDataMode={dataMode} />
 
-      <AdminNetworkView initialApps={apps as AffiliateItem[]} />
+      <AdminNetworkView initialApps={sanitizedApps as AffiliateItem[]} />
     </section>
   );
 }

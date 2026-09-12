@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import type { CollectionRecord } from "../../../lib/funnel";
+import ToggleTestModeButton from "../ToggleTestModeButton";
 
 export default function CollectionsApprovalView({
   collections,
@@ -186,6 +187,20 @@ export default function CollectionsApprovalView({
                           🔒 IMMUTABLE
                         </span>
                       )}
+                      {c.is_test === 1 && (
+                        <span
+                          className="badge"
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 700,
+                            background: "#fffbeb",
+                            color: "#b45309",
+                            border: "1px solid #fde68a",
+                          }}
+                        >
+                          🧪 TESTER DATA
+                        </span>
+                      )}
                     </div>
 
                     <h3 style={{ fontSize: 16, margin: "2px 0 2px", color: "#0f172a" }}>
@@ -275,6 +290,7 @@ export default function CollectionsApprovalView({
                   {/* ACTION BUTTONS */}
                   <div>
                     <div style={{ display: "flex", gap: 6, alignItems: "center", justifyContent: "flex-end" }}>
+                      <ToggleTestModeButton entityType="collection" entityId={c.id} isTest={c.is_test} size="sm" />
                       {isPending ? (
                         <>
                           <button

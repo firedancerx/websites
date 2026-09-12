@@ -1,0 +1,1593 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html>
+<html b:css='false' b:defaultwidgetversion='2' b:layoutsVersion='3' b:responsive='true' b:templateUrl='fancy.xml' b:templateVersion='1.3.3' expr:dir='data:blog.languageDirection' expr:lang='data:blog.locale' xmlns='http://www.w3.org/1999/xhtml' xmlns:b='http://www.google.com/2005/gml/b' xmlns:data='http://www.google.com/2005/gml/data' xmlns:expr='http://www.google.com/2005/gml/expr'>
+  <head>
+    <meta content='width=device-width, initial-scale=1' name='viewport'/>
+    <title><data:view.title.escaped/></title>
+    <b:include data='blog' name='all-head-content'/>
+    <b:skin version='1.3.3'><![CDATA[/*! normalize.css v3.0.1 | MIT License | git.io/normalize */html{font-family:sans-serif;-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%}body{margin:0}article,aside,details,figcaption,figure,footer,header,hgroup,main,nav,section,summary{display:block}audio,canvas,progress,video{display:inline-block;vertical-align:baseline}audio:not([controls]){display:none;height:0}[hidden],template{display:none}a{background:transparent}a:active,a:hover{outline:0}abbr[title]{border-bottom:1px dotted}b,strong{font-weight:bold}dfn{font-style:italic}h1{font-size:2em;margin:.67em 0}mark{background:#ff0;color:#000}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sup{top:-0.5em}sub{bottom:-0.25em}img{border:0}svg:not(:root){overflow:hidden}figure{margin:1em 40px}hr{-moz-box-sizing:content-box;box-sizing:content-box;height:0}pre{overflow:auto}code,kbd,pre,samp{font-family:monospace,monospace;font-size:1em}button,input,optgroup,select,textarea{color:inherit;font:inherit;margin:0}button{overflow:visible}button,select{text-transform:none}button,html input[type="button"],input[type="reset"],input[type="submit"]{-webkit-appearance:button;cursor:pointer}button[disabled],html input[disabled]{cursor:default}button::-moz-focus-inner,input::-moz-focus-inner{border:0;padding:0}input{line-height:normal}input[type="checkbox"],input[type="radio"]{box-sizing:border-box;padding:0}input[type="number"]::-webkit-inner-spin-button,input[type="number"]::-webkit-outer-spin-button{height:auto}input[type="search"]{-webkit-appearance:textfield;-moz-box-sizing:content-box;-webkit-box-sizing:content-box;box-sizing:content-box}input[type="search"]::-webkit-search-cancel-button,input[type="search"]::-webkit-search-decoration{-webkit-appearance:none}fieldset{border:1px solid #c0c0c0;margin:0 2px;padding:.35em .625em .75em}legend{border:0;padding:0}textarea{overflow:auto}optgroup{font-weight:bold}table{border-collapse:collapse;border-spacing:0}td,th{padding:0}
+/*
+<!-- Constants -->
+
+<!-- Fonts -->
+
+<Variable name="garamond12" description="12px Garamond" type="font" default="normal 400 12px EB Garamond, serif" hideEditor="true"  value="normal 400 12px EB Garamond, serif"/>
+<Variable name="garamond14" description="14px Garamond" type="font" default="normal 400 14px EB Garamond, serif" hideEditor="true"  value="normal 400 14px EB Garamond, serif"/>
+<Variable name="garamond16" description="16px Garamond" type="font" default="normal 400 16px EB Garamond, serif" hideEditor="true"  value="normal 400 16px EB Garamond, serif"/>
+<Variable name="garamond18" description="18px Garamond" type="font" default="normal 400 18px EB Garamond, serif" hideEditor="true"  value="normal 400 18px EB Garamond, serif"/>
+<Variable name="garamond20" description="20px Garamond" type="font" default="normal 400 20px EB Garamond, serif" hideEditor="true"  value="normal 400 20px EB Garamond, serif"/>
+<Variable name="garamond24" description="24px Garamond" type="font" default="normal 400 24px EB Garamond, serif" hideEditor="true"  value="normal 400 24px EB Garamond, serif"/>
+<Variable name="garamond36" description="36px Garamond" type="font" default="normal 400 36px EB Garamond, serif" hideEditor="true"  value="normal 400 36px EB Garamond, serif"/>
+<Variable name="lato12" description="12px Lato" type="font" default="normal 400 12px Lato, sans-serif" hideEditor="true"  value="normal 400 12px Lato, sans-serif"/>
+<Variable name="lato14" description="14px Lato" type="font" default="normal 400 14px Lato, sans-serif" hideEditor="true"  value="normal 400 14px Lato, sans-serif"/>
+<Variable name="lato16" description="16px Lato" type="font" default="normal 400 16px Lato, sans-serif" hideEditor="true"  value="normal 400 16px Lato, sans-serif"/>
+<Variable name="lato20" description="20px Lato" type="font" default="normal 400 20px Lato, sans-serif" hideEditor="true"  value="normal 400 20px Lato, sans-serif"/>
+<Variable name="lato24" description="24px Lato" type="font" default="normal 400 24px Lato, sans-serif" hideEditor="true"  value="normal 400 24px Lato, sans-serif"/>
+<Variable name="latoBold12" description="12px Lato Bold" type="font" default="normal 700 12px Lato, sans-serif" hideEditor="true"  value="normal 700 12px Lato, sans-serif"/>
+<Variable name="latoBold14" description="14px Lato Bold" type="font" default="normal 700 14px Lato, sans-serif" hideEditor="true"  value="normal 700 14px Lato, sans-serif"/>
+<Variable name="latoBold16" description="16px Lato Bold" type="font" default="normal 700 16px Lato, sans-serif" hideEditor="true"  value="normal 700 16px Lato, sans-serif"/>
+<Variable name="latoBold24" description="24px Lato Bold" type="font" default="normal 700 24px Lato, sans-serif" hideEditor="true"  value="normal 700 24px Lato, sans-serif"/>
+<Variable name="latoBold28" description="28px Lato Bold" type="font" default="normal 700 28px Lato, sans-serif" hideEditor="true"  value="normal 700 28px Lato, sans-serif"/>
+<Variable name="latoLight18" description="18px Lato Light" type="font" default="normal 300 18px Lato, sans-serif" hideEditor="true"  value="normal 300 18px Lato, sans-serif"/>
+<Variable name="latoLight20" description="20px Lato Light" type="font" default="normal 300 20px Lato, sans-serif" hideEditor="true"  value="normal 300 20px Lato, sans-serif"/>
+<Variable name="latoLight24" description="24px Lato Light" type="font" default="normal 300 24px Lato, sans-serif" hideEditor="true"  value="normal 300 24px Lato, sans-serif"/>
+<Variable name="latoLight36" description="36px Lato Light" type="font" default="normal 300 36px Lato, sans-serif" hideEditor="true"  value="normal 300 36px Lato, sans-serif"/>
+<Variable name="lora14" description="14px Lora" type="font" default="normal 400 14px Lora, serif" hideEditor="true"  value="normal 400 14px Lora, serif"/>
+<Variable name="lora16" description="16px Lora" type="font" default="normal 400 16px Lora, serif" hideEditor="true"  value="normal 400 16px Lora, serif"/>
+<Variable name="montserrat12" description="12px Montserrat" type="font" default="normal 400 12px Montserrat, sans-serif" hideEditor="true"  value="normal 400 12px Montserrat, sans-serif"/>
+<Variable name="montserrat14" description="14px Montserrat" type="font" default="normal 400 14px Montserrat, sans-serif" hideEditor="true"  value="normal 400 14px Montserrat, sans-serif"/>
+<Variable name="montserrat16" description="16px Montserrat" type="font" default="normal 400 16px Montserrat, sans-serif" hideEditor="true"  value="normal 400 16px Montserrat, sans-serif"/>
+<Variable name="montserrat24" description="24px Montserrat" type="font" default="normal 400 24px Montserrat, sans-serif" hideEditor="true"  value="normal 400 24px Montserrat, sans-serif"/>
+<Variable name="montserratBold12" description="12px Montserrat Bold" type="font" default="normal 700 12px Montserrat, sans-serif" hideEditor="true"  value="normal 700 12px Montserrat, sans-serif"/>
+<Variable name="montserratBold14" description="14px Montserrat Bold" type="font" default="normal 700 14px Montserrat, sans-serif" hideEditor="true"  value="normal 700 14px Montserrat, sans-serif"/>
+
+<!-- Colors -->
+
+<Variable name="shadowColor" description="Shadow color" type="color" default="rgba(0, 0, 0, 0.1)" hideEditor="true"  value="rgba(0, 0, 0, 0.1)"/>
+
+<!-- Variable definitions -->
+
+<Variable name="keycolor" description="Main Color" type="color" default="#bf8b38"  value="#bca772"/>
+<Variable name="startSide" description="Start side in blog language" type="automatic" default="left" hideEditor="true" />
+<Variable name="endSide" description="End side in blog language" type="automatic" default="right" hideEditor="true" />
+
+<Group description="Body">
+  <Variable name="body.background" description="Background" type="background" color="$(body.background.color)" default="$(color) none repeat scroll top left"  value="#3a3a3a url(https://themes.googleusercontent.com/image?id=1ivW29piS12orxDeRXenjyhaZzgc0JTkL44AyVX1Vr7ZabYyfFoROV8CCeBeZ3Yn6UeM9abG0JDV) no-repeat scroll top center /* Credit: Anna Williams (http://www.offset.com/photos/387164) */;"/>
+  <Variable name="body.background.color" description="Background color" type="color" default="#fff"  value="#3a3a3a"/>
+  <Variable name="body.title.font.small" description="Title font (small)" type="font" default="$(garamond20)"  value="normal 400 20px EB Garamond, serif"/>
+  <Variable name="body.title.font.large" description="Title font (large)" type="font" default="$(garamond24)"  value="normal 400 24px EB Garamond, serif"/>
+  <Variable name="body.title.color" description="Title color" type="color" default="#000"  value="#ffffff"/>
+  <Variable name="body.action.font.small" description="Action font (small)" type="font" default="$(montserrat12)"  value="normal 400 12px Montserrat, sans-serif"/>
+  <Variable name="body.action.font.large" description="Action font (large)" type="font" default="$(montserrat14)"  value="normal 400 14px Montserrat, sans-serif"/>
+  <Variable name="body.action.color" description="Action color" type="color" default="#bf8b38"  value="#bca772"/>
+  <Variable name="body.text.font" description="Text font" type="font" default="$(garamond20)"  value="normal 400 20px EB Garamond, serif"/>
+  <Variable name="body.text.color" description="Text color" type="color" default="#000"  value="#ffffff"/>
+  <Variable name="body.link.color" description="Link color" type="color" default="#bf8b38"  value="#bca772"/>
+  <Variable name="body.widget.title.font.small" description="Gadget title font (small)" type="font" default="$(montserrat12)"  value="normal 400 12px Montserrat, sans-serif"/>
+  <Variable name="body.widget.title.font.large" description="Gadget title font (large)" type="font" default="$(montserrat14)"  value="normal 400 14px Montserrat, sans-serif"/>
+  <Variable name="body.widget.title.color" description="Gadget title color" type="color" default="rgba(0, 0, 0, 0.54)"  value="rgba(255, 255, 255, 0.54)"/>
+  <Variable name="body.filter.background.color" description="Filter background color" type="color" default="#302c24"  value="#2c2c2c"/>
+  <Variable name="body.filter.text.font.small" description="Filter text font (small)" type="font" default="$(montserrat12)"  value="normal 400 12px Montserrat, sans-serif"/>
+  <Variable name="body.filter.text.font.large" description="Filter text font (large)" type="font" default="$(montserrat14)"  value="normal 400 14px Montserrat, sans-serif"/>
+  <Variable name="body.filter.text.color" description="Filter text color" type="color" default="rgba(255, 255, 255, 0.54)"  value="rgba(255, 255, 255, 0.54)"/>
+  <Variable name="body.filter.keyword.font.small" description="Filter keyword font (small)" type="font" default="$(montserratBold12)"  value="normal 700 12px Montserrat, sans-serif"/>
+  <Variable name="body.filter.keyword.font.large" description="Filter keyword font (large)" type="font" default="$(montserratBold14)"  value="normal 700 14px Montserrat, sans-serif"/>
+  <Variable name="body.filter.keyword.color" description="Filter keyword color" type="color" default="rgba(255, 255, 255, 0.87)"  value="rgba(255, 255, 255, 0.87)"/>
+  <Variable name="body.filter.link.font.small" description="Filter link font (small)" type="font" default="$(montserratBold12)"  value="normal 700 12px Montserrat, sans-serif"/>
+  <Variable name="body.filter.link.font.large" description="Filter link font (large)" type="font" default="$(montserratBold14)"  value="normal 700 14px Montserrat, sans-serif"/>
+  <Variable name="body.filter.link.color" description="Filter link color" type="color" default="#bf8b38"  value="#bca772"/>
+</Group>
+
+<Group description="Header">
+  <Variable name="header.background.color" description="Background color" type="color" default="#fff"  value="#1e1e1e"/>
+  <Variable name="header.title.font.small" description="Title font (small)" type="font" default="$(garamond18)"  value="normal 400 18px EB Garamond, serif"/>
+  <Variable name="header.title.font.large" description="Title font (large)" type="font" default="$(garamond36)"  value="normal 400 36px EB Garamond, serif"/>
+  <Variable name="header.title.color" description="Title color" type="color" default="#000"  value="#ffffff"/>
+  <Variable name="header.text.font" description="Text font" type="font" default="$(montserrat12)"  value="normal 400 12px Montserrat, sans-serif"/>
+  <Variable name="header.text.color" description="Text color" type="color" default="rgba(0, 0, 0, 0.54)"  value="rgba(255, 255, 255, 0.54)"/>
+  <Variable name="header.pageList.font" description="Page list font" type="font" default="$(montserrat14)"  value="normal 400 14px Montserrat, sans-serif"/>
+  <Variable name="header.pageList.color" description="Page list color" type="color" default="rgba(0, 0, 0, 0.54)"  value="rgba(255, 255, 255, 0.54)"/>
+  <Variable name="header.pageList.selected.font" description="Page list font (selected page)" type="font" default="$(montserratBold14)"  value="normal 700 14px Montserrat, sans-serif"/>
+  <Variable name="header.pageList.selected.color" description="Page list color (selected page)" type="color" default="rgba(0, 0, 0, 0.54)"  value="rgba(255, 255, 255, 0.54)"/>
+  <Variable name="header.icon.color" description="Icon color" type="color" default="rgba(0, 0, 0, 0.54)"  value="rgba(255, 255, 255, 0.54)"/>
+</Group>
+
+<Group description="Posts">
+  <Variable name="post.text.background.color" description="Background color (text-only post)" type="color" default="#302c24"  value="#2c2c2c"/>
+  <Variable name="post.title.font.small" description="Title font (small)" type="font" default="$(garamond20)"  value="normal 400 20px EB Garamond, serif"/>
+  <Variable name="post.title.font.large" description="Title font (large)" type="font" default="$(garamond24)"  value="normal 400 24px EB Garamond, serif"/>
+  <Variable name="post.title.color" description="Title color" type="color" default="#000"  value="#ffffff"/>
+  <Variable name="post.text.title.color" description="Title color (text-only post)" type="color" default="#fff"  value="#ffffff"/>
+  <Variable name="post.header.font" description="Header font" type="font" default="$(montserrat12)"  value="normal 400 12px Montserrat, sans-serif"/>
+  <Variable name="post.header.color" description="Header color" type="color" default="rgba(0, 0, 0, 0.54)"  value="rgba(255, 255, 255, 0.54)"/>
+  <Variable name="post.text.header.color" description="Header color (text-only post)" type="color" default="rgba(255, 255, 255, 0.54)"  value="rgba(255, 255, 255, 0.54)"/>
+  <Variable name="post.footer.font" description="Post Footer Font" type="font" default="$(montserrat12)"  value="normal 400 12px Montserrat, sans-serif"/>
+  <Variable name="post.footer.color" description="Footer color" type="color" default="#bf8b38"  value="#bca772"/>
+  <Variable name="post.text.font.small" description="Text font (small)" type="font" default="$(lora14)"  value="normal 400 14px Lora, serif"/>
+  <Variable name="post.text.font.large" description="Text font (large)" type="font" default="$(lora16)"  value="normal 400 16px Lora, serif"/>
+  <Variable name="post.text.color" description="Text color" type="color" default="#000"  value="#ffffff"/>
+  <Variable name="post.text.footer.color" description="Footer color (text-only post)" type="color" default="#bf8b38"  value="#bca772"/>
+  <Variable name="post.blockquote.font.small" description="Blockquote font (small)" type="font" default="$(montserrat16)"  value="normal 400 16px Montserrat, sans-serif"/>
+  <Variable name="post.blockquote.font.large" description="Blockquote font (large)" type="font" default="$(montserrat24)"  value="normal 400 24px Montserrat, sans-serif"/>
+  <Variable name="post.blockquote.color" description="Blockquote color" type="color" default="#000"  value="#ffffff"/>
+  <Variable name="post.caption.font" description="Caption font" type="font" default="$(montserrat12)"  value="normal 400 12px Montserrat, sans-serif"/>
+  <Variable name="post.caption.color" description="Caption color" type="color" default="#000"  value="#ffffff"/>
+</Group>
+
+<Group description="Comments">
+  <Variable name="comment.header.font" description="Header font" type="font" default="$(montserrat12)"  value="normal 400 12px Montserrat, sans-serif"/>
+  <Variable name="comment.header.color" description="Header color" type="color" default="rgba(0, 0, 0, 0.54)"  value="rgba(255, 255, 255, 0.54)"/>
+  <Variable name="comment.author.font" description="Author font" type="font" default="$(montserrat14)"  value="normal 400 14px Montserrat, sans-serif"/>
+  <Variable name="comment.author.color" description="Author color" type="color" default="#000"  value="#ffffff"/>
+  <Variable name="comment.content.font" description="Content font" type="font" default="$(lora14)"  value="normal 400 14px Lora, serif"/>
+  <Variable name="comment.content.color" description="Content color" type="color" default="#000"  value="#ffffff"/>
+  <Variable name="comment.action.font" description="Action font" type="font" default="$(montserrat12)"  value="normal 400 12px Montserrat, sans-serif"/>
+  <Variable name="comment.action.color" description="Action color" type="color" default="#bf8b38"  value="#bca772"/>
+</Group>
+
+<Group description="Sidebar">
+  <Variable name="sidebar.background.color" description="Background color" type="color" default="#fff"  value="#3a3a3a"/>
+  <Variable name="sidebar.separator.color" description="Separator color" type="color" default="rgba(0, 0, 0, 0.54)"  value="rgba(255, 255, 255, 0.54)"/>
+  <Variable name="sidebar.profile.name.font" description="Profile name font" type="font" default="$(garamond24)"  value="normal 400 24px EB Garamond, serif"/>
+  <Variable name="sidebar.profile.name.color" description="Profile name color" type="color" default="#000"  value="#ffffff"/>
+  <Variable name="sidebar.profile.description.font" description="Profile description font" type="font" default="$(montserrat12)"  value="normal 400 12px Montserrat, sans-serif"/>
+  <Variable name="sidebar.profile.description.color" description="Profile description color" type="color" default="rgba(0, 0, 0, 0.87)"  value="rgba(255, 255, 255, 0.87)"/>
+  <Variable name="sidebar.action.font" description="Action font" type="font" default="$(montserrat14)"  value="normal 400 14px Montserrat, sans-serif"/>
+  <Variable name="sidebar.action.color" description="Action color" type="color" default="#bf8b38"  value="#bca772"/>
+  <Variable name="sidebar.widget.title.font" description="Gadget title font" type="font" default="$(montserrat16)"  value="normal 400 16px Montserrat, sans-serif"/>
+  <Variable name="sidebar.widget.title.color" description="Gadget title color" type="color" default="rgba(0, 0, 0, 0.54)"  value="rgba(255, 255, 255, 0.54)"/>
+  <Variable name="sidebar.widget.text.font" description="Gadget text font" type="font" default="$(montserrat14)"  value="normal 400 14px Montserrat, sans-serif"/>
+  <Variable name="sidebar.widget.text.color" description="Gadget text color" type="color" default="rgba(0, 0, 0, 0.54)"  value="rgba(255, 255, 255, 0.54)"/>
+  <Variable name="sidebar.icon.color" description="Icon color" type="color" default="rgba(0, 0, 0, 0.54)"  value="rgba(255, 255, 255, 0.54)"/>
+</Group>
+
+<Group description="Search">
+  <Variable name="search.input.font" description="Input font" type="font" default="$(montserrat16)"  value="normal 400 16px Montserrat, sans-serif"/>
+</Group>
+
+<Group description="Sharing">
+  <Variable name="sharing.background.color" description="Sharing background color" type="color" default="#fafafa"  value="#252525"/>
+  <Variable name="sharing.text.font" description="Sharing text font" type="font" default="$(montserrat16)"  value="normal 400 16px Montserrat, sans-serif"/>
+  <Variable name="sharing.text.color" description="Sharing text color" type="color" default="#000"  value="rgba(255, 255, 255, 0.87)"/>
+  <Variable name="sharing.icon.color" description="Sharing icons color" type="color" default="#bf8b38"  value="#bca772"/>
+</Group>
+
+<Group description="Attribution">
+  <Variable name="attribution.text.font" description="Attribution text font" type="font" default="$(montserrat12)"  value="normal 400 12px Montserrat, sans-serif"/>
+  <Variable name="attribution.text.color" description="Attribution text color" type="color" default="rgba(0, 0, 0, 0.54)"  value="rgba(255, 255, 255, 0.54)"/>
+  <Variable name="attribution.icon.color" description="Attribution icon color" type="color" default="rgba(0, 0, 0, 0.54)" hideEditor="true"  value="rgba(255, 255, 255, 0.54)"/>
+</Group>
+
+<Group description="Widths" selector="#main, html[dir=rtl] .sidebar-container, html[dir=ltr] .sidebar-container">
+  <Variable name="sidebar.width" description="Sidebar width" type="length"
+            min="100px" max="1000px" default="284px"  value="284px"/>
+  <Variable name="content.width" description="Content width" type="length"
+            min="660px" max="2400px" default="922px"  value="922px"/>
+  <Variable name="content.margin" description="Content margin" type="length"
+            min="0px" max="1000px" default="117px"  value="117px"/>
+</Group>
+ */
+
+body{overflow-wrap:break-word;word-break:break-word;word-wrap:break-word}
+.hidden{display:none}
+.invisible{visibility:hidden}
+.container::after,.float-container::after{clear:both;content:"";display:table}
+]]></b:skin>
+    <b:template-skin>
+      <![CDATA[
+      body#layout .hidden, body#layout .invisible { display: inherit; }
+      body#layout .page { width: 60%; }
+      body#layout.ltr .page { float: right; }
+      body#layout.rtl .page { float: left; }
+      body#layout .sidebar-container { width: 40%; }
+      body#layout.ltr .sidebar-container { float: left; }
+      body#layout.rtl .sidebar-container { float: right; }
+      ]]>
+    </b:template-skin>
+  </head>
+  <body>
+    <b:class cond='data:view.isPreview' name='preview'/>
+    <b:class cond='data:view.isHomepage' name='homepage-view'/>
+    <b:class cond='data:view.isArchive' name='archive-view'/>
+    <b:class cond='data:view.isLabelSearch' name='label-view'/>
+    <b:class cond='data:view.isSearch and !data:view.isLabelSearch' name='search-view'/>
+    <b:class cond='data:view.isPost' name='post-view'/>
+    <b:class cond='data:view.isPage' name='page-view'/>
+    <b:class cond='data:view.isMultipleItems' name='feed-view'/>
+    <b:class cond='data:view.isSingleItem' name='item-view'/>
+    <b:class cond='data:view.isError' name='error-view'/>
+    <b:class name='version-1-3-3'/>
+    <b:include name='skipNavigation'/>
+    <div class='page'>
+      <div class='page_body'>
+        <div class='main-page-body-content'>
+          <div class='centered-top-placeholder'/>
+          <header class='centered-top-container' role='banner'>
+            <div class='centered-top'>
+              <b:class cond='data:view.isSearch and data:view.search.query' name='search-focused'/>
+              <b:if cond='data:view.isPost'>
+                <div class='back-button-container'>
+                  <a expr:href='data:blog.homepageUrl'>
+                    <b:include data='{ iconClass: &quot;touch-icon back-button rtl-reversible-icon&quot; }' name='backArrowIcon'/>
+                  </a>
+                </div>
+              <b:else/>
+                <div class='hamburger-menu-container'>
+                  <b:include data='{ iconClass: &quot;touch-icon hamburger-menu&quot; }' name='menuIcon'/>
+                </div>
+              </b:if>
+              <b:if cond='data:view.isLayoutMode or data:widgets any (w =&gt; w.sectionId == &quot;search_top&quot;)'>
+                <div class='search'>
+                  <b:class cond='data:view.isSearch and data:view.search.query' name='focused'/>
+                  <button class='search-expand touch-icon-button' expr:aria-label='data:messages.search.escaped'>
+                    <div class='search-expand-text'><data:messages.search/></div>
+                    <b:include data='{ iconClass: &quot;touch-icon search-expand-icon&quot; }' name='searchIcon'/>
+                  </button>
+                  <b:section id='search_top' name='Search (Top)' showaddelement='false'>
+                    <b:widget id='BlogSearch1' locked='true' title='Search This Blog' type='BlogSearch' visible='true'>
+                      <b:includable id='main'>
+                        <b:include name='widget-title'/>
+                        <b:include name='content'/>
+                      </b:includable>
+                      <b:includable id='content'>
+                        <div class='widget-content' role='search'>
+                          <b:include name='searchForm'/>
+                        </div>
+                      </b:includable>
+                    </b:widget>
+                  </b:section>
+                </div>
+              </b:if>
+              <div class='blog-name'>
+                <b:section id='header' name='Header' showaddelement='false'>
+                  <b:widget id='Header1' locked='true' title='ACE - Application and Commercialization of Technologies (Header)' type='Header' visible='true'>
+                    <b:includable id='main' var='this'>
+                      <div class='header-widget'>
+                        <b:include cond='data:imagePlacement in {&quot;REPLACE&quot;, &quot;BEFORE_DESCRIPTION&quot;}' name='image'/>
+                        <b:include cond='data:imagePlacement not in {&quot;REPLACE&quot;, &quot;BEFORE_DESCRIPTION&quot;}' name='title'/>
+                        <b:include cond='data:imagePlacement != &quot;REPLACE&quot;' name='description'/>
+                      </div>
+                    </b:includable>
+                  </b:widget>
+                </b:section>
+                <nav role='navigation'>
+                  <b:section id='page_list_top' name='Page List (Top)' showaddelement='false'>
+                    <b:widget id='PageList1' locked='true' title='' type='PageList' visible='false'>
+                      <b:includable id='main'>
+                        <b:include name='widget-title'/>
+                        <b:include name='content'/>
+                      </b:includable>
+                    </b:widget>
+                  </b:section>
+                </nav>
+              </div>
+            </div>
+          </header>
+          <div class='hero-image'>
+            <b:class cond='data:skin.vars.body_background.image' name='has-image'/>
+          </div>
+          <main class='centered-bottom' id='main' role='main' tabindex='-1'>
+            <b:section ads='true' class='main' id='page_body' name='Page Body' showaddelement='false'>
+              <b:widget id='FeaturedPost1' locked='true' title='' type='FeaturedPost' visible='true'>
+                <b:includable id='main'>
+                  <b:with value='data:messages.featured' var='defaultTitle'>
+                    <b:include name='super.main'/>
+                  </b:with>
+                </b:includable>
+              </b:widget>
+              <b:widget cond='data:view.isHomepage' id='AdSense1' locked='false' title='' type='AdSense' visible='false'>
+                <b:includable id='main'>
+                  <div class='widget-content'></div>
+                </b:includable>
+              </b:widget>
+              <b:widget id='Blog1' locked='true' title='Blog Posts' type='Blog' visible='true'>
+                <b:includable id='main'>
+                  <b:include name='noContentPlaceholder'/>
+                </b:includable>
+              </b:widget>
+              <b:widget cond='data:view.isSingleItem and data:posts any (p =&gt; p.id != data:view.postId)' id='PopularPosts1' locked='true' title='' type='PopularPosts' visible='true'>
+                <b:includable id='main'>
+                  <b:with value='data:messages.popularPosts' var='defaultTitle'>
+                    <b:include name='super.main'/>
+                  </b:with>
+                </b:includable>
+              </b:widget>
+            </b:section>
+          </main>
+        </div>
+        <b:section class='footer' id='footer' name='Footer' showaddelement='false' tag='footer'>
+          <b:widget id='Attribution1' locked='true' title='' type='Attribution' visible='true'>
+            <b:includable id='main' var='this'>
+              <div class='widget-content'></div>
+            </b:includable>
+          </b:widget>
+        </b:section>
+      </div>
+    </div>
+    <aside class='sidebar-container container sidebar-invisible' role='complementary'>
+      <b:section id='sidebar' name='Sidebar' preferred='yes'>
+        <b:widget id='Profile1' locked='false' title='About Me' type='Profile' visible='true'>
+          <b:includable id='main' var='this'><b:include name='content'/></b:includable>
+        </b:widget>
+        <b:widget id='BlogArchive1' locked='false' title='' type='BlogArchive' visible='true'>
+          <b:includable id='main' var='this'></b:includable>
+        </b:widget>
+        <b:widget id='Label1' locked='false' title='Labels' type='Label' visible='true'>
+          <b:includable id='main' var='this'></b:includable>
+        </b:widget>
+        <b:widget id='ReportAbuse1' locked='true' title='' type='ReportAbuse' visible='true'>
+          <b:includable id='main'><b:include name='reportAbuse'/></b:includable>
+        </b:widget>
+        <b:widget id='AdSense2' locked='false' title='' type='AdSense' visible='false'>
+          <b:includable id='main'></b:includable>
+        </b:widget>
+      </b:section>
+    </aside>
+    <b:template-script async='true' name='fancy' version='1.0.0'/>
+    <script type='text/javascript'>
+    //<![CDATA[
+    /**
+ * FolioDesk Enhanced AI Agent Chatbot Widget
+ * Features:
+ * 1. Copy Last Response in Markdown (for MS Word, Google Docs, WhatsApp)
+ * 2. Copy Entire Conversation in Markdown
+ * 3. Export & Download Conversation as PDF
+ * 4. LocalStorage History & Session Switching
+ * 5. Start Each Session as Empty (New Conversation)
+ */
+(function () {
+  if (window.FolioDeskEnhancedChatbotInitialized) return;
+  window.FolioDeskEnhancedChatbotInitialized = true;
+
+  const currentScript =
+    document.currentScript ||
+    document.getElementById("foliodesk-chatbot-script") ||
+    Array.from(document.querySelectorAll("script")).find((s) =>
+      s.src && s.src.includes("enhanced-widget.js")
+    ) ||
+    Array.from(document.querySelectorAll("script")).slice(-1)[0];
+
+  const API_KEY = (currentScript && currentScript.getAttribute("data-chatbot-id")) || "Lm9QyNOPFSzSUVy8XuCEvUDol__n6g92";
+  const AGENT_ID = (currentScript && currentScript.getAttribute("data-agent-id")) || "d139564c-a122-11f1-aee4-4e013e2ddde4";
+  const AGENT_NAME =
+    (currentScript && currentScript.getAttribute("data-name")) || "FolioDesk AI Assistant";
+  const PRIMARY_COLOR =
+    (currentScript && currentScript.getAttribute("data-primary-color")) || "#031B4E";
+  const SECONDARY_COLOR =
+    (currentScript && currentScript.getAttribute("data-secondary-color")) || "#E5E8ED";
+  const BUTTON_BG =
+    (currentScript && currentScript.getAttribute("data-button-background-color")) || "#0061EB";
+  const LOGO_SRC =
+    (currentScript && currentScript.getAttribute("data-logo")) ||
+    "/static/chatbot/icons/default-agent.svg";
+  const STARTING_MSG =
+    (currentScript && currentScript.getAttribute("data-starting-message")) ||
+    "Hello! How can I help you today?";
+  
+  let API_URL = (currentScript && currentScript.getAttribute("data-api-url")) || "https://qdaknrh2rzs3aueib5py5cbo.agents.do-ai.run";
+
+  const STORAGE_KEY_SESSIONS = "foliodesk_chatbot_sessions_v1";
+  const STORAGE_KEY_ACTIVE = "foliodesk_chatbot_active_session_v1";
+
+  function getStoredSessions() {
+    try {
+      const data = localStorage.getItem(STORAGE_KEY_SESSIONS);
+      return data ? JSON.parse(data) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveStoredSessions(sessions) {
+    try {
+      localStorage.setItem(STORAGE_KEY_SESSIONS, JSON.stringify(sessions));
+    } catch (e) {
+      console.warn("FolioDesk Chatbot: Storage limit reached.", e);
+    }
+  }
+
+  function createNewSession() {
+    const session = {
+      id: "session_" + Date.now() + "_" + Math.random().toString(36).substr(2, 6),
+      title: "New Conversation",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      messages: []
+    };
+    if (STARTING_MSG) {
+      session.messages.push({
+        id: "msg_init_" + Date.now(),
+        role: "assistant",
+        content: STARTING_MSG,
+        timestamp: new Date().toISOString()
+      });
+    }
+    const sessions = getStoredSessions();
+    sessions.unshift(session);
+    saveStoredSessions(sessions);
+    localStorage.setItem(STORAGE_KEY_ACTIVE, session.id);
+    return session;
+  }
+
+  function updateActiveSessionMessages(messages, customTitle = null) {
+    const sessions = getStoredSessions();
+    const activeId = localStorage.getItem(STORAGE_KEY_ACTIVE);
+    const index = sessions.findIndex((s) => s.id === activeId);
+    if (index !== -1) {
+      sessions[index].messages = messages;
+      sessions[index].updatedAt = new Date().toISOString();
+      
+      if (customTitle) {
+        sessions[index].title = customTitle;
+      } else if (sessions[index].title === "New Conversation") {
+        const firstUserMsg = messages.find((m) => m.role === "user");
+        if (firstUserMsg) {
+          sessions[index].title = firstUserMsg.content.substring(0, 32) + (firstUserMsg.content.length > 32 ? "..." : "");
+        }
+      }
+      saveStoredSessions(sessions);
+    }
+  }
+
+  let cachedToken = null;
+  let tokenExpiry = 0;
+
+  async function getAccessToken() {
+    if (cachedToken && Date.now() < tokenExpiry - 30000) {
+      return cachedToken;
+    }
+    try {
+      const res = await fetch(
+        `https://cloud.digitalocean.com/gen-ai/auth/agents/${AGENT_ID}/token`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Api-Key": API_KEY
+          },
+          body: JSON.stringify({})
+        }
+      );
+      if (!res.ok) throw new Error("Authentication failed: " + res.statusText);
+      const data = await res.json();
+      cachedToken = data.access_token;
+      tokenExpiry = Date.now() + 50 * 60 * 1000;
+      return cachedToken;
+    } catch (err) {
+      console.error("FolioDesk Chatbot Auth Error:", err);
+      throw err;
+    }
+  }
+
+  function loadScript(src) {
+    return new Promise((resolve, reject) => {
+      if (document.querySelector(`script[src="${src}"]`)) {
+        return resolve();
+      }
+      const s = document.createElement("script");
+      s.src = src;
+      s.onload = resolve;
+      s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  }
+
+  const styleEl = document.createElement("style");
+  styleEl.textContent = `
+    .fd-chat-launcher {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: ${BUTTON_BG};
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+      cursor: pointer;
+      z-index: 99999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      border: none;
+      outline: none;
+    }
+    .fd-chat-launcher:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    }
+    .fd-chat-launcher svg {
+      width: 28px;
+      height: 28px;
+      fill: #ffffff;
+    }
+    .fd-chat-container {
+      position: fixed;
+      bottom: 96px;
+      right: 24px;
+      width: 420px;
+      max-width: calc(100vw - 32px);
+      height: 650px;
+      max-height: calc(100vh - 120px);
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      z-index: 99999;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      border: 1px solid rgba(0,0,0,0.08);
+    }
+    .fd-chat-container.hidden {
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(20px) scale(0.95);
+    }
+    .fd-chat-header {
+      background: ${PRIMARY_COLOR};
+      color: #ffffff;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .fd-header-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .fd-header-logo {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+      object-fit: cover;
+    }
+    .fd-header-title {
+      font-weight: 600;
+      font-size: 15px;
+      color: #ffffff;
+    }
+    .fd-header-status {
+      font-size: 11px;
+      color: rgba(255,255,255,0.75);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .fd-status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #10B981;
+    }
+    .fd-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .fd-action-btn {
+      background: rgba(255,255,255,0.12);
+      border: none;
+      color: #ffffff;
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s ease;
+      position: relative;
+    }
+    .fd-action-btn:hover {
+      background: rgba(255,255,255,0.25);
+    }
+    .fd-action-btn svg {
+      width: 16px;
+      height: 16px;
+      fill: currentColor;
+    }
+    .fd-tooltip {
+      position: absolute;
+      bottom: -28px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1F2937;
+      color: #ffffff;
+      font-size: 10px;
+      padding: 3px 6px;
+      border-radius: 4px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s ease;
+      z-index: 100000;
+    }
+    .fd-action-btn:hover .fd-tooltip {
+      opacity: 1;
+    }
+    .fd-chat-toolbar {
+      background: ${SECONDARY_COLOR};
+      padding: 6px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      color: #475569;
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+    }
+    .fd-toolbar-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .fd-toolbar-btn {
+      background: #ffffff;
+      border: 1px solid #CBD5E1;
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 11px;
+      color: #334155;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-weight: 500;
+      transition: all 0.15s ease;
+    }
+    .fd-toolbar-btn:hover {
+      background: #F8FAFC;
+      border-color: #94A3B8;
+      color: #0F172A;
+    }
+    .fd-chat-messages {
+      flex: 1;
+      padding: 16px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      background: #F8FAFC;
+    }
+    .fd-message {
+      display: flex;
+      flex-direction: column;
+      max-width: 85%;
+      word-break: break-word;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .fd-message.user {
+      align-self: flex-end;
+    }
+    .fd-message.assistant {
+      align-self: flex-start;
+    }
+    .fd-bubble {
+      padding: 10px 14px;
+      border-radius: 14px;
+      position: relative;
+    }
+    .fd-message.user .fd-bubble {
+      background: ${BUTTON_BG};
+      color: #ffffff;
+      border-bottom-right-radius: 2px;
+    }
+    .fd-message.assistant .fd-bubble {
+      background: #ffffff;
+      color: #1E293B;
+      border-bottom-left-radius: 2px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      border: 1px solid #E2E8F0;
+    }
+    .fd-msg-meta {
+      font-size: 10px;
+      color: #94A3B8;
+      margin-top: 4px;
+      align-self: flex-end;
+    }
+    .fd-message.assistant .fd-msg-meta {
+      align-self: flex-start;
+    }
+    .fd-chat-input-area {
+      padding: 12px;
+      background: #ffffff;
+      border-top: 1px solid #E2E8F0;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .fd-chat-textarea {
+      flex: 1;
+      border: 1px solid #CBD5E1;
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 14px;
+      resize: none;
+      height: 40px;
+      max-height: 100px;
+      outline: none;
+      font-family: inherit;
+      color: #1E293B !important;
+      background: #FFFFFF !important;
+    }
+    .fd-chat-textarea:focus {
+      border-color: ${BUTTON_BG};
+      box-shadow: 0 0 0 2px rgba(0, 97, 235, 0.15);
+    }
+    .fd-send-btn {
+      background: ${BUTTON_BG};
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      width: 40px;
+      height: 40px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s ease;
+    }
+    .fd-send-btn:hover {
+      filter: brightness(0.9);
+    }
+    .fd-send-btn svg {
+      width: 18px;
+      height: 18px;
+      fill: #ffffff;
+    }
+    .fd-history-drawer {
+      position: absolute;
+      top: 56px;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: #ffffff;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 0.25s ease;
+    }
+    .fd-history-drawer.open {
+      transform: translateX(0);
+    }
+    .fd-drawer-header {
+      padding: 12px 16px;
+      background: #F1F5F9;
+      border-bottom: 1px solid #E2E8F0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 600;
+      font-size: 14px;
+      color: #334155;
+    }
+    .fd-close-drawer-btn {
+      background: none;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+      color: #64748B;
+    }
+    .fd-history-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .fd-history-item {
+      padding: 10px 12px;
+      border: 1px solid #E2E8F0;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background 0.15s ease;
+    }
+    .fd-history-item:hover {
+      background: #F8FAFC;
+      border-color: ${BUTTON_BG};
+    }
+    .fd-history-item.active {
+      background: #EFF6FF;
+      border-color: ${BUTTON_BG};
+    }
+    .fd-history-item-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      overflow: hidden;
+    }
+    .fd-history-item-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: #1E293B;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .fd-history-item-date {
+      font-size: 10px;
+      color: #94A3B8;
+    }
+    .fd-history-item-del {
+      background: none;
+      border: none;
+      color: #EF4444;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+    }
+    .fd-history-item-del:hover {
+      background: #FEE2E2;
+    }
+    .fd-toast {
+      position: absolute;
+      top: 64px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1E293B;
+      color: #ffffff;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 1000;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      pointer-events: none;
+    }
+    .fd-toast.show {
+      opacity: 1;
+    }
+    .fd-bubble p { margin: 0 0 8px 0; }
+    .fd-bubble p:last-child { margin-bottom: 0; }
+    .fd-bubble code { background: rgba(0,0,0,0.06); padding: 2px 4px; border-radius: 4px; font-family: monospace; font-size: 12px; }
+    .fd-bubble pre { background: #1E293B; color: #F8FAFC; padding: 10px; border-radius: 6px; overflow-x: auto; font-size: 12px; margin: 8px 0; }
+    .fd-bubble pre code { background: transparent; color: inherit; padding: 0; }
+  `;
+  document.head.appendChild(styleEl);
+
+  let toastTimer = null;
+  function showToast(text) {
+    let toast = document.querySelector(".fd-toast");
+    if (!toast) {
+      toast = document.createElement("div");
+      toast.className = "fd-toast";
+      document.body.appendChild(toast);
+    }
+    toast.textContent = text;
+    toast.classList.add("show");
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => {
+      toast.classList.remove("show");
+    }, 2500);
+  }
+
+  // Create UI Structure
+  const launcher = document.createElement("button");
+  launcher.className = "fd-chat-launcher";
+  launcher.title = "Open Chat Assistant";
+  launcher.innerHTML = `
+    <svg viewBox="0 0 24 24">
+      <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.2L4 17.2V4h16v12z"/>
+    </svg>
+  `;
+  document.body.appendChild(launcher);
+
+  const container = document.createElement("div");
+  container.className = "fd-chat-container hidden";
+  container.innerHTML = `
+    <div class="fd-chat-header">
+      <div class="fd-header-brand">
+        <img class="fd-header-logo" src="${LOGO_SRC}" alt="Logo" onerror="this.style.display='none'"/>
+        <div>
+          <div class="fd-header-title">${AGENT_NAME}</div>
+          <div class="fd-header-status"><span class="fd-status-dot"></span> Online</div>
+        </div>
+      </div>
+      <div class="fd-header-actions">
+        <button class="fd-action-btn" id="fd-btn-new-chat" title="New Chat">
+          <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+          <span class="fd-tooltip">New Chat</span>
+        </button>
+        <button class="fd-action-btn" id="fd-btn-history" title="History">
+          <svg viewBox="0 0 24 24"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/></svg>
+          <span class="fd-tooltip">History</span>
+        </button>
+        <button class="fd-action-btn" id="fd-btn-close" title="Close">
+          <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+          <span class="fd-tooltip">Close</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="fd-chat-toolbar">
+      <span>Action Bar</span>
+      <div class="fd-toolbar-group">
+        <button class="fd-toolbar-btn" id="fd-btn-copy-last" title="Copy Last Response in Markdown">
+          📋 Copy Last
+        </button>
+        <button class="fd-toolbar-btn" id="fd-btn-copy-all" title="Copy Entire Conversation in Markdown">
+          📝 Copy All
+        </button>
+        <button class="fd-toolbar-btn" id="fd-btn-pdf-last" title="Export Last Response as PDF">
+          📄 PDF Last
+        </button>
+        <button class="fd-toolbar-btn" id="fd-btn-pdf-all" title="Export Entire Conversation as PDF">
+          📄 PDF All
+        </button>
+      </div>
+    </div>
+
+    <div class="fd-chat-messages" id="fd-messages-list"></div>
+
+    <div class="fd-chat-input-area">
+      <textarea class="fd-chat-textarea" id="fd-input-text" placeholder="Type a message..."></textarea>
+      <button class="fd-send-btn" id="fd-btn-send">
+        <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+      </button>
+    </div>
+
+    <div class="fd-history-drawer" id="fd-history-drawer">
+      <div class="fd-drawer-header">
+        <span>Saved Conversations</span>
+        <button class="fd-close-drawer-btn" id="fd-btn-close-drawer">&times;</button>
+      </div>
+      <div class="fd-history-list" id="fd-history-list"></div>
+    </div>
+  `;
+  document.body.appendChild(container);
+
+  // Always start each session as empty (new conversation) on page load
+  let currentSession = createNewSession();
+
+  const messagesListEl = container.querySelector("#fd-messages-list");
+
+  function parseMarkdownToHtml(md) {
+    if (!md) return "";
+
+    let lines = md.split("\n");
+    let inTable = false;
+    let tableHeader = null;
+    let tableRows = [];
+    let htmlLines = [];
+    let inList = false;
+    let listType = null;
+
+    function closeTable() {
+      if (!inTable) return;
+      let tHtml = '<table style="width:100%; border-collapse:collapse; margin:14px 0; font-size:12px; line-height:1.5; border:1px solid #CBD5E1;">';
+      if (tableHeader) {
+        tHtml += '<thead style="background:#F1F5F9; border-bottom:2px solid #94A3B8;"><tr>';
+        tableHeader.forEach((cell) => {
+          tHtml += `<th style="padding:8px 10px; text-align:left; font-weight:600; color:#1E293B; border:1px solid #CBD5E1; background:#E2E8F0;">${formatInline(cell)}</th>`;
+        });
+        tHtml += '</tr></thead>';
+      }
+      tHtml += '<tbody>';
+      tableRows.forEach((row, idx) => {
+        let bg = idx % 2 === 0 ? '#FFFFFF' : '#F8FAFC';
+        tHtml += `<tr style="background:${bg};">`;
+        row.forEach((cell) => {
+          tHtml += `<td style="padding:8px 10px; color:#334155; border:1px solid #CBD5E1;">${formatInline(cell)}</td>`;
+        });
+        tHtml += '</tr>';
+      });
+      tHtml += '</tbody></table>';
+      htmlLines.push(tHtml);
+      inTable = false;
+      tableHeader = null;
+      tableRows = [];
+    }
+
+    function closeList() {
+      if (!inList) return;
+      htmlLines.push(listType === 'ul' ? '</ul>' : '</ol>');
+      inList = false;
+      listType = null;
+    }
+
+    function formatInline(text) {
+      if (!text) return "";
+      let str = text.trim();
+      str = str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      str = str.replace(/`([^`]+)`/g, '<code style="background:#F1F5F9; color:#0F172A; padding:2px 5px; border-radius:4px; font-family:monospace; font-size:11px;">$1</code>');
+      str = str.replace(/\*\*([^*]+)\*\*/g, '<strong style="color:#0F172A; font-weight:600;">$1</strong>');
+      str = str.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+      str = str.replace(/\[\[([^\]]+)\]\]/g, '<span style="display:inline-block; font-size:10px; background:#E2E8F0; color:#475569; padding:1px 5px; border-radius:3px; font-weight:600; margin:0 2px;">$1</span>');
+      return str;
+    }
+
+    for (let i = 0; i < lines.length; i++) {
+      let line = lines[i].trim();
+
+      if (line.startsWith("|") && line.endsWith("|")) {
+        closeList();
+        let cells = line.split("|").map((c) => c.trim()).filter((c, idx, arr) => idx > 0 && idx < arr.length - 1);
+        if (cells.every((c) => /^:?-+:?$/.test(c))) {
+          continue;
+        }
+        if (!inTable) {
+          inTable = true;
+          tableHeader = cells;
+        } else {
+          tableRows.push(cells);
+        }
+        continue;
+      } else if (inTable) {
+        closeTable();
+      }
+
+      if (line.startsWith("### ")) {
+        closeList();
+        htmlLines.push(`<h3 style="font-size:15px; font-weight:700; color:#0F172A; margin:18px 0 8px 0; border-bottom:1px solid #E2E8F0; padding-bottom:4px;">${formatInline(line.substring(4))}</h3>`);
+        continue;
+      }
+      if (line.startsWith("## ")) {
+        closeList();
+        htmlLines.push(`<h2 style="font-size:18px; font-weight:700; color:#031B4E; margin:22px 0 10px 0; border-bottom:2px solid #031B4E; padding-bottom:6px;">${formatInline(line.substring(3))}</h2>`);
+        continue;
+      }
+      if (line.startsWith("# ")) {
+        closeList();
+        htmlLines.push(`<h1 style="font-size:22px; font-weight:800; color:#031B4E; margin:24px 0 12px 0;">${formatInline(line.substring(2))}</h1>`);
+        continue;
+      }
+
+      if (/^[-*]\s+/.test(line)) {
+        if (!inList || listType !== 'ul') {
+          closeList();
+          inList = true;
+          listType = 'ul';
+          htmlLines.push('<ul style="margin:8px 0; padding-left:20px; color:#334155; line-height:1.6;">');
+        }
+        htmlLines.push(`<li style="margin-bottom:4px;">${formatInline(line.replace(/^[-*]\s+/, ''))}</li>`);
+        continue;
+      }
+
+      if (/^\d+\.\s+/.test(line)) {
+        if (!inList || listType !== 'ol') {
+          closeList();
+          inList = true;
+          listType = 'ol';
+          htmlLines.push('<ol style="margin:8px 0; padding-left:20px; color:#334155; line-height:1.6;">');
+        }
+        htmlLines.push(`<li style="margin-bottom:4px;">${formatInline(line.replace(/^\d+\.\s+/, ''))}</li>`);
+        continue;
+      }
+
+      closeList();
+
+      if (line === "---" || line === "***" || line === "___") {
+        htmlLines.push('<hr style="border:0; border-top:1px solid #E2E8F0; margin:16px 0;"/>');
+        continue;
+      }
+
+      if (line === "") {
+        continue;
+      }
+
+      htmlLines.push(`<p style="margin:0 0 10px 0; color:#334155; line-height:1.6; font-size:13px;">${formatInline(line)}</p>`);
+    }
+
+    closeTable();
+    closeList();
+
+    return htmlLines.join("\n");
+  }
+
+  function renderMarkdownText(text) {
+    return parseMarkdownToHtml(text);
+  }
+
+  function renderMessages() {
+    messagesListEl.innerHTML = "";
+    currentSession.messages.forEach((msg) => {
+      const msgDiv = document.createElement("div");
+      msgDiv.className = `fd-message ${msg.role}`;
+      
+      const timeStr = msg.timestamp
+        ? new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        : "";
+
+      msgDiv.innerHTML = `
+        <div class="fd-bubble">${renderMarkdownText(msg.content)}</div>
+        <div class="fd-msg-meta">${timeStr}</div>
+      `;
+      messagesListEl.appendChild(msgDiv);
+    });
+    messagesListEl.scrollTop = messagesListEl.scrollHeight;
+  }
+
+  renderMessages();
+
+  // Toggle Chat
+  launcher.addEventListener("click", () => {
+    container.classList.toggle("hidden");
+  });
+
+  container.querySelector("#fd-btn-close").addEventListener("click", () => {
+    container.classList.add("hidden");
+  });
+
+  // Action 1: Copy Last Response in Markdown
+  container.querySelector("#fd-btn-copy-last").addEventListener("click", async () => {
+    const assistantMsgs = currentSession.messages.filter((m) => m.role === "assistant" && m.content !== STARTING_MSG);
+    if (assistantMsgs.length === 0) {
+      showToast("No assistant response to copy.");
+      return;
+    }
+    const lastMsg = assistantMsgs[assistantMsgs.length - 1];
+    const markdownContent = lastMsg.content;
+
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(markdownContent);
+      } else {
+        const tempArea = document.createElement("textarea");
+        tempArea.value = markdownContent;
+        document.body.appendChild(tempArea);
+        tempArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(tempArea);
+      }
+      showToast("Last response copied (Markdown)!");
+    } catch (e) {
+      showToast("Failed to copy response.");
+    }
+  });
+
+  // Action 2: Copy Entire Conversation in Markdown
+  container.querySelector("#fd-btn-copy-all").addEventListener("click", async () => {
+    const validMsgs = currentSession.messages.filter((m) => m.content !== STARTING_MSG);
+    if (validMsgs.length === 0) {
+      showToast("Conversation is empty.");
+      return;
+    }
+    let conversationMd = `# ${AGENT_NAME} - Executive Briefing Transcript\n`;
+    conversationMd += `**Date:** ${new Date(currentSession.createdAt).toLocaleString()}\n\n---\n\n`;
+
+    validMsgs.forEach((msg) => {
+      const sender = msg.role === "user" ? "👤 User Query" : `🤖 Executive Analysis`;
+      conversationMd += `### ${sender}\n${msg.content}\n\n`;
+    });
+
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(conversationMd);
+      } else {
+        const tempArea = document.createElement("textarea");
+        tempArea.value = conversationMd;
+        document.body.appendChild(tempArea);
+        tempArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(tempArea);
+      }
+      showToast("Entire conversation copied!");
+    } catch (e) {
+      showToast("Failed to copy conversation.");
+    }
+  });
+
+  // Action 3: Export PDF Helper (Executive Paper Format)
+  async function exportConversationPdf(mode) {
+    let assistantMsgs = currentSession.messages.filter(
+      (m) => m.role === "assistant" && m.content !== STARTING_MSG && m.content !== "Thinking..."
+    );
+
+    if (assistantMsgs.length === 0) {
+      showToast("No response content to export.");
+      return;
+    }
+
+    let targetMsgs = mode === "last" ? [assistantMsgs[assistantMsgs.length - 1]] : assistantMsgs;
+
+    showToast(`Generating Executive Document (${mode === "last" ? "Last Section" : "Full Report"})...`);
+
+    let wrapper = null;
+    try {
+      if (typeof window.html2pdf === "undefined") {
+        await loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js");
+      }
+
+      wrapper = document.createElement("div");
+      wrapper.style.position = "absolute";
+      wrapper.style.top = "-9999px";
+      wrapper.style.left = "-9999px";
+      wrapper.style.width = "750px";
+      wrapper.style.background = "#ffffff";
+      wrapper.style.margin = "0";
+      wrapper.style.padding = "0";
+      wrapper.style.zIndex = "-99999";
+
+      const printDiv = document.createElement("div");
+      printDiv.className = "pdf-doc";
+      printDiv.style.width = "750px";
+      printDiv.style.margin = "0";
+      printDiv.style.padding = "24px";
+      printDiv.style.boxSizing = "border-box";
+      printDiv.style.fontFamily = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
+      printDiv.style.color = "#1E293B";
+      printDiv.style.background = "#ffffff";
+      printDiv.style.fontSize = "13px";
+      printDiv.style.lineHeight = "1.6";
+      printDiv.style.textAlign = "left";
+
+      const docTitle = currentSession.title && currentSession.title !== "New Conversation"
+        ? currentSession.title
+        : "Executive Intelligence Report";
+
+      const dateStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+
+      let pdfHtml = `
+        <style>
+          .pdf-doc, .pdf-doc * {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+            text-align: left !important;
+          }
+          .pdf-header {
+            border-bottom: 2px solid #031B4E;
+            padding-bottom: 12px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            page-break-inside: avoid;
+            text-align: left !important;
+          }
+          .pdf-section {
+            margin-bottom: 20px;
+            page-break-inside: auto;
+            text-align: left !important;
+          }
+          h1 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #031B4E;
+            margin: 18px 0 8px 0;
+            line-height: 1.3;
+            page-break-after: avoid;
+            page-break-inside: avoid;
+            text-align: left !important;
+          }
+          h2 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #031B4E;
+            margin: 16px 0 6px 0;
+            line-height: 1.3;
+            border-bottom: 1px solid #CBD5E1;
+            padding-bottom: 4px;
+            page-break-after: avoid;
+            page-break-inside: avoid;
+            text-align: left !important;
+          }
+          h3 {
+            font-size: 14px;
+            font-weight: 700;
+            color: #0F172A;
+            margin: 14px 0 4px 0;
+            line-height: 1.3;
+            page-break-after: avoid;
+            page-break-inside: avoid;
+            text-align: left !important;
+          }
+          p, li, blockquote {
+            font-size: 13px;
+            color: #334155;
+            line-height: 1.6;
+            margin: 0 0 8px 0;
+            text-align: left !important;
+          }
+          strong, b {
+            font-weight: 600;
+            color: #0F172A;
+          }
+          ul, ol {
+            margin: 6px 0 12px 0;
+            padding-left: 20px;
+            line-height: 1.6;
+            text-align: left !important;
+          }
+          li {
+            margin-bottom: 4px;
+            text-align: left !important;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 14px 0;
+            font-size: 12px;
+            page-break-inside: auto;
+            table-layout: fixed;
+            text-align: left !important;
+          }
+          tr {
+            page-break-inside: avoid;
+            text-align: left !important;
+          }
+          th, td {
+            padding: 8px 10px;
+            border: 1px solid #CBD5E1;
+            word-wrap: break-word;
+            word-break: break-word;
+            font-size: 12px;
+            text-align: left !important;
+          }
+          th {
+            background: #F1F5F9;
+            font-weight: 600;
+            color: #1E293B;
+            text-align: left !important;
+          }
+          .pdf-footer {
+            margin-top: 32px;
+            border-top: 1px solid #CBD5E1;
+            padding-top: 10px;
+            font-size: 10px;
+            color: #94A3B8;
+            display: flex;
+            justify-content: space-between;
+            page-break-inside: avoid;
+            text-align: left !important;
+          }
+        </style>
+        <div class="pdf-header">
+          <div>
+            <div style="font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #0061EB; margin-bottom: 4px;">Executive Briefing Paper</div>
+            <h1 style="font-size: 20px; font-weight: 700; color: #031B4E; margin: 0; line-height: 1.3;">${docTitle}</h1>
+          </div>
+          <div style="text-align: right !important; font-size: 11px; color: #64748B; line-height: 1.4;">
+            <div><strong>Date:</strong> ${dateStr}</div>
+            <div><strong>Classification:</strong> Confidential</div>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 16px; text-align: left !important;">
+      `;
+
+      targetMsgs.forEach((msg, idx) => {
+        const bodyContent = parseMarkdownToHtml(msg.content);
+        pdfHtml += `
+          <div class="pdf-section">
+            ${targetMsgs.length > 1 ? `<div style="font-size: 11px; font-weight: 700; color: #031B4E; text-transform: uppercase; letter-spacing: 1px; font-family: sans-serif; margin-bottom: 8px;">Section ${idx + 1}</div>` : ''}
+            <div>${bodyContent}</div>
+          </div>
+        `;
+      });
+
+      pdfHtml += `
+        </div>
+        <div class="pdf-footer">
+          <span>FolioDesk Executive Intelligence Systems</span>
+          <span>Strictly Confidential</span>
+        </div>
+      `;
+
+      printDiv.innerHTML = pdfHtml;
+      wrapper.appendChild(printDiv);
+      document.body.appendChild(wrapper);
+
+      const filePrefix = mode === "last" ? "Executive_Brief" : "Executive_Report";
+      const opt = {
+        margin: [10, 10, 10, 10],
+        filename: `${filePrefix}_${Date.now()}.pdf`,
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          logging: false
+        },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        pagebreak: { mode: ["avoid-all", "css", "legacy"] }
+      };
+
+      await window.html2pdf().set(opt).from(printDiv).save();
+      showToast("Executive PDF downloaded!");
+    } catch (e) {
+      console.error("PDF Export Error:", e);
+      showToast("Failed to generate Executive PDF.");
+    } finally {
+      if (wrapper && wrapper.parentNode) {
+        wrapper.parentNode.removeChild(wrapper);
+      }
+    }
+  }
+
+  container.querySelector("#fd-btn-pdf-last").addEventListener("click", () => exportConversationPdf("last"));
+  container.querySelector("#fd-btn-pdf-all").addEventListener("click", () => exportConversationPdf("all"));
+
+  // Action 4: New Chat
+  container.querySelector("#fd-btn-new-chat").addEventListener("click", () => {
+    currentSession = createNewSession();
+    renderMessages();
+    showToast("Started new conversation.");
+  });
+
+  // Action 5: History Drawer
+  const historyDrawer = container.querySelector("#fd-history-drawer");
+  const historyListEl = container.querySelector("#fd-history-list");
+
+  function renderHistoryList() {
+    historyListEl.innerHTML = "";
+    const sessions = getStoredSessions();
+
+    if (sessions.length === 0) {
+      historyListEl.innerHTML = '<div style="color:#94A3B8; font-size:13px; text-align:center; padding:20px;">No saved history.</div>';
+      return;
+    }
+
+    sessions.forEach((s) => {
+      const itemDiv = document.createElement("div");
+      itemDiv.className = `fd-history-item ${s.id === currentSession.id ? "active" : ""}`;
+      
+      const dateStr = s.updatedAt ? new Date(s.updatedAt).toLocaleDateString() : "";
+
+      itemDiv.innerHTML = `
+        <div class="fd-history-item-info">
+          <div class="fd-history-item-title">${s.title || "Conversation"}</div>
+          <div class="fd-history-item-date">${dateStr} (${s.messages.length} messages)</div>
+        </div>
+        <button class="fd-history-item-del" title="Delete conversation">&times;</button>
+      `;
+
+      itemDiv.querySelector(".fd-history-item-info").addEventListener("click", () => {
+        currentSession = s;
+        localStorage.setItem(STORAGE_KEY_ACTIVE, s.id);
+        renderMessages();
+        historyDrawer.classList.remove("open");
+        showToast("Switched conversation.");
+      });
+
+      itemDiv.querySelector(".fd-history-item-del").addEventListener("click", (e) => {
+        e.stopPropagation();
+        const updated = getStoredSessions().filter((item) => item.id !== s.id);
+        saveStoredSessions(updated);
+        if (s.id === currentSession.id) {
+          currentSession = createNewSession();
+          renderMessages();
+        }
+        renderHistoryList();
+        showToast("Conversation deleted.");
+      });
+
+      historyListEl.appendChild(itemDiv);
+    });
+  }
+
+  container.querySelector("#fd-btn-history").addEventListener("click", () => {
+    renderHistoryList();
+    historyDrawer.classList.add("open");
+  });
+
+  container.querySelector("#fd-btn-close-drawer").addEventListener("click", () => {
+    historyDrawer.classList.remove("open");
+  });
+
+  // Sending Messages & Streaming Assistant Responses
+  const inputText = container.querySelector("#fd-input-text");
+  const sendBtn = container.querySelector("#fd-btn-send");
+
+  async function handleSendMessage() {
+    const text = inputText.value.trim();
+    if (!text) return;
+
+    inputText.value = "";
+    inputText.style.height = "40px";
+
+    const userMsg = {
+      id: "msg_" + Date.now(),
+      role: "user",
+      content: text,
+      timestamp: new Date().toISOString()
+    };
+    currentSession.messages.push(userMsg);
+    updateActiveSessionMessages(currentSession.messages);
+    renderMessages();
+
+    const assistantMsg = {
+      id: "msg_" + (Date.now() + 1),
+      role: "assistant",
+      content: "Thinking...",
+      timestamp: new Date().toISOString()
+    };
+    currentSession.messages.push(assistantMsg);
+    renderMessages();
+
+    try {
+      const token = await getAccessToken();
+
+      const res = await fetch(`${API_URL}/api/v1/chat/completions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          messages: currentSession.messages.slice(0, -1).map((m) => ({
+            role: m.role,
+            content: m.content
+          })),
+          stream: true
+        })
+      });
+
+      if (!res.ok) {
+        throw new Error("Chat request failed: " + res.statusText);
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder("utf-8");
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed.startsWith("data: ")) {
+            const dataStr = trimmed.replace(/^data:\s*/, "");
+            if (dataStr === "[DONE]") break;
+            try {
+              const parsed = JSON.parse(dataStr);
+              const delta = parsed.choices?.[0]?.delta?.content || "";
+              if (delta) {
+                if (assistantMsg.content === "Thinking...") {
+                  assistantMsg.content = "";
+                }
+                assistantMsg.content += delta;
+                renderMessages();
+              }
+            } catch (e) {
+              // Ignore non-JSON lines
+            }
+          }
+        }
+      }
+
+      if (!assistantMsg.content || assistantMsg.content === "Thinking...") {
+        assistantMsg.content = "Received empty response from assistant.";
+      }
+      updateActiveSessionMessages(currentSession.messages);
+      renderMessages();
+    } catch (err) {
+      console.error("Chatbot Send Error:", err);
+      assistantMsg.content = "Sorry, I encountered an error responding to your request.";
+      updateActiveSessionMessages(currentSession.messages);
+      renderMessages();
+    }
+  }
+
+  sendBtn.addEventListener("click", handleSendMessage);
+  inputText.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  });
+
+  inputText.addEventListener("input", () => {
+    inputText.style.height = "40px";
+    inputText.style.height = Math.min(inputText.scrollHeight, 100) + "px";
+  });
+})();
+
+    //]]>
+    </script>
+  </body>
+</html>
