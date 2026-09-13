@@ -3,7 +3,7 @@ import Link from "next/link";
 import { requireAdmin } from "../../../../lib/auth";
 import { db } from "../../../../lib/db";
 import { getCommissionSettings } from "../../../../lib/settings";
-import { calculateClosureDeadline } from "../../../../lib/funnel";
+import { calculateClosureDeadline, type ClosureLogRecord, type CollectionRecord, type DealRecord, type FunnelStepRecord } from "../../../../lib/funnel";
 import AdminNav from "../../AdminNav";
 import DealDetailView from "./DealDetailView";
 
@@ -26,7 +26,7 @@ export default async function AdminDealDetailPage({
   const { id } = await params;
   const dealId = Number(id);
 
-  const [deals] = await db().execute<any[]>(
+  const [deals] = await db().execute<DatabaseResultRow<DealRecord>[]>(
     `SELECT dp.*,
        a.legal_name AS affiliate_legal_name,
        a.affiliate_code AS affiliate_code,
@@ -42,7 +42,7 @@ export default async function AdminDealDetailPage({
   const deal = deals[0];
   if (!deal) redirect("/admin/deals");
 
-  const [steps] = await db().execute<any[]>(
+  const [steps] = await db().execute<DatabaseResultRow<FunnelStepRecord>[]>(
     `SELECT s.*, u.full_name AS submitter_name, r.full_name AS reviewer_name
      FROM deal_funnel_steps s
      JOIN users u ON u.id = s.submitted_by_user_id
@@ -52,7 +52,7 @@ export default async function AdminDealDetailPage({
     [dealId]
   );
 
-  const [closureLogs] = await db().execute<any[]>(
+  const [closureLogs] = await db().execute<DatabaseResultRow<ClosureLogRecord>[]>(
     `SELECT l.*, u.full_name AS performer_name
      FROM deal_closure_logs l
      JOIN users u ON u.id = l.performed_by_user_id
@@ -61,7 +61,7 @@ export default async function AdminDealDetailPage({
     [dealId]
   );
 
-  const [collections] = await db().execute<any[]>(
+  const [collections] = await db().execute<DatabaseResultRow<CollectionRecord>[]>(
     `SELECT * FROM deal_collections WHERE deal_id=? ORDER BY created_at DESC`,
     [dealId]
   );

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin, getBaseUrl } from "../../../../../lib/auth";
 import { settleConsolidatedPayout } from "../../../../../lib/funnel";
+import { errorMessage } from "../../../../../lib/errors";
 
 export async function POST(req: Request) {
   const admin = await requireAdmin();
@@ -39,10 +40,10 @@ export async function POST(req: Request) {
       ),
       303
     );
-  } catch (err: any) {
+  } catch (err) {
     return NextResponse.redirect(
       new URL(
-        `/foliodesk/admin/payouts?error=${encodeURIComponent(err?.message || "Failed to settle consolidated payout")}`,
+        `/foliodesk/admin/payouts?error=${encodeURIComponent(errorMessage(err, "Failed to settle consolidated payout"))}`,
         getBaseUrl(req)
       ),
       303

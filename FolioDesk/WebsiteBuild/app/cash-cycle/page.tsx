@@ -21,7 +21,7 @@ export default function CashCyclePage() {
 
       <div className="admin-card" style={{ background: "#f8fafc", padding: 24, borderRadius: 8, marginBottom: 32, borderLeft: "4px solid #0f766e" }}>
         <p style={{ fontSize: 18, fontStyle: "italic", color: "#1e293b", margin: 0, lineHeight: 1.6 }}>
-          "Every functional category in an engineering ERP exists to serve a single underlying business reality: the movement of Cash through the firm, out into committed obligations, and back again as collected revenue. Profitability is not something to be discovered at project closeout—it must be managed in real time during execution."
+          &ldquo;Every functional category in an engineering ERP exists to serve a single underlying business reality: the movement of Cash through the firm, out into committed obligations, and back again as collected revenue. Profitability is not something to be discovered at project closeout—it must be managed in real time during execution.&rdquo;
         </p>
       </div>
 

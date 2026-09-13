@@ -30,7 +30,7 @@ export default async function AdminPayoutsPage({
   }
 
   // Query all payment advices with beneficiary affiliate & collection details
-  const [advices] = await db().execute<any[]>(
+  const [advices] = await db().execute<DatabaseRow[]>(
     `SELECT pa.*,
        a.legal_name AS beneficiary_legal_name,
        a.affiliate_code AS beneficiary_affiliate_code,

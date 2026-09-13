@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 export default function CopyReferralLink({
   affiliateCode,
@@ -10,23 +10,19 @@ export default function CopyReferralLink({
   compact?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
-  const [fullUrl, setFullUrl] = useState<string>("");
-
-  useEffect(() => {
-    const origin = typeof window !== "undefined" ? window.location.origin : "http://127.0.0.1:80";
-    setFullUrl(`${origin}/foliodesk/register?upline=${affiliateCode}`);
-  }, [affiliateCode]);
-
-  const displayUrl = fullUrl || `http://127.0.0.1:80/foliodesk/register?upline=${affiliateCode}`;
+  const referralPath = `/foliodesk/register?upline=${affiliateCode}`;
+  const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "");
+  const displayUrl = configuredSiteUrl ? `${configuredSiteUrl}/register?upline=${affiliateCode}` : referralPath;
 
   const copyToClipboard = async () => {
     try {
+      const copyValue = new URL(referralPath, window.location.origin).toString();
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(displayUrl);
+        await navigator.clipboard.writeText(copyValue);
       } else {
         // Fallback selection copy
         const textarea = document.createElement("textarea");
-        textarea.value = displayUrl;
+        textarea.value = copyValue;
         textarea.style.position = "fixed";
         textarea.style.opacity = "0";
         document.body.appendChild(textarea);

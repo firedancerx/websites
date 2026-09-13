@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import type { DealRecord, FunnelStepRecord, ClosureLogRecord, CollectionRecord, FunnelStatus, StepReviewStatus } from "../../../../lib/funnel";
+import type { DealRecord, FunnelStepRecord, ClosureLogRecord, CollectionRecord, StepReviewStatus } from "../../../../lib/funnel";
 import ToggleTestModeButton from "../../ToggleTestModeButton";
 import InvoiceDocumentModal from "../../../components/InvoiceDocumentModal";
 
@@ -11,7 +10,6 @@ export default function DealDetailView({
   steps,
   closureLogs,
   collections,
-  closurePeriodDays,
   daysRemaining,
   isOverdue,
   deadlineDateStr,
@@ -793,7 +791,7 @@ export default function DealDetailView({
         <InvoiceDocumentModal
           deal={{
             ...deal,
-            invoice_target: invoiceTarget as any,
+            invoice_target: invoiceTarget,
           }}
           onClose={() => setIsInvoiceDocOpen(false)}
           onRecordCollection={() => {

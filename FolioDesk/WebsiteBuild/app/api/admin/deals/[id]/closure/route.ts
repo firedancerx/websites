@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin, getBaseUrl } from "../../../../../../lib/auth";
 import { forceCloseDeal, extendDealDirectly, adjudicateDealAppeal } from "../../../../../../lib/funnel";
+import { errorMessage } from "../../../../../../lib/errors";
 
 export async function POST(
   req: Request,
@@ -72,9 +73,9 @@ export async function POST(
     }
 
     return NextResponse.redirect(new URL(`/foliodesk/admin/deals/${dealId}`, getBaseUrl(req)), 303);
-  } catch (err: any) {
+  } catch (err) {
     return NextResponse.redirect(
-      new URL(`/foliodesk/admin/deals/${dealId}?error=${encodeURIComponent(err?.message || "Failed to process closure action")}`, getBaseUrl(req)),
+      new URL(`/foliodesk/admin/deals/${dealId}?error=${encodeURIComponent(errorMessage(err, "Failed to process closure action"))}`, getBaseUrl(req)),
       303
     );
   }

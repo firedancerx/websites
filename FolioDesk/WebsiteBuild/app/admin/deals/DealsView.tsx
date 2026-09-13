@@ -100,7 +100,6 @@ export default function DealsView({
   }, [deals, activeTab, searchQuery]);
 
   // Aggregate Metrics
-  const totalValue = deals.reduce((sum, d) => sum + Number(d.contract_value_myr || 0), 0);
   const totalCollected = deals.reduce((sum, d) => sum + Number(d.total_collected_myr || 0), 0);
   const activePipelineValue = deals
     .filter((d) => !["ABORTED", "UNCOLLECTIBLE"].includes(d.status))
@@ -778,8 +777,8 @@ export default function DealsView({
             affiliate_legal_name: viewInvoiceDeal.affiliate_legal_name || "N/A",
             affiliate_code: viewInvoiceDeal.affiliate_code || "N/A",
             affiliate_email: viewInvoiceDeal.affiliate_email || viewInvoiceDeal.customer_email,
-            invoice_target: (viewInvoiceDeal as any).invoice_target || "PROSPECT",
-            total_collected_myr: (viewInvoiceDeal as any).total_collected_myr || 0,
+            invoice_target: viewInvoiceDeal.invoice_target || "PROSPECT",
+            total_collected_myr: viewInvoiceDeal.total_collected_myr || 0,
           }}
           onClose={() => setViewInvoiceDeal(null)}
           onRecordCollection={() => {

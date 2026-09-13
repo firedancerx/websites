@@ -283,6 +283,8 @@ export default function InvoiceDocumentModal({
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "2px solid #0f766e", paddingBottom: 24, marginBottom: 24 }}>
             <div>
               <div style={{ marginBottom: 12 }}>
+                {/* The browser-native image is intentional for reliable printable invoice rendering. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="/foliodesk/FolioDesk-logo-transparent.png"
                   alt="FolioDesk Enterprise Document Platform"

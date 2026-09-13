@@ -12,7 +12,7 @@ export interface PackageItem {
 }
 
 export async function getActivePackages(): Promise<PackageItem[]> {
-  const [rows] = await db().execute<any[]>(
+  const [rows] = await db().execute<DatabaseRow[]>(
     "SELECT * FROM packages WHERE is_active = 1 ORDER BY unit_price_myr ASC, id ASC"
   );
   return rows.map((r) => ({
@@ -26,7 +26,7 @@ export async function getActivePackages(): Promise<PackageItem[]> {
 }
 
 export async function getAllPackages(): Promise<PackageItem[]> {
-  const [rows] = await db().execute<any[]>(
+  const [rows] = await db().execute<DatabaseRow[]>(
     "SELECT * FROM packages ORDER BY is_active DESC, id ASC"
   );
   return rows.map((r) => ({

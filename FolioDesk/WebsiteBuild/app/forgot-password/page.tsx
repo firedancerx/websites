@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { currentUser, hashPassword, getBaseUrl } from "../../lib/auth";
-import { db } from "../../lib/db";
+import { currentUser } from "../../lib/auth";
 
 export const dynamic = "force-dynamic";
 export const metadata = {

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { currentUser, getBaseUrl } from "../../../../../../lib/auth";
 import { db } from "../../../../../../lib/db";
 import { submitDealAppeal } from "../../../../../../lib/funnel";
+import { errorMessage } from "../../../../../../lib/errors";
 
 export async function POST(
   req: Request,
@@ -15,7 +16,7 @@ export async function POST(
   const { id } = await params;
   const dealId = Number(id);
 
-  const [apps] = await db().execute<any[]>(
+  const [apps] = await db().execute<DatabaseRow[]>(
     "SELECT id FROM affiliate_applications WHERE user_id=? ORDER BY submitted_at DESC LIMIT 1",
     [user.id]
   );
@@ -24,7 +25,7 @@ export async function POST(
     return NextResponse.redirect(new URL("/foliodesk/portal", getBaseUrl(req)), 303);
   }
 
-  const [deals] = await db().execute<any[]>(
+  const [deals] = await db().execute<DatabaseRow[]>(
     "SELECT * FROM deal_pipeline WHERE id=? AND affiliate_id=? LIMIT 1",
     [dealId, app.id]
   );
@@ -57,9 +58,9 @@ export async function POST(
       ),
       303
     );
-  } catch (err: any) {
+  } catch (err) {
     return NextResponse.redirect(
-      new URL(`/foliodesk/portal/prospects/${dealId}?error=${encodeURIComponent(err?.message || "Failed to submit appeal")}`, getBaseUrl(req)),
+      new URL(`/foliodesk/portal/prospects/${dealId}?error=${encodeURIComponent(errorMessage(err, "Failed to submit appeal"))}`, getBaseUrl(req)),
       303
     );
   }

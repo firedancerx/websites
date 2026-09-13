@@ -4,9 +4,10 @@ import { currentUser } from "../../lib/auth";
 import { db } from "../../lib/db";
 import { getCountries, getStates } from "../../lib/db-locations";
 import { getActivePackages } from "../../lib/packages";
-import ProfileEditForm from "./ProfileEditForm";
+import ProfileEditForm, { type ApplicationData, type ProfileUpdateData } from "./ProfileEditForm";
 import RetractButton from "./RetractButton";
 import PortalTabsView, { type PortalDealItem, type PortalAdviceItem } from "./PortalTabsView";
+import type { PayoutBatchRecord } from "../../lib/funnel";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "My Profile | FolioDesk Affiliate Portal", robots: { index: false, follow: false } };
@@ -20,7 +21,7 @@ export default async function Portal({
   const user = await currentUser();
   if (!user) redirect("/login");
 
-  const [rows] = await db().execute<any[]>(
+  const [rows] = await db().execute<DatabaseRow[]>(
     "SELECT * FROM affiliate_applications WHERE user_id=? ORDER BY submitted_at DESC LIMIT 1",
     [user.id]
   );
@@ -33,20 +34,20 @@ export default async function Portal({
   const states = await getStates();
   const packages = await getActivePackages();
 
-  let deals: any[] = [];
-  let advices: any[] = [];
-  let batches: any[] = [];
+  let deals: DatabaseRow[] = [];
+  let advices: DatabaseRow[] = [];
+  let batches: PayoutBatchRecord[] = [];
   let directDownlinesCount = 0;
-  let latestProfileUpdate: any = null;
+  let latestProfileUpdate: ProfileUpdateData | null = null;
 
   if (a) {
-    const [upRows] = await db().execute<any[]>(
+    const [upRows] = await db().execute<DatabaseRow[]>(
       "SELECT * FROM affiliate_profile_updates WHERE application_id=? ORDER BY created_at DESC LIMIT 1",
       [a.id]
     );
-    latestProfileUpdate = upRows[0] || null;
+    latestProfileUpdate = (upRows[0] as DatabaseResultRow<ProfileUpdateData> | undefined) || null;
 
-    const [dRows] = await db().execute<any[]>(
+    const [dRows] = await db().execute<DatabaseRow[]>(
       `SELECT dp.*, 
          COALESCE((SELECT SUM(c.collected_amount_myr) FROM deal_collections c WHERE c.deal_id = dp.id AND c.approval_status = 'APPROVED'), 0) AS total_collected_myr
        FROM deal_pipeline dp
@@ -56,7 +57,7 @@ export default async function Portal({
     );
     deals = dRows;
 
-    const [advRows] = await db().execute<any[]>(
+    const [advRows] = await db().execute<DatabaseRow[]>(
       `SELECT pa.*, 
          dp.deal_code, 
          dp.customer_name, 
@@ -72,7 +73,7 @@ export default async function Portal({
     );
     advices = advRows;
 
-    const [batchRows] = await db().execute<any[]>(
+    const [batchRows] = await db().execute<DatabaseRow[]>(
       `SELECT pb.*, u.full_name AS disburser_name 
        FROM payout_batches pb 
        LEFT JOIN users u ON u.id = pb.disbursed_by 
@@ -80,10 +81,10 @@ export default async function Portal({
        ORDER BY pb.disbursed_at DESC`,
       [a.id]
     );
-    batches = batchRows;
+    batches = batchRows as DatabaseResultRow<PayoutBatchRecord>[];
 
     if (a.affiliate_code) {
-      const [downRows] = await db().execute<any[]>(
+      const [downRows] = await db().execute<DatabaseRow[]>(
         "SELECT COUNT(*) AS count FROM affiliate_applications WHERE upline_affiliate_code=?",
         [a.affiliate_code]
       );
@@ -145,12 +146,20 @@ export default async function Portal({
       {q.error && <p className="notice error" style={{ marginBottom: 20 }}>⚠️ {q.error}</p>}
 
       {isEditing ? (
-        <ProfileEditForm user={user} application={a} pendingUpdate={latestProfileUpdate} countries={countries} states={states} error={q.error} success={q.success} />
+        <ProfileEditForm
+          user={user as DatabaseResultRow<{ id: number; full_name: string; email: string }>}
+          application={a as DatabaseResultRow<ApplicationData> | undefined}
+          pendingUpdate={latestProfileUpdate}
+          countries={countries}
+          states={states}
+          error={q.error}
+          success={q.success}
+        />
       ) : (
         <PortalTabsView
           deals={deals as PortalDealItem[]}
           advices={advices as PortalAdviceItem[]}
-          batches={batches as any[]}
+          batches={batches}
           isRetracted={isRetracted}
           isSuspended={isSuspended}
           affiliateId={a?.id}
@@ -231,10 +240,10 @@ export default async function Portal({
                   {latestProfileUpdate.postcode !== a.postcode && (
                     <div><small style={{ color: "#64748b" }}>Proposed Postcode</small><p style={{ fontWeight: 700, color: "#1e40af", margin: "2px 0" }}>{latestProfileUpdate.postcode}</p></div>
                   )}
-                  {latestProfileUpdate.id_doc_path !== a.id_doc_path && (
+                  {latestProfileUpdate.id_doc_path && latestProfileUpdate.id_doc_path !== a.id_doc_path && (
                     <div><small style={{ color: "#64748b" }}>New ID Document Uploaded</small><p style={{ fontWeight: 700, color: "#1e40af", margin: "2px 0" }}><a href={latestProfileUpdate.id_doc_path} target="_blank" rel="noreferrer">📄 View proposed ID doc</a></p></div>
                   )}
-                  {latestProfileUpdate.holding_id_path !== a.holding_id_path && (
+                  {latestProfileUpdate.holding_id_path && latestProfileUpdate.holding_id_path !== a.holding_id_path && (
                     <div><small style={{ color: "#64748b" }}>New Photo Holding ID Uploaded</small><p style={{ fontWeight: 700, color: "#1e40af", margin: "2px 0" }}><a href={latestProfileUpdate.holding_id_path} target="_blank" rel="noreferrer">📷 View proposed photo holding ID</a></p></div>
                   )}
                 </div>

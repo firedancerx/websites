@@ -30,7 +30,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const [rows] = await db().execute<any[]>("SELECT password_hash FROM users WHERE id=? LIMIT 1", [user.id]);
+  const [rows] = await db().execute<DatabaseRow[]>("SELECT password_hash FROM users WHERE id=? LIMIT 1", [user.id]);
   const storedHash = rows[0]?.password_hash;
 
   if (!storedHash || !verifyPassword(currentPassword, storedHash)) {

@@ -257,6 +257,7 @@ CREATE TABLE IF NOT EXISTS payment_advices (
   CONSTRAINT fk_adv_deal FOREIGN KEY (deal_id) REFERENCES deal_pipeline(id) ON DELETE CASCADE,
   CONSTRAINT fk_adv_affiliate FOREIGN KEY (beneficiary_affiliate_id) REFERENCES affiliate_applications(id) ON DELETE CASCADE,
   CONSTRAINT fk_adv_batch FOREIGN KEY (payout_batch_id) REFERENCES payout_batches(id) ON DELETE SET NULL,
+  UNIQUE KEY uq_adv_collection_beneficiary_type (collection_id, beneficiary_affiliate_id, beneficiary_type),
   INDEX idx_adv_beneficiary (beneficiary_affiliate_id),
   INDEX idx_adv_status (payout_status),
   INDEX idx_adv_batch (payout_batch_id)

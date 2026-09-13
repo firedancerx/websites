@@ -10,7 +10,7 @@ export async function POST(req: Request) {
     return NextResponse.redirect(new URL("/foliodesk/login", getBaseUrl(req)), 303);
   }
 
-  const [apps] = await db().execute<any[]>(
+  const [apps] = await db().execute<DatabaseRow[]>(
     "SELECT id, status FROM affiliate_applications WHERE user_id=? ORDER BY submitted_at DESC LIMIT 1",
     [user.id]
   );
@@ -71,7 +71,7 @@ export async function POST(req: Request) {
   }
 
   const dealCode = generateDealCode();
-  const [dealRes]: any = await db().execute(
+  const [dealRes] = await db().execute<DatabaseResult>(
     `INSERT INTO deal_pipeline 
       (affiliate_id, deal_code, customer_name, customer_email, customer_phone, package_name, package_count, contract_value_myr, status, status_note, is_test)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'LEAD_SUBMITTED', ?, ?)`,

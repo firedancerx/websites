@@ -3,7 +3,7 @@ import Link from "next/link";
 import { currentUser } from "../../../../lib/auth";
 import { db } from "../../../../lib/db";
 import { getCommissionSettings } from "../../../../lib/settings";
-import { calculateClosureDeadline } from "../../../../lib/funnel";
+import { calculateClosureDeadline, type ClosureLogRecord, type DealRecord, type FunnelStepRecord } from "../../../../lib/funnel";
 import ProspectJourneyView from "./ProspectJourneyView";
 
 export const dynamic = "force-dynamic";
@@ -25,21 +25,21 @@ export default async function AffiliateProspectDetailPage({
   const { id } = await params;
   const dealId = Number(id);
 
-  const [apps] = await db().execute<any[]>(
+  const [apps] = await db().execute<DatabaseRow[]>(
     "SELECT id FROM affiliate_applications WHERE user_id=? ORDER BY submitted_at DESC LIMIT 1",
     [user.id]
   );
   const a = apps[0];
   if (!a) redirect("/portal");
 
-  const [deals] = await db().execute<any[]>(
+  const [deals] = await db().execute<DatabaseResultRow<DealRecord>[]>(
     "SELECT * FROM deal_pipeline WHERE id=? AND affiliate_id=? LIMIT 1",
     [dealId, a.id]
   );
   const deal = deals[0];
   if (!deal) redirect("/portal/prospects");
 
-  const [steps] = await db().execute<any[]>(
+  const [steps] = await db().execute<DatabaseResultRow<FunnelStepRecord>[]>(
     `SELECT s.*, u.full_name AS submitter_name, r.full_name AS reviewer_name
      FROM deal_funnel_steps s
      JOIN users u ON u.id = s.submitted_by_user_id
@@ -49,7 +49,7 @@ export default async function AffiliateProspectDetailPage({
     [dealId]
   );
 
-  const [closureLogs] = await db().execute<any[]>(
+  const [closureLogs] = await db().execute<DatabaseResultRow<ClosureLogRecord>[]>(
     `SELECT l.*, u.full_name AS performer_name
      FROM deal_closure_logs l
      JOIN users u ON u.id = l.performed_by_user_id

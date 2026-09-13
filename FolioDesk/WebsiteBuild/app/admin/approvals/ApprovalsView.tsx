@@ -4,11 +4,11 @@ import React, { useState } from "react";
 import Link from "next/link";
 
 interface ApprovalsViewProps {
-  applications: any[];
-  profileUpdates: any[];
-  collections: any[];
-  appeals: any[];
-  steps: any[];
+  applications: DatabaseRow[];
+  profileUpdates: DatabaseRow[];
+  collections: DatabaseRow[];
+  appeals: DatabaseRow[];
+  steps: DatabaseRow[];
   totalPending: number;
 }
 
@@ -26,12 +26,12 @@ export default function ApprovalsView({
 
   const [previewItem, setPreviewItem] = useState<{
     type: "APPLICATION" | "PROFILE_UPDATE" | "COLLECTION" | "APPEAL" | "STEP";
-    data: any;
+    data: DatabaseRow;
   } | null>(null);
 
   const [rejectItem, setRejectItem] = useState<{
     type: "APPLICATION" | "PROFILE_UPDATE" | "COLLECTION" | "APPEAL" | "STEP";
-    data: any;
+    data: DatabaseRow;
   } | null>(null);
 
   return (

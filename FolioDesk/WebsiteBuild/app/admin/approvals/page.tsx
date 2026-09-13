@@ -33,7 +33,7 @@ export default async function AdminApprovalsPage({
   }
 
   // 1. Pending Affiliate Applications
-  const [pendingApplications] = await db().execute<any[]>(
+  const [pendingApplications] = await db().execute<DatabaseRow[]>(
     `SELECT a.*, u.email AS user_email 
      FROM affiliate_applications a 
      LEFT JOIN users u ON u.id = a.user_id 
@@ -42,7 +42,7 @@ export default async function AdminApprovalsPage({
   );
 
   // 2. Pending Profile & eKYC Updates
-  const [pendingProfileUpdates] = await db().execute<any[]>(
+  const [pendingProfileUpdates] = await db().execute<DatabaseRow[]>(
     `SELECT pu.*, a.affiliate_code, a.legal_name AS current_legal_name
      FROM affiliate_profile_updates pu
      JOIN affiliate_applications a ON a.id = pu.application_id
@@ -51,7 +51,7 @@ export default async function AdminApprovalsPage({
   );
 
   // 3. Pending Payment Collections
-  const [pendingCollections] = await db().execute<any[]>(
+  const [pendingCollections] = await db().execute<DatabaseRow[]>(
     `SELECT c.*, 
        d.deal_code, d.customer_name, d.contract_value_myr, d.invoice_number, d.package_name, d.package_count,
        a.legal_name AS affiliate_legal_name, a.affiliate_code
@@ -63,7 +63,7 @@ export default async function AdminApprovalsPage({
   );
 
   // 4. Pending Closure Deadline Appeals
-  const [pendingAppeals] = await db().execute<any[]>(
+  const [pendingAppeals] = await db().execute<DatabaseRow[]>(
     `SELECT d.*, 
        a.legal_name AS affiliate_legal_name, a.affiliate_code, u.email AS affiliate_email
      FROM deal_pipeline d
@@ -74,7 +74,7 @@ export default async function AdminApprovalsPage({
   );
 
   // 5. Pending Deal Funnel Steps Review
-  const [pendingFunnelSteps] = await db().execute<any[]>(
+  const [pendingFunnelSteps] = await db().execute<DatabaseRow[]>(
     `SELECT s.*, 
        d.deal_code, d.customer_name, d.status AS deal_status,
        a.legal_name AS affiliate_legal_name, a.affiliate_code

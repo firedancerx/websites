@@ -2,6 +2,7 @@
   "name": "foliodesk-website",
   "version": "1.0.0",
   "private": true,
+  "packageManager": "pnpm@11.19.0",
   "engines": {
     "node": ">=22.13.0"
   },
@@ -10,11 +11,15 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "db:migrate": "node --env-file=.env.local scripts/migrate.mjs",
+    "db:migrate": "node scripts/migrate.mjs",
+    "db:verify": "node scripts/verify-schema.mjs",
+    "db:reconcile": "node scripts/reconcile-database.mjs",
+    "db:test-migration": "node scripts/test-migration.mjs",
     "db:seed-admin": "node --env-file=.env.local scripts/seed-admin.mjs",
     "db:setup": "pnpm db:migrate && pnpm db:seed-admin"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "3.1131.0",
     "mysql2": "3.14.5",
     "next": "16.2.6",
     "react": "19.2.6",

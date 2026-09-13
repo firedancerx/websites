@@ -48,7 +48,7 @@ export async function POST(req: Request) {
     }
 
     const dealCode = generateDealCode();
-    const [res]: any = await db().execute(
+    const [res] = await db().execute<DatabaseResult>(
       `INSERT INTO deal_pipeline 
         (affiliate_id, deal_code, customer_name, customer_email, customer_phone, package_name, package_count, contract_value_myr, status, status_note, is_test)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -111,12 +111,12 @@ export async function POST(req: Request) {
       );
     }
 
-    const [existingRows] = await db().execute<any[]>("SELECT invoice_number, status FROM deal_pipeline WHERE id=? LIMIT 1", [dealId]);
+    const [existingRows] = await db().execute<DatabaseRow[]>("SELECT invoice_number, status FROM deal_pipeline WHERE id=? LIMIT 1", [dealId]);
     const existingDeal = existingRows[0] || null;
     const isReissuance = existingDeal?.invoice_number && existingDeal.invoice_number !== invoiceNumber;
 
     let query = "UPDATE deal_pipeline SET status=?, status_note=COALESCE(?, status_note), invoice_target=?";
-    const params: any[] = [targetStatus, statusNote, invoiceTarget];
+    const params: unknown[] = [targetStatus, statusNote, invoiceTarget];
 
     if (targetStatus === "SUSPENDED_EFFORT") {
       query += ", suspended_reason=?";

@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
-import { writeFile, mkdir } from "node:fs/promises";
-import { join } from "node:path";
 import { requireAdmin, getBaseUrl } from "../../../../../../lib/auth";
 import { submitDealCollection } from "../../../../../../lib/funnel";
+import { saveUpload, validateUpload } from "../../../../../../lib/storage";
+import { errorMessage } from "../../../../../../lib/errors";
 
 export async function POST(
   req: Request,
@@ -37,18 +37,14 @@ export async function POST(
 
   let proofMediaPath: string | null = null;
   if (proofFile && proofFile.size > 0) {
-    const uploadDir = join(process.cwd(), "public", "uploads", "proofs");
-    await mkdir(uploadDir, { recursive: true });
-
-    const ext = proofFile.name.split(".").pop() || "pdf";
+    const ext = validateUpload(proofFile);
     const fileName = `proof_${Date.now()}_${randomBytes(4).toString("hex")}.${ext}`;
     const fileBuffer = Buffer.from(await proofFile.arrayBuffer());
-    await writeFile(join(uploadDir, fileName), fileBuffer);
-    proofMediaPath = `/foliodesk/uploads/proofs/${fileName}`;
+    proofMediaPath = await saveUpload(["proofs", fileName], fileBuffer, proofFile.type);
   }
 
   try {
-    const { collectionId } = await submitDealCollection({
+    await submitDealCollection({
       dealId,
       invoiceNumber,
       invoiceTotalMyr,
@@ -67,9 +63,9 @@ export async function POST(
       ),
       303
     );
-  } catch (err: any) {
+  } catch (err) {
     return NextResponse.redirect(
-      new URL(`/foliodesk/admin/deals?error=${encodeURIComponent(err?.message || "Failed to record collection")}`, getBaseUrl(req)),
+      new URL(`/foliodesk/admin/deals?error=${encodeURIComponent(errorMessage(err, "Failed to record collection"))}`, getBaseUrl(req)),
       303
     );
   }

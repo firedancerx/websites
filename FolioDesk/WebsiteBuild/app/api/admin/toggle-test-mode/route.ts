@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { errorMessage } from "@/lib/errors";
 
 export async function POST(req: NextRequest) {
   const admin = await requireAdmin();
@@ -25,7 +26,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid entityType" }, { status: 400 });
     }
 
-    const [rows] = await db().execute<any[]>(
+    const [rows] = await db().execute<DatabaseRow[]>(
       `SELECT id, is_test FROM ${tableName} WHERE id = ? LIMIT 1`,
       [entityId]
     );
@@ -61,8 +62,8 @@ export async function POST(req: NextRequest) {
       is_test: newIsTest,
       message: `Data mode updated to ${newIsTest === 1 ? "TESTER" : "ACTUAL"}`,
     });
-  } catch (err: any) {
+  } catch (err) {
     console.error("Failed to toggle test mode:", err);
-    return NextResponse.json({ error: err.message || "Server error" }, { status: 500 });
+    return NextResponse.json({ error: errorMessage(err, "Server error") }, { status: 500 });
   }
 }

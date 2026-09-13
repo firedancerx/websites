@@ -15,10 +15,9 @@ Full-stack Next.js website with MySQL-backed affiliate registration, applicant s
 ## Local administrator
 
 - URL: `http://localhost:3000/login`
-- Email: `admin@foliodesk.local`
-- Initial local password: `ChangeMe!FolioDesk2026`
+- Email and password: set `ADMIN_EMAIL` and `ADMIN_PASSWORD` in `.env.local`
 
-Change the values in `.env.local`, rerun `pnpm db:seed-admin`, and never use the included local password in production.
+Run `pnpm db:seed-admin` after setting the values. Never commit administrator credentials.
 
 ## Primary routes
 

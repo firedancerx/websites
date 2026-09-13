@@ -20,7 +20,7 @@ export default async function RequestCorrectionPage({
   const { id } = await params;
   const q = await searchParams;
 
-  const [rows] = await db().execute<any[]>(
+  const [rows] = await db().execute<DatabaseRow[]>(
     "SELECT a.*, u.email, u.full_name FROM affiliate_applications a JOIN users u ON u.id=a.user_id WHERE a.id=? LIMIT 1",
     [id]
   );
@@ -29,7 +29,7 @@ export default async function RequestCorrectionPage({
   if (!a) redirect("/admin");
 
   // 1. Query Active Prospects (Sales funnel pipeline in progress)
-  const [prospects] = await db().execute<any[]>(
+  const [prospects] = await db().execute<DatabaseRow[]>(
     `SELECT d.*, 
        COALESCE((SELECT SUM(collected_amount_myr) FROM deal_collections WHERE deal_id = d.id AND approval_status = 'APPROVED'), 0) as total_collected_myr
      FROM deal_pipeline d 
@@ -39,7 +39,7 @@ export default async function RequestCorrectionPage({
     [a.id]
   );
 
-  const [clientDeals] = await db().execute<any[]>(
+  const [clientDeals] = await db().execute<DatabaseRow[]>(
     `SELECT d.*, 
        COALESCE((SELECT SUM(collected_amount_myr) FROM deal_collections WHERE deal_id = d.id AND approval_status = 'APPROVED'), 0) as total_collected_myr
      FROM deal_pipeline d 
@@ -49,12 +49,28 @@ export default async function RequestCorrectionPage({
     [a.id]
   );
 
-  const [onboardedCusts] = await db().execute<any[]>(
+  const [onboardedCusts] = await db().execute<DatabaseRow[]>(
     "SELECT * FROM onboarded_customers WHERE affiliate_id=? ORDER BY signed_date DESC",
     [a.id]
   );
 
-  const activeClientsMap = new Map<string, any>();
+  type ActiveClient = {
+    id: number;
+    deal_id: number | null;
+    deal_code: string | null;
+    customer_name: string;
+    customer_email: string;
+    customer_phone: string | null;
+    package_name: string;
+    package_count: number;
+    annual_value_myr: number | string;
+    total_collected_myr: number | string;
+    invoice_number: string | null;
+    signed_date: string;
+    status: string;
+    is_test: number;
+  };
+  const activeClientsMap = new Map<string, ActiveClient>();
   clientDeals.forEach((d) => {
     const key = (d.customer_name || "").trim().toLowerCase();
     activeClientsMap.set(key, {
@@ -102,7 +118,7 @@ export default async function RequestCorrectionPage({
   // Query latest profile update request
 
   // Query latest profile update request
-  const [updateRows] = await db().execute<any[]>(
+  const [updateRows] = await db().execute<DatabaseRow[]>(
     "SELECT * FROM affiliate_profile_updates WHERE application_id=? ORDER BY created_at DESC LIMIT 1",
     [id]
   );

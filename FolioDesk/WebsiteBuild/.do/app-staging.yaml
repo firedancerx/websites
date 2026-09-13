@@ -1,0 +1,103 @@
+name: foliodesk-staging
+region: sgp
+alerts:
+  - rule: DEPLOYMENT_FAILED
+  - rule: DOMAIN_FAILED
+services:
+  - name: web
+    environment_slug: node-js
+    github:
+      repo: firedancerx/websites
+      branch: staging
+      deploy_on_push: true
+    source_dir: /FolioDesk/WebsiteBuild
+    build_command: corepack enable && pnpm install --frozen-lockfile && pnpm run build
+    run_command: pnpm run start
+    http_port: 8080
+    instance_count: 1
+    instance_size_slug: apps-s-1vcpu-1gb
+    health_check:
+      http_path: /foliodesk/api/health
+      initial_delay_seconds: 20
+      period_seconds: 10
+      timeout_seconds: 5
+      failure_threshold: 6
+    envs:
+      - key: NODE_ENV
+        value: production
+        scope: RUN_TIME
+      - key: DATABASE_URL
+        value: ${db.DATABASE_PRIVATE_URL}
+        scope: RUN_TIME
+      - key: DATABASE_CA_CERT
+        value: ${db.CA_CERT}
+        scope: RUN_TIME
+        type: SECRET
+      - key: DATABASE_SSL_MODE
+        value: verify-ca
+        scope: RUN_TIME
+      - key: DATABASE_POOL_SIZE
+        value: "10"
+        scope: RUN_TIME
+      - key: SESSION_SECRET
+        value: REPLACE_WITH_STAGING_SECRET
+        scope: RUN_TIME
+        type: SECRET
+      - key: NEXT_PUBLIC_SITE_URL
+        value: https://staging.example.com/foliodesk
+        scope: RUN_AND_BUILD_TIME
+      - key: FILE_STORAGE_PROVIDER
+        value: spaces
+        scope: RUN_TIME
+      - key: SPACES_ENDPOINT
+        value: https://sgp1.digitaloceanspaces.com
+        scope: RUN_TIME
+      - key: SPACES_REGION
+        value: sgp1
+        scope: RUN_TIME
+      - key: SPACES_BUCKET
+        value: REPLACE_WITH_STAGING_BUCKET
+        scope: RUN_TIME
+      - key: SPACES_ACCESS_KEY
+        value: REPLACE_WITH_STAGING_ACCESS_KEY
+        scope: RUN_TIME
+        type: SECRET
+      - key: SPACES_SECRET_KEY
+        value: REPLACE_WITH_STAGING_SECRET_KEY
+        scope: RUN_TIME
+        type: SECRET
+jobs:
+  - name: schema-migrate
+    kind: PRE_DEPLOY
+    environment_slug: node-js
+    github:
+      repo: firedancerx/websites
+      branch: staging
+      deploy_on_push: true
+    source_dir: /FolioDesk/WebsiteBuild
+    build_command: corepack enable && pnpm install --frozen-lockfile --ignore-scripts
+    run_command: pnpm run db:migrate && pnpm run db:verify
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    envs:
+      - key: NODE_ENV
+        value: production
+        scope: RUN_TIME
+      - key: DATABASE_URL
+        value: ${db.DATABASE_PRIVATE_URL}
+        scope: RUN_TIME
+      - key: DATABASE_CA_CERT
+        value: ${db.CA_CERT}
+        scope: RUN_TIME
+        type: SECRET
+      - key: DATABASE_SSL_MODE
+        value: verify-ca
+        scope: RUN_TIME
+databases:
+  - name: db
+    engine: MYSQL
+    version: "8.4"
+    production: true
+    cluster_name: REPLACE_WITH_STAGING_MYSQL_CLUSTER
+    db_name: foliodesk_staging
+    db_user: foliodesk_staging_app

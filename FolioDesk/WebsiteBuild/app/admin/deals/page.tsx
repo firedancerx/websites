@@ -34,7 +34,7 @@ export default async function AdminDealsPage({
     affWhereClause = "WHERE a.is_test = 0";
   }
 
-  const [deals] = await db().execute<any[]>(
+  const [deals] = await db().execute<DatabaseRow[]>(
     `SELECT d.*, 
        a.legal_name AS affiliate_legal_name, 
        a.affiliate_code,
@@ -47,7 +47,7 @@ export default async function AdminDealsPage({
      ORDER BY d.created_at DESC`
   );
 
-  const [affiliates] = await db().execute<any[]>(
+  const [affiliates] = await db().execute<DatabaseRow[]>(
     `SELECT id, legal_name, affiliate_code 
      FROM affiliate_applications a
      ${affWhereClause ? affWhereClause + " AND (status='APPROVED' OR affiliate_code IS NOT NULL)" : "WHERE status='APPROVED' OR affiliate_code IS NOT NULL"}

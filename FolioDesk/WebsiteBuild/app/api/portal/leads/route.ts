@@ -10,7 +10,7 @@ export async function POST(req: Request) {
     return NextResponse.redirect(new URL("/foliodesk/login", getBaseUrl(req)), 303);
   }
 
-  const [apps] = await db().execute<any[]>(
+  const [apps] = await db().execute<DatabaseRow[]>(
     "SELECT id, status FROM affiliate_applications WHERE user_id=? ORDER BY submitted_at DESC LIMIT 1",
     [user.id]
   );

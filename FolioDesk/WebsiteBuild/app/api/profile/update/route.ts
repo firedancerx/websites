@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
-import { writeFile, mkdir } from "node:fs/promises";
-import { join } from "node:path";
 import { currentUser, hashPassword, getBaseUrl } from "../../../../lib/auth";
 import { db } from "../../../../lib/db";
+import { saveUpload, validateUpload } from "../../../../lib/storage";
 
 export async function POST(req: Request) {
   const user = await currentUser();
@@ -11,7 +10,7 @@ export async function POST(req: Request) {
     return NextResponse.redirect(new URL("/foliodesk/login", getBaseUrl(req)), 303);
   }
 
-  const [apps] = await db().execute<any[]>(
+  const [apps] = await db().execute<DatabaseRow[]>(
     "SELECT * FROM affiliate_applications WHERE user_id=? ORDER BY submitted_at DESC LIMIT 1",
     [user.id]
   );
@@ -45,7 +44,7 @@ export async function POST(req: Request) {
   const postcode = String(f.get("postcode") || "").trim();
 
   // Currency fetched from countries table in DB
-  const [cRows] = await db().execute<any[]>(
+  const [cRows] = await db().execute<DatabaseRow[]>(
     "SELECT currency FROM countries WHERE code=? LIMIT 1",
     [countryCode]
   );
@@ -100,31 +99,26 @@ export async function POST(req: Request) {
 
     // Handle new file uploads if provided (allowed for initial correction or APPROVED profile updates)
     if (canEditUploadsAndUpline || app.status === "APPROVED") {
-      const uploadDir = join(process.cwd(), "public", "uploads", "id-documents");
-      await mkdir(uploadDir, { recursive: true });
-
       const idDocFile = f.get("idDoc") as File | null;
       if (idDocFile && idDocFile.size > 0) {
-        const ext = idDocFile.name.split(".").pop() || "jpg";
+        const ext = validateUpload(idDocFile);
         const fileName = `id_doc_${Date.now()}_${randomBytes(4).toString("hex")}.${ext}`;
         const buf = Buffer.from(await idDocFile.arrayBuffer());
-        await writeFile(join(uploadDir, fileName), buf);
-        idDocPath = `/foliodesk/uploads/id-documents/${fileName}`;
+        idDocPath = await saveUpload(["id-documents", fileName], buf, idDocFile.type);
       }
 
       const holdingIdFile = f.get("holdingId") as File | null;
       if (holdingIdFile && holdingIdFile.size > 0) {
-        const ext = holdingIdFile.name.split(".").pop() || "jpg";
+        const ext = validateUpload(holdingIdFile);
         const fileName = `holding_id_${Date.now()}_${randomBytes(4).toString("hex")}.${ext}`;
         const buf = Buffer.from(await holdingIdFile.arrayBuffer());
-        await writeFile(join(uploadDir, fileName), buf);
-        holdingIdPath = `/foliodesk/uploads/id-documents/${fileName}`;
+        holdingIdPath = await saveUpload(["id-documents", fileName], buf, holdingIdFile.type);
       }
     }
 
     if (app.status === "APPROVED") {
       // eKYC Workflow: Create or update pending profile update request without touching active profile
-      const [existingPending] = await db().execute<any[]>(
+      const [existingPending] = await db().execute<DatabaseRow[]>(
         "SELECT id FROM affiliate_profile_updates WHERE application_id=? AND status='PENDING_APPROVAL' LIMIT 1",
         [app.id]
       );
@@ -241,7 +235,7 @@ export async function POST(req: Request) {
     const newStatus = isAwaitingOrReturned ? "SUBMITTED" : app.status;
     const newFlagIdDoc = isAwaitingOrReturned ? 0 : (app.flag_id_doc_unclear || 0);
     const newFlagHoldingId = isAwaitingOrReturned ? 0 : (app.flag_holding_id_unaccepted || 0);
-    let updatedUplineCode = canEditUploadsAndUpline ? uplineCode : app.upline_affiliate_code;
+    const updatedUplineCode = canEditUploadsAndUpline ? uplineCode : app.upline_affiliate_code;
 
     await db().execute(
       `UPDATE affiliate_applications SET 

@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
-import { writeFile, mkdir } from "node:fs/promises";
-import { join } from "node:path";
 import { db } from "../../../lib/db";
 import { hashPassword, getBaseUrl, generateAffiliateCode, currentUser } from "../../../lib/auth";
+import { saveUpload, validateUpload } from "../../../lib/storage";
+import { errorCode } from "../../../lib/errors";
 
 export async function POST(req: Request) {
   try {
@@ -71,12 +71,9 @@ export async function POST(req: Request) {
     const idDocFile = f.get("idDoc") as File | null;
     const holdingIdFile = f.get("holdingId") as File | null;
 
-    const uploadDir = join(process.cwd(), "public", "uploads", "id-documents");
-    await mkdir(uploadDir, { recursive: true });
-
     // Handle Reinstatement of an existing user & application
     if (isReinstatement && loggedInUser) {
-      const [existingApps]: any = await db().execute(
+      const [existingApps] = await db().execute<DatabaseRow[]>(
         "SELECT * FROM affiliate_applications WHERE user_id=? ORDER BY submitted_at DESC LIMIT 1",
         [loggedInUser.id]
       );
@@ -90,20 +87,18 @@ export async function POST(req: Request) {
 
       let idDocPath = prevApp.id_doc_path;
       if (idDocFile && idDocFile.size > 0) {
-        const idDocExt = idDocFile.name.split(".").pop() || "jpg";
+        const idDocExt = validateUpload(idDocFile);
         const idDocFileName = `id_doc_${Date.now()}_${randomBytes(4).toString("hex")}.${idDocExt}`;
         const idDocBuffer = Buffer.from(await idDocFile.arrayBuffer());
-        await writeFile(join(uploadDir, idDocFileName), idDocBuffer);
-        idDocPath = `/foliodesk/uploads/id-documents/${idDocFileName}`;
+        idDocPath = await saveUpload(["id-documents", idDocFileName], idDocBuffer, idDocFile.type);
       }
 
       let holdingIdPath = prevApp.holding_id_path;
       if (holdingIdFile && holdingIdFile.size > 0) {
-        const holdingIdExt = holdingIdFile.name.split(".").pop() || "jpg";
+        const holdingIdExt = validateUpload(holdingIdFile);
         const holdingIdFileName = `holding_id_${Date.now()}_${randomBytes(4).toString("hex")}.${holdingIdExt}`;
         const holdingIdBuffer = Buffer.from(await holdingIdFile.arrayBuffer());
-        await writeFile(join(uploadDir, holdingIdFileName), holdingIdBuffer);
-        holdingIdPath = `/foliodesk/uploads/id-documents/${holdingIdFileName}`;
+        holdingIdPath = await saveUpload(["id-documents", holdingIdFileName], holdingIdBuffer, holdingIdFile.type);
       }
 
       const conn = await db().getConnection();
@@ -209,24 +204,22 @@ export async function POST(req: Request) {
       );
     }
 
-    const idDocExt = idDocFile.name.split(".").pop() || "jpg";
+    const idDocExt = validateUpload(idDocFile);
     const idDocFileName = `id_doc_${Date.now()}_${randomBytes(4).toString("hex")}.${idDocExt}`;
     const idDocBuffer = Buffer.from(await idDocFile.arrayBuffer());
-    await writeFile(join(uploadDir, idDocFileName), idDocBuffer);
-    const idDocPath = `/foliodesk/uploads/id-documents/${idDocFileName}`;
+    const idDocPath = await saveUpload(["id-documents", idDocFileName], idDocBuffer, idDocFile.type);
 
-    const holdingIdExt = holdingIdFile.name.split(".").pop() || "jpg";
+    const holdingIdExt = validateUpload(holdingIdFile);
     const holdingIdFileName = `holding_id_${Date.now()}_${randomBytes(4).toString("hex")}.${holdingIdExt}`;
     const holdingIdBuffer = Buffer.from(await holdingIdFile.arrayBuffer());
-    await writeFile(join(uploadDir, holdingIdFileName), holdingIdBuffer);
-    const holdingIdPath = `/foliodesk/uploads/id-documents/${holdingIdFileName}`;
+    const holdingIdPath = await saveUpload(["id-documents", holdingIdFileName], holdingIdBuffer, holdingIdFile.type);
 
     // Generate unique 9-character affiliate code (numbers & uppercase letters)
     let affiliateCode = generateAffiliateCode();
     let isUnique = false;
     let attempts = 0;
     while (!isUnique && attempts < 10) {
-      const [dup]: any = await db().execute(
+      const [dup] = await db().execute<DatabaseRow[]>(
         "SELECT id FROM affiliate_applications WHERE affiliate_code=? LIMIT 1",
         [affiliateCode]
       );
@@ -243,12 +236,12 @@ export async function POST(req: Request) {
     const conn = await db().getConnection();
     try {
       await conn.beginTransaction();
-      const [u]: any = await conn.execute(
+      const [u] = await conn.execute<DatabaseResult>(
         "INSERT INTO users(email,password_hash,full_name,role) VALUES(?,?,?,'APPLICANT')",
         [email, hashPassword(password), fullName]
       );
       const number = `FDA-${new Date().getFullYear()}-${randomBytes(3).toString("hex").toUpperCase()}`;
-      const [a]: any = await conn.execute(
+      const [a] = await conn.execute<DatabaseResult>(
         `INSERT INTO affiliate_applications(
           user_id, application_number, applicant_type, legal_name, company_number, 
           country_code, state, town, postcode, currency, address_line1, address_line2, address_line3,
@@ -299,9 +292,9 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.redirect(new URL("/foliodesk/login?registered=1", getBaseUrl(req)), 303);
-  } catch (e: any) {
+  } catch (e) {
     const msg =
-      e?.code === "ER_DUP_ENTRY"
+      errorCode(e) === "ER_DUP_ENTRY"
         ? "An account already exists for that email or registration number"
         : "We could not save your application. Check the database connection.";
     return NextResponse.redirect(new URL(`/foliodesk/register?error=${encodeURIComponent(msg)}`, getBaseUrl(req)), 303);

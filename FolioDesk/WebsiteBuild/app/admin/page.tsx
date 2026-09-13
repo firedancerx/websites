@@ -23,7 +23,7 @@ export default async function Admin() {
     whereClause = "WHERE a.is_test = 0";
   }
 
-  const [apps] = await db().execute<any[]>(
+  const [apps] = await db().execute<DatabaseRow[]>(
     `SELECT a.*, u.email, 
       (SELECT COUNT(*) FROM deal_pipeline dp WHERE dp.affiliate_id = a.id AND dp.status IN ('LEAD_SUBMITTED', 'QUALIFIED', 'PROPOSAL_SENT', 'CONTRACT_SIGNED', 'INVOICED')) AS active_prospects_count,
       (SELECT COUNT(*) FROM deal_pipeline dp WHERE dp.affiliate_id = a.id AND dp.status IN ('PARTIAL_COLLECTED', 'FULLY_COLLECTED', 'CLIENT_ONBOARDED', 'CLOSED_WON')) AS active_clients_count,

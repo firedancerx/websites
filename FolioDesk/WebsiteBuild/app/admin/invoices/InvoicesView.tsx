@@ -118,15 +118,15 @@ export default function InvoicesView({ invoices = [] }: { invoices?: InvoiceDeal
           </div>
 
           <div style={{ display: "flex", gap: 6 }}>
-            {[
+            {([
               { key: "ALL", label: `All Invoices (${invoices.length})` },
               { key: "UNCOLLECTED", label: `⏳ Uncollected / Partial (${invoices.filter((i) => Number(i.contract_value_myr) - Number(i.total_collected_myr) > 0.01).length})` },
               { key: "PAID", label: `✓ Fully Paid (${invoices.filter((i) => Number(i.contract_value_myr) - Number(i.total_collected_myr) <= 0.01 || i.status === "FULLY_COLLECTED").length})` },
-            ].map((tab) => (
+            ] as const).map((tab) => (
               <button
                 key={tab.key}
                 type="button"
-                onClick={() => setActiveTab(tab.key as any)}
+                onClick={() => setActiveTab(tab.key)}
                 style={{
                   padding: "8px 14px",
                   borderRadius: 8,

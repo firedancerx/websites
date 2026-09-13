@@ -30,7 +30,7 @@ export default async function AdminCollectionsPage({
     whereClause = "WHERE dc.is_test = 0";
   }
 
-  const [collections] = await db().execute<any[]>(
+  const [collections] = await db().execute<DatabaseRow[]>(
     `SELECT dc.*,
        dp.deal_code,
        dp.customer_name,

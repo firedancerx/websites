@@ -21,7 +21,7 @@ export default async function AffiliateProspectsPage({
   const user = await currentUser();
   if (!user) redirect("/login");
 
-  const [apps] = await db().execute<any[]>(
+  const [apps] = await db().execute<DatabaseRow[]>(
     "SELECT * FROM affiliate_applications WHERE user_id=? ORDER BY submitted_at DESC LIMIT 1",
     [user.id]
   );
@@ -35,7 +35,7 @@ export default async function AffiliateProspectsPage({
 
   let prospects: ProspectItem[] = [];
   if (a) {
-    const [dRows] = await db().execute<any[]>(
+    const [dRows] = await db().execute<DatabaseResultRow<ProspectItem>[]>(
       `SELECT dp.*, 
          COALESCE((SELECT SUM(c.collected_amount_myr) FROM deal_collections c WHERE c.deal_id = dp.id AND c.approval_status='APPROVED'), 0) AS total_collected_myr,
          (SELECT COUNT(*) FROM deal_funnel_steps s WHERE s.deal_id = dp.id AND s.admin_review_status = 'PENDING_REVIEW') AS pending_steps_count

@@ -37,7 +37,7 @@ export async function POST(req: Request) {
     );
 
     return NextResponse.json({ success: true }, { status: 200 });
-  } catch (err: any) {
+  } catch (err) {
     console.error("Demo request error:", err);
     return NextResponse.json(
       { error: "Failed to submit demo request. Please try again later." },

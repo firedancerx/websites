@@ -1,61 +1,58 @@
 import { NextResponse } from "next/server";
-import { readFile, stat } from "node:fs/promises";
-import { join, normalize, extname } from "node:path";
+import type { RowDataPacket } from "mysql2/promise";
+import { currentUser } from "../../../lib/auth";
+import { db } from "../../../lib/db";
+import { readUpload } from "../../../lib/storage";
 
-const MIME_TYPES: Record<string, string> = {
-  ".pdf": "application/pdf",
-  ".png": "image/png",
-  ".jpg": "image/jpeg",
-  ".jpeg": "image/jpeg",
-  ".webp": "image/webp",
-  ".gif": "image/gif",
-  ".svg": "image/svg+xml",
-  ".heic": "image/heic",
-  ".heif": "image/heif",
-};
+interface AllowedUploadRow extends RowDataPacket {
+  allowed: number;
+}
 
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
   try {
+    const user = await currentUser();
+    if (!user) return new NextResponse("Unauthorized", { status: 401 });
+
     const { path: pathSegments } = await params;
 
     if (!pathSegments || pathSegments.length === 0) {
       return new NextResponse("Not Found", { status: 404 });
     }
 
-    // Prevent directory traversal
-    for (const segment of pathSegments) {
-      if (segment === ".." || segment === "." || segment.includes("\\") || segment.includes("/")) {
-        return new NextResponse("Invalid Path", { status: 400 });
-      }
+    const publicPath = `/foliodesk/uploads/${pathSegments.join("/")}`;
+    if (user.role !== "ADMIN") {
+      const [allowedRows] = await db().execute<AllowedUploadRow[]>(
+        `(SELECT 1 AS allowed FROM affiliate_applications
+          WHERE user_id=? AND (id_doc_path=? OR holding_id_path=?))
+         UNION ALL
+         (SELECT 1 AS allowed FROM affiliate_profile_updates
+          WHERE user_id=? AND (id_doc_path=? OR holding_id_path=?))
+         UNION ALL
+         (SELECT 1 AS allowed
+          FROM deal_collections dc
+          JOIN deal_pipeline dp ON dp.id=dc.deal_id
+          JOIN affiliate_applications aa ON aa.id=dp.affiliate_id
+          WHERE aa.user_id=? AND dc.proof_media_path=?)
+         LIMIT 1`,
+        [user.id, publicPath, publicPath, user.id, publicPath, publicPath, user.id, publicPath],
+      );
+      if (allowedRows.length === 0) return new NextResponse("Forbidden", { status: 403 });
     }
 
-    const baseUploadsDir = normalize(join(process.cwd(), "public", "uploads"));
-    const filePath = normalize(join(baseUploadsDir, ...pathSegments));
+    const file = await readUpload(pathSegments);
 
-    // Security check: ensure path stays within baseUploadsDir
-    if (!filePath.startsWith(baseUploadsDir)) {
-      return new NextResponse("Forbidden", { status: 403 });
-    }
-
-    const fileStat = await stat(filePath);
-    if (!fileStat.isFile()) {
-      return new NextResponse("Not Found", { status: 404 });
-    }
-
-    const fileBuffer = await readFile(filePath);
-    const ext = extname(filePath).toLowerCase();
-    const contentType = MIME_TYPES[ext] || "application/octet-stream";
-
-    return new NextResponse(fileBuffer, {
+    const body = new Blob([file.bytes as Uint8Array<ArrayBuffer>], { type: file.contentType });
+    return new NextResponse(body, {
       status: 200,
       headers: {
-        "Content-Type": contentType,
-        "Content-Length": fileStat.size.toString(),
+        "Content-Type": file.contentType,
+        "Content-Length": file.contentLength.toString(),
         "Content-Disposition": "inline",
-        "Cache-Control": "public, max-age=31536000, immutable",
+        "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff",
       },
     });
   } catch {

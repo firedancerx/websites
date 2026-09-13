@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { errorMessage } from "../../lib/errors";
 
 interface Props {
   entityType: "affiliate" | "deal" | "collection" | "payment_advice";
@@ -55,8 +56,8 @@ export default function ToggleTestModeButton({
           window.location.reload();
         }
       }
-    } catch (err: any) {
-      alert("Error updating mode: " + err.message);
+    } catch (err) {
+      alert("Error updating mode: " + errorMessage(err, "Server error"));
     } finally {
       setLoading(false);
     }

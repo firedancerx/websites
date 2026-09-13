@@ -1,4 +1,4 @@
-import RegistrationForm from "./RegistrationForm";
+import RegistrationForm, { type ExistingApp } from "./RegistrationForm";
 import { getCountries, getStates } from "../../lib/db-locations";
 import { currentUser } from "../../lib/auth";
 import { db } from "../../lib/db";
@@ -19,14 +19,14 @@ export default async function Register({
 
   // Check if current user is logged in (e.g. for reinstatement)
   const user = await currentUser();
-  let existingApp: any = null;
+  let existingApp: ExistingApp | null = null;
 
   if (user) {
-    const [rows] = await db().execute<any[]>(
+    const [rows] = await db().execute<DatabaseRow[]>(
       "SELECT * FROM affiliate_applications WHERE user_id=? ORDER BY submitted_at DESC LIMIT 1",
       [user.id]
     );
-    existingApp = rows[0] || null;
+    existingApp = (rows[0] as DatabaseResultRow<ExistingApp> | undefined) || null;
   }
 
   const isReinstatement = Boolean(

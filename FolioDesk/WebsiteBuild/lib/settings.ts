@@ -8,7 +8,7 @@ export interface CommissionSettings {
 }
 
 export async function getCommissionSettings(): Promise<CommissionSettings> {
-  const [rows] = await db().execute<any[]>(
+  const [rows] = await db().execute<DatabaseRow[]>(
     "SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('direct_commission_rate_pct', 'upline_l1_commission_rate_pct', 'upline_l2_commission_rate_pct', 'default_closure_period_days')"
   );
 
@@ -45,7 +45,7 @@ export async function updateCommissionSettings(settings: CommissionSettings): Pr
 export type DataModeFilter = "TEST" | "ACTUAL" | "ALL";
 
 export async function getAdminDataMode(): Promise<DataModeFilter> {
-  const [rows] = await db().execute<any[]>(
+  const [rows] = await db().execute<DatabaseRow[]>(
     "SELECT setting_value FROM system_settings WHERE setting_key = 'admin_data_mode' LIMIT 1"
   );
   const val = String(rows[0]?.setting_value || "TEST").toUpperCase();

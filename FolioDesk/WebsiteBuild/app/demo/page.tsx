@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { errorMessage } from "../../lib/errors";
 
 export default function DemoRequest() {
   const [loading, setLoading] = useState(false);
@@ -29,8 +30,8 @@ export default function DemoRequest() {
       }
 
       setSuccess(true);
-    } catch (err: any) {
-      setError(err.message || "An unexpected error occurred.");
+    } catch (err) {
+      setError(errorMessage(err, "An unexpected error occurred."));
     } finally {
       setLoading(false);
     }

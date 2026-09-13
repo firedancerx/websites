@@ -26,6 +26,9 @@ export interface PortalDealItem {
   invoice_target?: "PROSPECT" | "AFFILIATE" | null;
   created_at: string;
   total_collected_myr: number;
+  affiliate_legal_name?: string;
+  affiliate_code?: string;
+  affiliate_email?: string;
 }
 
 export interface PortalAdviceItem {
@@ -53,10 +56,8 @@ export interface PortalAdviceItem {
 export default function PortalTabsView({
   deals,
   advices,
-  batches = [],
   isRetracted,
   isSuspended,
-  affiliateId,
   affiliateCode,
   packages = [],
   initialTab = "PIPELINE",
@@ -774,9 +775,9 @@ export default function PortalTabsView({
         <InvoiceDocumentModal
           deal={{
             ...viewInvoiceDeal,
-            affiliate_legal_name: (viewInvoiceDeal as any).affiliate_legal_name || "N/A",
-            affiliate_code: (viewInvoiceDeal as any).affiliate_code || "N/A",
-            affiliate_email: (viewInvoiceDeal as any).affiliate_email || viewInvoiceDeal.customer_email,
+            affiliate_legal_name: viewInvoiceDeal.affiliate_legal_name || "N/A",
+            affiliate_code: viewInvoiceDeal.affiliate_code || "N/A",
+            affiliate_email: viewInvoiceDeal.affiliate_email || viewInvoiceDeal.customer_email,
             invoice_target: viewInvoiceDeal.invoice_target || "PROSPECT",
             total_collected_myr: viewInvoiceDeal.total_collected_myr || 0,
           }}

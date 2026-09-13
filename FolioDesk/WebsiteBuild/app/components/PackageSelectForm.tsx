@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import type { PackageItem } from "../../lib/packages";
 import { isValidEmail, isValidPhone } from "../../lib/validation";
 

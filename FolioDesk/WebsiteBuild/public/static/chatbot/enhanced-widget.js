@@ -58,7 +58,7 @@
     try {
       const data = localStorage.getItem(STORAGE_KEY_SESSIONS);
       return data ? JSON.parse(data) : [];
-    } catch (e) {
+    } catch {
       return [];
     }
   }
@@ -66,7 +66,7 @@
   function saveStoredSessions(sessions) {
     try {
       localStorage.setItem(STORAGE_KEY_SESSIONS, JSON.stringify(sessions));
-    } catch (e) {
+    } catch {
       console.warn("FolioDesk Chatbot: Storage limit reached.", e);
     }
   }
@@ -1027,7 +1027,7 @@
         btn.classList.remove("copied");
       }, 2000);
       showToast("Copied — paste directly into MS Word!");
-    } catch (e) {
+    } catch {
       showToast("Copy failed. Please try again.");
     }
   }
@@ -1331,7 +1331,7 @@
                   assistantMsg.content += delta;
                   renderMessages();
                 }
-              } catch (e) {
+              } catch {
                 // Ignore non-JSON lines
               }
             }

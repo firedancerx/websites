@@ -19,7 +19,7 @@ export async function createSession(userId:number){
 export async function currentUser(){
   const token=(await cookies()).get("fd_session")?.value; if(!token) return null;
   const hash=createHash("sha256").update(token).digest("hex");
-  const [rows]=await db().execute<any[]>("SELECT u.id,u.email,u.full_name,u.role,u.status FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=? AND s.expires_at>NOW() LIMIT 1",[hash]);
+  const [rows]=await db().execute<DatabaseRow[]>("SELECT u.id,u.email,u.full_name,u.role,u.status FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=? AND s.expires_at>NOW() LIMIT 1",[hash]);
   return rows[0]||null;
 }
 export async function requireAdmin(){const user=await currentUser(); return user?.role==="ADMIN"?user:null;}

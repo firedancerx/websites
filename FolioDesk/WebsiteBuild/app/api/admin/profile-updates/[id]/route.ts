@@ -16,7 +16,7 @@ export async function POST(
   const action = String(f.get("action") || "").toUpperCase();
   const adminRemarks = String(f.get("adminRemarks") || "").trim() || null;
 
-  const [rows] = await db().execute<any[]>(
+  const [rows] = await db().execute<DatabaseRow[]>(
     "SELECT * FROM affiliate_profile_updates WHERE id=? LIMIT 1",
     [id]
   );

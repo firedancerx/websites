@@ -36,7 +36,6 @@ export interface ProspectItem {
 
 export default function ProspectsListView({
   prospects,
-  closurePeriodDays,
   isRetracted,
   isSuspended,
   packages = [],

@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import type { CountryItem, StateItem } from "../../lib/db-locations";
 
-interface ApplicationData {
+export interface ApplicationData {
   id: number;
   legal_name: string;
   applicant_type: string;
@@ -33,10 +33,15 @@ interface ApplicationData {
   decision_note?: string | null;
 }
 
+export interface ProfileUpdateData extends ApplicationData {
+  full_name: string;
+  created_at: string;
+  admin_remarks: string | null;
+}
+
 export default function ProfileEditForm({
   user,
   application,
-  pendingUpdate,
   countries,
   states,
   error,
@@ -44,7 +49,7 @@ export default function ProfileEditForm({
 }: {
   user: { id: number; full_name: string; email: string };
   application?: ApplicationData;
-  pendingUpdate?: any;
+  pendingUpdate?: ProfileUpdateData | null;
   countries: CountryItem[];
   states: StateItem[];
   error?: string;
@@ -64,8 +69,12 @@ export default function ProfileEditForm({
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordTouched, setPasswordTouched] = useState(false);
   const [confirmPasswordTouched, setConfirmPasswordTouched] = useState(false);
-  const [passwordError, setPasswordError] = useState<{ en: string; ms: string } | null>(null);
-  const [confirmPasswordError, setConfirmPasswordError] = useState<{ en: string; ms: string } | null>(null);
+  const passwordError = passwordTouched && password.length > 0 && password.length < 12
+    ? { en: "Password must be at least 12 characters", ms: "Kata laluan mestilah sekurang-kurangnya 12 aksara" }
+    : null;
+  const confirmPasswordError = (confirmPasswordTouched || confirmPassword.length > 0) && confirmPassword !== password
+    ? { en: "Passwords do not match", ms: "Kata laluan tidak sepadan" }
+    : null;
 
   const handleCountryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newCountryCode = e.target.value;
@@ -78,32 +87,6 @@ export default function ProfileEditForm({
       setStateVal("");
     }
   };
-
-  useEffect(() => {
-    if (!passwordTouched && !confirmPasswordTouched) return;
-
-    if (password.length > 0 && password.length < 12) {
-      setPasswordError({
-        en: "Password must be at least 12 characters",
-        ms: "Kata laluan mestilah sekurang-kurangnya 12 aksara",
-      });
-    } else {
-      setPasswordError(null);
-    }
-
-    if (confirmPasswordTouched || confirmPassword.length > 0) {
-      if (confirmPassword !== password) {
-        setConfirmPasswordError({
-          en: "Passwords do not match",
-          ms: "Kata laluan tidak sepadan",
-        });
-      } else {
-        setConfirmPasswordError(null);
-      }
-    } else {
-      setConfirmPasswordError(null);
-    }
-  }, [password, confirmPassword, passwordTouched, confirmPasswordTouched]);
 
   const canEditUpline =
     application &&

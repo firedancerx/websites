@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "../../../../lib/auth";
 import { upsertPackage } from "../../../../lib/packages";
+import { errorMessage } from "../../../../lib/errors";
 
 export async function POST(req: Request) {
   const admin = await requireAdmin();
@@ -35,10 +36,10 @@ export async function POST(req: Request) {
     return NextResponse.redirect(
       new URL("/admin/settings?success=" + encodeURIComponent(`Package "${packageName}" updated successfully.`), req.url)
     );
-  } catch (err: any) {
+  } catch (err) {
     console.error("Error saving package:", err);
     return NextResponse.redirect(
-      new URL("/admin/settings?error=" + encodeURIComponent(err.message || "Failed to save package."), req.url)
+      new URL("/admin/settings?error=" + encodeURIComponent(errorMessage(err, "Failed to save package.")), req.url)
     );
   }
 }

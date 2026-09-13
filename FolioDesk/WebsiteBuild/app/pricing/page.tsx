@@ -1,13 +1,11 @@
 import Link from "next/link";
-import { currentUser } from "../../lib/auth";
 
 export const metadata = {
   title: "Pricing | FolioDesk Marketing & Affiliate CRM",
   description: "Commercial licensing for FolioDesk SaaS & Affiliate CRM: 3-Year Annual License (RM 60,000) and Design Partner Lifetime License (RM 300,000).",
 };
 
-export default async function PricingPage() {
-  const user = await currentUser();
+export default function PricingPage() {
   return (
     <section className="admin-wrap" style={{ maxWidth: 1100, margin: "0 auto", padding: "40px 20px" }}>
       <div className="admin-head" style={{ borderBottom: "1px solid #e2e8f0", paddingBottom: 24, marginBottom: 32 }}>
@@ -127,7 +125,7 @@ export default async function PricingPage() {
       <div className="admin-card" style={{ background: "#0f766e", color: "#fff", padding: 32, borderRadius: 8, textAlign: "center" }}>
         <h3 style={{ fontSize: 24, color: "#fff", marginBottom: 8 }}>Ready to Transform Your Referral Network?</h3>
         <p style={{ color: "#ccfbf1", fontSize: 16, maxWidth: 650, margin: "0 auto 24px" }}>
-          Schedule a product demonstration to explore FolioDesk's 3-Year License or apply for 1 of 10 global Design Partner Lifetime Licenses.
+          Schedule a product demonstration to explore FolioDesk&apos;s 3-Year License or apply for 1 of 10 global Design Partner Lifetime Licenses.
         </p>
         <Link href="/demo" className="button pale" style={{ display: "inline-block" }}>
           Schedule your product demonstration

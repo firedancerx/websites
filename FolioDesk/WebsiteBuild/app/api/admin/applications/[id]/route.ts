@@ -24,7 +24,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const decision = String(f.get("decision"));
   if (!allowed.has(decision)) return NextResponse.redirect(new URL("/foliodesk/admin", getBaseUrl(req)), 303);
 
-  const [rows] = await db().execute<any[]>("SELECT user_id, status, affiliate_code FROM affiliate_applications WHERE id=?", [id]);
+  const [rows] = await db().execute<DatabaseRow[]>("SELECT user_id, status, affiliate_code FROM affiliate_applications WHERE id=?", [id]);
   if (!rows[0]) return NextResponse.redirect(new URL("/foliodesk/admin", getBaseUrl(req)), 303);
 
   const targetUserId = rows[0].user_id;

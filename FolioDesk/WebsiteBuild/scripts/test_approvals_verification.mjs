@@ -1,11 +1,17 @@
 async function testAllAdminPages() {
-  console.log("=== TESTING ALL IIS ENDPOINTS FOR ADMIN & AFFILIATE PORTAL ===");
+  const baseUrl = (process.env.TEST_BASE_URL || "http://localhost:3000/foliodesk").replace(/\/$/, "");
+  const adminEmail = process.env.TEST_ADMIN_EMAIL;
+  const adminPassword = process.env.TEST_ADMIN_PASSWORD;
+  if (!adminEmail || !adminPassword) {
+    throw new Error("TEST_ADMIN_EMAIL and TEST_ADMIN_PASSWORD are required");
+  }
+  console.log(`=== TESTING ADMIN & AFFILIATE PORTAL AT ${baseUrl} ===`);
 
   const adminForm = new FormData();
-  adminForm.append('email', 'admin@foliodesk.local');
-  adminForm.append('password', 'ChangeMe!FolioDesk2026');
+  adminForm.append('email', adminEmail);
+  adminForm.append('password', adminPassword);
 
-  const loginRes = await fetch('http://127.0.0.1:80/foliodesk/api/login', {
+  const loginRes = await fetch(`${baseUrl}/api/login`, {
     method: 'POST',
     body: adminForm,
     redirect: 'manual',
@@ -16,11 +22,11 @@ async function testAllAdminPages() {
   console.log("Cookie obtained successfully.");
 
   const pages = [
-    { url: 'http://127.0.0.1:80/foliodesk/admin', title: 'Affiliate Network' },
-    { url: 'http://127.0.0.1:80/foliodesk/admin/invoices', title: 'Issued Tax Invoices' },
-    { url: 'http://127.0.0.1:80/foliodesk/admin/approvals', title: 'Action Center' },
-    { url: 'http://127.0.0.1:80/foliodesk/admin/deals', title: 'Sales Funnel' },
-    { url: 'http://127.0.0.1:80/foliodesk/portal', title: 'Portal' },
+    { url: `${baseUrl}/admin`, title: 'Affiliate Network' },
+    { url: `${baseUrl}/admin/invoices`, title: 'Issued Tax Invoices' },
+    { url: `${baseUrl}/admin/approvals`, title: 'Action Center' },
+    { url: `${baseUrl}/admin/deals`, title: 'Sales Funnel' },
+    { url: `${baseUrl}/portal`, title: 'Portal' },
   ];
 
   let failed = false;

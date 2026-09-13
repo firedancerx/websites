@@ -1,7 +1,8 @@
 async function run() {
   console.log("Testing referral link registration page auto-fill...");
   const testCode = "FDTEST123";
-  const res = await fetch(`http://127.0.0.1:80/foliodesk/register?upline=${testCode}`);
+  const baseUrl = (process.env.TEST_BASE_URL || "http://localhost:3000/foliodesk").replace(/\/$/, "");
+  const res = await fetch(`${baseUrl}/register?upline=${testCode}`);
   console.log(`HTTP Status: ${res.status}`);
   const text = await res.text();
   

@@ -31,7 +31,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const [rows] = await db().execute<any[]>(
+  const [rows] = await db().execute<DatabaseRow[]>(
     "SELECT id, status FROM users WHERE email=? LIMIT 1",
     [email]
   );

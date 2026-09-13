@@ -1,4 +1,5 @@
 import React from "react";
+import Image from "next/image";
 
 export default function Logo({
   variant = "light",
@@ -10,9 +11,11 @@ export default function Logo({
   const height = size === "large" ? 48 : 38;
 
   return (
-    <img
+    <Image
       src="/foliodesk/FolioDesk-logo-transparent.png"
       alt="FolioDesk Enterprise Document Platform"
+      width={220}
+      height={height}
       style={{
         height: height,
         width: "auto",

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin, getBaseUrl } from "../../../../../../lib/auth";
 import { approveDealCollection } from "../../../../../../lib/funnel";
+import { errorMessage } from "../../../../../../lib/errors";
 
 export async function POST(
   req: Request,
@@ -31,10 +32,10 @@ export async function POST(
       ),
       303
     );
-  } catch (err: any) {
+  } catch (err) {
     return NextResponse.redirect(
       new URL(
-        `/foliodesk/admin/collections?error=${encodeURIComponent(err?.message || "Failed to approve collection")}`,
+        `/foliodesk/admin/collections?error=${encodeURIComponent(errorMessage(err, "Failed to approve collection"))}`,
         getBaseUrl(req)
       ),
       303

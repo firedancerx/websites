@@ -20,7 +20,7 @@ export async function POST(req: Request) {
 
     if (field === "email") {
       const email = trimmedValue.toLowerCase();
-      const [rows]: any = await db().execute(
+      const [rows] = await db().execute<DatabaseRow[]>(
         "SELECT u.id, u.status AS user_status, a.status AS app_status FROM users u LEFT JOIN affiliate_applications a ON a.user_id=u.id WHERE u.email=? LIMIT 1",
         [email]
       );
@@ -53,7 +53,7 @@ export async function POST(req: Request) {
 
     if (field === "company_number") {
       const isCompany = applicantType === "COMPANY";
-      const [rows]: any = await db().execute(
+      const [rows] = await db().execute<DatabaseRow[]>(
         "SELECT id, user_id, status FROM affiliate_applications WHERE company_number=? LIMIT 1",
         [trimmedValue]
       );
@@ -85,7 +85,7 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({ error: "Unsupported field" }, { status: 400 });
-  } catch (err: any) {
+  } catch (err) {
     console.error("Field validation error:", err);
     return NextResponse.json({ error: "Validation failed" }, { status: 500 });
   }

@@ -1,7 +1,8 @@
 import mysql from "mysql2/promise";
 
 async function migrate() {
-  const url = process.env.DATABASE_URL || "mysql://root:root@127.0.0.1:3306/foliodesk";
+  const url = process.env.DATABASE_URL;
+  if (!url) throw new Error("DATABASE_URL is required");
   const conn = await mysql.createConnection(url);
   console.log("Connected to MySQL database...");
 

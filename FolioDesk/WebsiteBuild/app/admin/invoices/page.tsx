@@ -29,7 +29,7 @@ export default async function AdminInvoicesPage({
     dealWhereClause += " AND d.is_test = 0";
   }
 
-  const [invoices] = await db().execute<any[]>(
+  const [invoices] = await db().execute<DatabaseRow[]>(
     `SELECT d.*, 
        a.legal_name AS affiliate_legal_name, 
        a.affiliate_code,

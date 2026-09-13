@@ -1,14 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import type { DealRecord, FunnelStepRecord, ClosureLogRecord, FunnelStatus, StepReviewStatus } from "../../../../lib/funnel";
 
 export default function ProspectJourneyView({
   deal,
   steps,
   closureLogs,
-  closurePeriodDays,
   daysRemaining,
   isOverdue,
   deadlineDateStr,
