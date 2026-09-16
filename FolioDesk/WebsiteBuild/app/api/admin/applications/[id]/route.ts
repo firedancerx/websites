@@ -66,7 +66,17 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   );
 
   if (targetUserId) {
-    const userStatus = (decision === "SUSPENDED" || decision === "TERMINATED") ? "SUSPENDED" : "ACTIVE";
+    // F-05 fix (plan §6.2 Finding 2, §7.8, §8 item 4): every decision string other
+    // than the literal SUSPENDED/TERMINATED previously fell through to ACTIVE --
+    // including RETRACTED and RETRACTION_ACKNOWLEDGED, which this endpoint's own
+    // decision-note text above describes as "read-only mode". users.status must
+    // reflect that read-only intent instead of silently reactivating the account.
+    const userStatus =
+      decision === "SUSPENDED" || decision === "TERMINATED"
+        ? "SUSPENDED"
+        : decision === "RETRACTED" || decision === "RETRACTION_ACKNOWLEDGED"
+        ? "SUSPENDED"
+        : "ACTIVE";
     if (decision === "APPROVED") {
       await db().execute("UPDATE users SET status=?, role='AFFILIATE' WHERE id=?", [userStatus, targetUserId]);
     } else {

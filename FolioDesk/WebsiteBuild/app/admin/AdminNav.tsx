@@ -18,6 +18,7 @@ export default function AdminNav({
     { href: "/admin/collections", label: "⚖️ Collections & Mgt Approval" },
     { href: "/admin/payouts", label: "💳 Payment Advices & Disbursements" },
     { href: "/admin/settings", label: "⚙️ Commission Settings" },
+    { href: "/admin/users", label: "👤 User & Role Management" },
   ];
 
   return (
