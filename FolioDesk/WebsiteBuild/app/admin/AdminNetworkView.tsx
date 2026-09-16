@@ -407,6 +407,8 @@ export default function AdminNetworkView({ initialApps }: { initialApps: Affilia
                           ? "#e0e7ff"
                           : node.status === "CORRECTION_REQUIRED" || node.status === "INFORMATION_REQUIRED"
                           ? "#fef3c7"
+                          : node.status === "PENDING_MANAGEMENT_APPROVAL"
+                          ? "#ede9fe"
                           : node.status === "APPROVED"
                           ? "#dcfce7"
                           : node.status === "SUSPENDED"
@@ -425,6 +427,8 @@ export default function AdminNetworkView({ initialApps }: { initialApps: Affilia
                           ? "#3730a3"
                           : node.status === "CORRECTION_REQUIRED" || node.status === "INFORMATION_REQUIRED"
                           ? "#92400e"
+                          : node.status === "PENDING_MANAGEMENT_APPROVAL"
+                          ? "#5b21b6"
                           : node.status === "APPROVED"
                           ? "#166534"
                           : node.status === "SUSPENDED"
@@ -443,6 +447,8 @@ export default function AdminNetworkView({ initialApps }: { initialApps: Affilia
                           ? "1px solid #c7d2fe"
                           : node.status === "CORRECTION_REQUIRED" || node.status === "INFORMATION_REQUIRED"
                           ? "1px solid #fde68a"
+                          : node.status === "PENDING_MANAGEMENT_APPROVAL"
+                          ? "1px solid #ddd6fe"
                           : node.status === "APPROVED"
                           ? "1px solid #bbf7d0"
                           : node.status === "SUSPENDED"
@@ -490,11 +496,21 @@ export default function AdminNetworkView({ initialApps }: { initialApps: Affilia
                       </button>
                     )}
 
-                    {node.status !== "APPROVED" && node.status !== "TERMINATED" && node.status !== "RETRACTED" && node.status !== "RETRACTION_ACKNOWLEDGED" && (
-                      <button className="approve" name="decision" value="APPROVED" title={node.status === "SUSPENDED" ? "Reactivate affiliate" : "Approve application"}>
-                        {node.status === "SUSPENDED" ? "Reactivate" : "Approve"}
-                      </button>
+                    {node.status === "PENDING_MANAGEMENT_APPROVAL" && (
+                      <span style={{ fontSize: 12, color: "#5b21b6", fontWeight: 600, padding: "4px 8px" }}>
+                        Awaiting Management decision
+                      </span>
                     )}
+
+                    {node.status !== "APPROVED" &&
+                      node.status !== "TERMINATED" &&
+                      node.status !== "RETRACTED" &&
+                      node.status !== "RETRACTION_ACKNOWLEDGED" &&
+                      node.status !== "PENDING_MANAGEMENT_APPROVAL" && (
+                        <button className="approve" name="decision" value="APPROVED" title={node.status === "SUSPENDED" ? "Reactivate affiliate" : "Submit for Management approval"}>
+                          {node.status === "SUSPENDED" ? "Reactivate" : "Submit for Approval"}
+                        </button>
+                      )}
 
                     {node.status === "APPROVED" && (
                       <button name="decision" value="SUSPENDED" title="Suspend affiliate">
