@@ -16,12 +16,25 @@ export async function POST(
   const dealId = Number(id);
 
   const [apps] = await db().execute<any[]>(
-    "SELECT id FROM affiliate_applications WHERE user_id=? ORDER BY submitted_at DESC LIMIT 1",
+    "SELECT id, status FROM affiliate_applications WHERE user_id=? ORDER BY submitted_at DESC LIMIT 1",
     [user.id]
   );
   const app = apps[0];
   if (!app) {
     return NextResponse.redirect(new URL("/foliodesk/portal", getBaseUrl(req)), 303);
+  }
+
+  // T-503 (plan §8 item 5, §6.2 Finding 3): this route had zero affiliate-status
+  // check (only login + ownership). Tightened to an explicit APPROVED allowlist
+  // rather than the blocklist pattern in app/api/portal/prospects/route.ts --
+  // only an affiliate in good standing may submit funnel-step updates, and an
+  // allowlist fails closed against any future status value this list doesn't
+  // yet know about.
+  if (app.status !== "APPROVED") {
+    return NextResponse.redirect(
+      new URL("/foliodesk/portal/prospects?error=Your+affiliateship+is+not+active+for+submitting+funnel+updates", getBaseUrl(req)),
+      303
+    );
   }
 
   const [deals] = await db().execute<any[]>(
