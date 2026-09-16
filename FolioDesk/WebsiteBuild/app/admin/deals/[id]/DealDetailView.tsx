@@ -49,6 +49,12 @@ export default function DealDetailView({
   // already given to Collections and Payouts -- once the Admin has submitted an
   // appeal recommendation, it must not be resubmittable until Management decides.
   const isAwaitingMgtReview = deal.mc_request_status === "PENDING";
+  // T-506 (plan §8 item 8, F-12): once any collection on this deal is sealed
+  // (approved or rejected, is_immutable=1), its locked commission rates were
+  // derived against the invoice number/billing target at that moment -- both
+  // must stop being changeable from here, mirroring the server-side guard in
+  // app/api/admin/deals/route.ts (UPDATE_STATUS and TOGGLE_INVOICE_TARGET).
+  const hasLockedCollections = Number(deal.locked_collections_count || 0) > 0;
 
   function getStepBadge(status: StepReviewStatus) {
     switch (status) {
@@ -173,9 +179,18 @@ export default function DealDetailView({
                     <button
                       className="button secondary"
                       onClick={() => setIsInvoiceModalOpen(true)}
-                      style={{ background: "#faf5ff", color: "#6b21a8", borderColor: "#c084fc", fontWeight: 700 }}
+                      disabled={hasLockedCollections}
+                      title={hasLockedCollections ? "A sealed collection is attached to this deal -- the invoice can no longer be re-issued." : undefined}
+                      style={{
+                        background: hasLockedCollections ? "#f1f5f9" : "#faf5ff",
+                        color: hasLockedCollections ? "#94a3b8" : "#6b21a8",
+                        borderColor: hasLockedCollections ? "#e2e8f0" : "#c084fc",
+                        fontWeight: 700,
+                        opacity: hasLockedCollections ? 0.7 : 1,
+                        cursor: hasLockedCollections ? "not-allowed" : "pointer",
+                      }}
                     >
-                      ✏️ Re-issue / Replace Invoice
+                      {hasLockedCollections ? "🔒 Invoice Sealed" : "✏️ Re-issue / Replace Invoice"}
                     </button>
                   </>
                 ) : (
@@ -300,12 +315,15 @@ export default function DealDetailView({
           <form action="/foliodesk/api/admin/deals" method="POST" style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <input type="hidden" name="action" value="TOGGLE_INVOICE_TARGET" />
             <input type="hidden" name="dealId" value={deal.id} />
-            <span style={{ fontSize: 12, fontWeight: 600, color: "#64748b" }}>Switch Invoicing Target:</span>
+            <span style={{ fontSize: 12, fontWeight: 600, color: "#64748b" }}>
+              {hasLockedCollections ? "🔒 Invoicing Target Sealed:" : "Switch Invoicing Target:"}
+            </span>
             <button
               type="submit"
               name="invoiceTarget"
               value="PROSPECT"
-              disabled={invoiceTarget === "PROSPECT"}
+              disabled={invoiceTarget === "PROSPECT" || hasLockedCollections}
+              title={hasLockedCollections ? "A sealed collection is attached to this deal -- the billing target can no longer be changed." : undefined}
               className="button secondary"
               style={{
                 fontSize: 12,
@@ -323,7 +341,8 @@ export default function DealDetailView({
               type="submit"
               name="invoiceTarget"
               value="AFFILIATE"
-              disabled={invoiceTarget === "AFFILIATE"}
+              disabled={invoiceTarget === "AFFILIATE" || hasLockedCollections}
+              title={hasLockedCollections ? "A sealed collection is attached to this deal -- the billing target can no longer be changed." : undefined}
               className="button secondary"
               style={{
                 fontSize: 12,
