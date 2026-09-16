@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import ToggleTestModeButton from "../ToggleTestModeButton";
 
 export interface AdviceItem {
@@ -30,6 +30,8 @@ export interface AdviceItem {
   invoice_number: string;
   bank_receipt_ref: string;
   collection_date: string;
+  // T-402 (plan §7.3(2)): status of this advice's maker-checker disbursement request, if any.
+  mc_request_status?: "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED" | null;
 }
 
 export default function PayoutsView({
@@ -43,6 +45,11 @@ export default function PayoutsView({
   // Modal States
   const [disburseAdvice, setDisburseAdvice] = useState<AdviceItem | null>(null);
   const [viewAdvice, setViewAdvice] = useState<AdviceItem | null>(null);
+  // F-11 fix: disabled/loading state on the highest-risk submit button in the codebase.
+  const [isSubmittingDisbursement, setIsSubmittingDisbursement] = useState(false);
+  const handleDisburseSubmit = useCallback(() => {
+    setIsSubmittingDisbursement(true);
+  }, []);
 
   // Search filtering on itemized advices
   const filteredAdvices = useMemo(() => {
@@ -219,6 +226,14 @@ export default function PayoutsView({
           filteredAdvices.map((advice) => {
             const benBadge = getBeneficiaryTypeBadge(advice.beneficiary_type);
             const isPaid = advice.payout_status === "PAID";
+            // F-03 fix (plan §6.3, §7.3(2)): the old condition only excluded PAID,
+            // never CANCELLED -- a cancelled advice still showed a live Disburse
+            // button. isDisbursable now requires PENDING_DISBURSEMENT explicitly,
+            // and additionally requires no maker-checker request already pending
+            // (avoiding a duplicate submission for the same advice).
+            const isCancelled = advice.payout_status === "CANCELLED";
+            const isAwaitingMgtReview = advice.payout_status === "PENDING_DISBURSEMENT" && advice.mc_request_status === "PENDING";
+            const isDisbursable = advice.payout_status === "PENDING_DISBURSEMENT" && advice.mc_request_status !== "PENDING";
 
             return (
               <div
@@ -301,12 +316,18 @@ export default function PayoutsView({
                         style={{
                           fontSize: 10,
                           fontWeight: 700,
-                          background: isPaid ? "#dcfce7" : "#fef3c7",
-                          color: isPaid ? "#166534" : "#92400e",
-                          border: isPaid ? "1px solid #bbf7d0" : "1px solid #fde68a",
+                          background: isPaid ? "#dcfce7" : isCancelled ? "#fee2e2" : isAwaitingMgtReview ? "#ede9fe" : "#fef3c7",
+                          color: isPaid ? "#166534" : isCancelled ? "#991b1b" : isAwaitingMgtReview ? "#5b21b6" : "#92400e",
+                          border: isPaid ? "1px solid #bbf7d0" : isCancelled ? "1px solid #fca5a5" : isAwaitingMgtReview ? "1px solid #ddd6fe" : "1px solid #fde68a",
                         }}
                       >
-                        {isPaid ? "✓ DISBURSED / SETTLED" : "⏳ PENDING DISBURSEMENT"}
+                        {isPaid
+                          ? "✓ DISBURSED / SETTLED"
+                          : isCancelled
+                          ? "✕ CANCELLED"
+                          : isAwaitingMgtReview
+                          ? "🔎 PENDING MANAGEMENT REVIEW"
+                          : "⏳ PENDING DISBURSEMENT"}
                       </span>
                     </div>
                     {isPaid && advice.manual_bank_tx_ref && (
@@ -320,14 +341,19 @@ export default function PayoutsView({
                   <div style={{ display: "flex", gap: 6, alignItems: "center", justifyContent: "flex-end" }}>
                     <ToggleTestModeButton entityType="payment_advice" entityId={advice.id} isTest={advice.is_test} size="sm" />
                     
-                    {!isPaid && (
+                    {isDisbursable && (
                       <button
                         className="button primary"
                         style={{ fontSize: 12, padding: "5px 12px", background: "#059669", borderColor: "#047857", whiteSpace: "nowrap" }}
                         onClick={() => setDisburseAdvice(advice)}
                       >
-                        💸 Disburse Payment
+                        📤 Submit for Disbursement
                       </button>
+                    )}
+                    {isAwaitingMgtReview && (
+                      <span style={{ fontSize: 12, color: "#5b21b6", fontWeight: 600, whiteSpace: "nowrap" }}>
+                        Awaiting Management decision
+                      </span>
                     )}
 
                     <button
@@ -380,7 +406,7 @@ export default function PayoutsView({
                   INDIVIDUAL DISBURSEMENT RECORD
                 </span>
                 <h3 style={{ fontSize: 18, margin: "4px 0 0", color: "#0f172a" }}>
-                  Disburse Payment Advice #{disburseAdvice.advice_number}
+                  Submit Payment Advice #{disburseAdvice.advice_number} for Disbursement
                 </h3>
               </div>
               <button
@@ -409,8 +435,20 @@ export default function PayoutsView({
               </div>
             </div>
 
-            <form action={`/foliodesk/api/admin/payouts/${disburseAdvice.id}`} method="post">
+            <form
+              action={`/foliodesk/api/admin/payouts/${disburseAdvice.id}`}
+              method="post"
+              onSubmit={handleDisburseSubmit}
+            >
               <input type="hidden" name="action" value="SETTLE_PAYOUT" />
+
+              <div style={{ background: "#ede9fe", border: "1px solid #ddd6fe", padding: 12, borderRadius: 8, fontSize: 13, color: "#5b21b6", marginBottom: 14 }}>
+                <p style={{ margin: 0, fontWeight: 700 }}>🔎 Maker-Checker Notice:</p>
+                <p style={{ margin: "4px 0 0" }}>
+                  This submits a request to a Management user. The advice is <b>not marked PAID</b> until Management approves.
+                  You (the submitting Admin) cannot also act as the approving Management user for this same request.
+                </p>
+              </div>
 
               <div style={{ marginBottom: 14 }}>
                 <label style={{ display: "block", fontSize: 13, fontWeight: 700, marginBottom: 4, color: "#0f172a" }}>
@@ -444,16 +482,24 @@ export default function PayoutsView({
                 <button
                   type="button"
                   className="button secondary"
-                  onClick={() => setDisburseAdvice(null)}
+                  onClick={() => { setDisburseAdvice(null); setIsSubmittingDisbursement(false); }}
+                  disabled={isSubmittingDisbursement}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   className="button primary"
-                  style={{ background: "#059669", borderColor: "#047857", fontWeight: 700 }}
+                  disabled={isSubmittingDisbursement}
+                  style={{
+                    background: "#059669",
+                    borderColor: "#047857",
+                    fontWeight: 700,
+                    opacity: isSubmittingDisbursement ? 0.6 : 1,
+                    cursor: isSubmittingDisbursement ? "not-allowed" : "pointer",
+                  }}
                 >
-                  ✓ Confirm Individual Disbursement
+                  {isSubmittingDisbursement ? "Submitting…" : "📤 Submit for Management Approval"}
                 </button>
               </div>
             </form>
