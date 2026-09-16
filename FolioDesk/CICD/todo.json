@@ -249,7 +249,7 @@
             "app/api/management/applications/[id]/decide/route.ts"
           ],
           "branch": "foliodesk/maker-checker-and-audit-fixes",
-          "status": "pending",
+          "status": "done",
           "depends_on": [
             "T-102",
             "T-103",
@@ -271,7 +271,7 @@
             "app/api/management/deals/[id]/closure/decide/route.ts"
           ],
           "branch": "foliodesk/maker-checker-and-audit-fixes",
-          "status": "pending",
+          "status": "done",
           "depends_on": [
             "T-102",
             "T-203",

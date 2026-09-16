@@ -138,6 +138,38 @@
       "tasks": [
         "T-402"
       ]
+    },
+    {
+      "timestamp": "2026-09-16T15:45:00Z",
+      "actor": "claude",
+      "action": "CODE_CHANGE",
+      "detail": "T-403: only the APPROVED transition in the admin application-decision route is now gated -- it sets affiliate_applications.status='PENDING_MANAGEMENT_APPROVAL' (no affiliate_code assigned yet, no decided_at) and submits a maker_checker_requests row instead of approving directly; the other 8 decision values (REJECTED, SUSPENDED, TERMINATED, RETRACTED, RETRACTION_ACKNOWLEDGED, etc.) proceed through the original code path unchanged, including the F-05 users.status fix from T-303. New app/api/management/applications/[id]/decide/route.ts (MANAGEMENT-only): on APPROVE, generates affiliate_code (if not already assigned, e.g. on a reinstatement), sets status='APPROVED', decided_at=NOW(), and users.status='ACTIVE'/role='AFFILIATE'; on REJECT, reverts affiliate_applications.status to 'UNDER_REVIEW' (non-terminal -- Management disagreeing with the Admin's recommendation, not a decision about the applicant) with the reason logged to application_status_history. AdminNetworkView.tsx updated with PENDING_MANAGEMENT_APPROVAL badge styling and 'Awaiting Management decision' button-area copy; Approve/Reactivate button text changed to 'Submit for Approval'.",
+      "status": "success",
+      "files": [
+        "FolioDesk/WebsiteBuild/app/api/admin/applications/[id]/route.ts",
+        "FolioDesk/WebsiteBuild/app/api/management/applications/[id]/decide/route.ts",
+        "FolioDesk/WebsiteBuild/app/admin/AdminNetworkView.tsx"
+      ],
+      "tasks": [
+        "T-403"
+      ],
+      "commit": "75e94d4"
+    },
+    {
+      "timestamp": "2026-09-16T15:50:00Z",
+      "actor": "claude",
+      "action": "CODE_CHANGE",
+      "detail": "T-404: force-closure appeal adjudication now routes through maker_checker_requests. In app/api/admin/deals/[id]/closure/route.ts, FORCE_CLOSE and EXTEND_DIRECT actions are left completely unchanged (out of scope per plan §7.3(4)); ADJUDICATE_APPEAL no longer calls adjudicateDealAppeal() directly -- it checks for an existing PENDING request (entity_type='deal_pipeline', request_type='CLOSURE_APPEAL_ADJUDICATION') then submits one with payload {dealId, isApproved, daysExtended, notes}. New app/api/management/deals/[id]/closure/decide/route.ts (MANAGEMENT-only): on APPROVE, calls adjudicateDealAppeal() with the exact payload the Admin submitted (Management confirms-as-submitted, cannot silently change days), then re-reads deal_pipeline.status to report the actual restored stage (leveraging the T-203/F-08 fix that populates status_before_force_closure) rather than assuming a fixed outcome; on REJECT, does NOT call adjudicateDealAppeal() -- appeal_status is left untouched at APPEAL_SUBMITTED so the appeal remains open for the Admin to resubmit a different recommendation. DealDetailView.tsx appeal modal updated: title changed to 'Review Extension Appeal', added a maker-checker notice box, submit button changed to 'Submit Recommendation for Management Sign-off'. This completes all four of the plan's mandatory maker-checker flows (T-401 through T-404).",
+      "status": "success",
+      "files": [
+        "FolioDesk/WebsiteBuild/app/api/admin/deals/[id]/closure/route.ts",
+        "FolioDesk/WebsiteBuild/app/api/management/deals/[id]/closure/decide/route.ts",
+        "FolioDesk/WebsiteBuild/app/admin/deals/[id]/DealDetailView.tsx"
+      ],
+      "tasks": [
+        "T-404"
+      ],
+      "commit": "2d31409"
     }
   ]
 }
