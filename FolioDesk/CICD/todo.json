@@ -312,14 +312,14 @@
             "app/admin/deals/[id]/DealDetailView.tsx"
           ],
           "branch": "foliodesk/maker-checker-and-audit-fixes",
-          "status": "pending",
+          "status": "done",
           "depends_on": [
             "T-401",
             "T-402",
             "T-403",
             "T-404"
           ],
-          "notes": "F-11 (systemic double-submit risk) fixed here as a shared submit-button/hook, applied across all touched Admin and Management forms while they're already being edited (per \u00a78 item 9 and \u00a77.5)."
+          "notes": "F-11 (systemic double-submit risk) fixed here as a shared submit-button/hook, applied across all touched Admin and Management forms while they're already being edited (per \u00a78 item 9 and \u00a77.5). IMPLEMENTATION NOTE: app/admin/applications/[id]/correction/page.tsx was in the original file list but on inspection only ever submits CORRECTION_REQUIRED/RETRACTION_ACKNOWLEDGED, not the gated APPROVED transition -- left unchanged. app/admin/AdminNetworkView.tsx (the actual home of the Submit-for-Approval button) was edited instead, since that is where the double-submit risk on the APPROVED decision actually lives."
         },
         {
           "id": "T-407",
@@ -347,14 +347,14 @@
             "app/api/management/deals/[id]/closure/decide/route.ts"
           ],
           "branch": "foliodesk/maker-checker-and-audit-fixes",
-          "status": "pending",
+          "status": "done",
           "depends_on": [
             "T-401",
             "T-402",
             "T-403",
             "T-404"
           ],
-          "notes": "action='MAKER_CHECKER_DECISION', cross-referencing maker_checker_requests.id, for consistency with existing audit_events coverage."
+          "notes": "action='MAKER_CHECKER_DECISION', cross-referencing maker_checker_requests.id, for consistency with existing audit_events coverage. IMPLEMENTATION NOTE: this was already done as part of each decide route's own implementation in T-401..T-404 (not deferred to a separate pass) -- verified by grep that all four decide routes write a MAKER_CHECKER_DECISION audit_events row. No additional code change needed; marking done on verification."
         }
       ]
     },

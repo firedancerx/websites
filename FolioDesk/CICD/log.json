@@ -194,6 +194,33 @@
         "T-405"
       ],
       "commit": "6a2606b"
+    },
+    {
+      "timestamp": "2026-09-16T16:45:00Z",
+      "actor": "claude",
+      "action": "CODE_CHANGE",
+      "detail": "T-406 (F-11, systemic double-submit risk): extended the disabled/opacity submit-button guard already applied to the Payouts disbursement form (T-402) to the remaining maker-checker submission forms. app/admin/deals/[id]/page.tsx now joins mc_request_status onto the deal query so DealDetailView.tsx can distinguish an appeal not yet submitted to Management ('Extension Appeal Pending') from one already awaiting sign-off ('PENDING MANAGEMENT REVIEW' badge, button replaced with 'Awaiting Management decision'), matching the treatment Collections and Payouts already had; also added a double-submit guard to the appeal-recommendation form itself. CollectionsApprovalView.tsx: added the same guard to both the approve and reject modals. AdminNetworkView.tsx: added a per-row double-submit guard (fieldset disabled keyed by node.id) around the application decision buttons, since that file -- not app/admin/applications/[id]/correction/page.tsx, which was in the original task file list but only ever submits CORRECTION_REQUIRED/RETRACTION_ACKNOWLEDGED -- is where the gated APPROVED decision button actually lives.",
+      "status": "success",
+      "files": [
+        "FolioDesk/WebsiteBuild/app/admin/deals/[id]/page.tsx",
+        "FolioDesk/WebsiteBuild/app/admin/deals/[id]/DealDetailView.tsx",
+        "FolioDesk/WebsiteBuild/app/admin/collections/CollectionsApprovalView.tsx",
+        "FolioDesk/WebsiteBuild/app/admin/AdminNetworkView.tsx"
+      ],
+      "tasks": [
+        "T-406"
+      ],
+      "commit": "33deac5"
+    },
+    {
+      "timestamp": "2026-09-16T16:50:00Z",
+      "actor": "claude",
+      "action": "VERIFICATION",
+      "detail": "T-408: verified (grep) that all four Management decide routes already write a MAKER_CHECKER_DECISION audit_events row cross-referencing maker_checker_requests.id, as built inline during T-401..T-404 rather than deferred to a separate pass. No additional code change required. Marked done on verification, no new commit.",
+      "status": "success",
+      "tasks": [
+        "T-408"
+      ]
     }
   ]
 }
