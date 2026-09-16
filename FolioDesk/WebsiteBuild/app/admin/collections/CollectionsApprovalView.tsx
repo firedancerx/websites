@@ -164,6 +164,9 @@ export default function CollectionsApprovalView({
             const isPending = c.approval_status === "PENDING_APPROVAL";
             const isApproved = c.approval_status === "APPROVED";
             const isRejected = c.approval_status === "REJECTED";
+            // T-401 (plan §7.3(1)): true once an Admin has submitted this collection
+            // for Management approval but no decision has been recorded yet.
+            const isAwaitingMgtReview = isPending && c.mc_request_status === "PENDING";
 
             return (
               <div
@@ -265,12 +268,18 @@ export default function CollectionsApprovalView({
                         style={{
                           fontSize: 11,
                           fontWeight: 700,
-                          background: isApproved ? "#dcfce7" : isPending ? "#fef3c7" : "#fee2e2",
-                          color: isApproved ? "#166534" : isPending ? "#92400e" : "#991b1b",
-                          border: isApproved ? "1px solid #bbf7d0" : isPending ? "1px solid #fde68a" : "1px solid #fca5a5",
+                          background: isApproved ? "#dcfce7" : isAwaitingMgtReview ? "#ede9fe" : isPending ? "#fef3c7" : "#fee2e2",
+                          color: isApproved ? "#166534" : isAwaitingMgtReview ? "#5b21b6" : isPending ? "#92400e" : "#991b1b",
+                          border: isApproved ? "1px solid #bbf7d0" : isAwaitingMgtReview ? "1px solid #ddd6fe" : isPending ? "1px solid #fde68a" : "1px solid #fca5a5",
                         }}
                       >
-                        {isApproved ? "✓ APPROVED (SEALED)" : isPending ? "⏳ AWAITING APPROVAL" : "✕ REJECTED"}
+                        {isApproved
+                          ? "✓ APPROVED (SEALED)"
+                          : isAwaitingMgtReview
+                          ? "🔎 PENDING MANAGEMENT REVIEW"
+                          : isPending
+                          ? "⏳ AWAITING SUBMISSION"
+                          : "✕ REJECTED"}
                       </span>
                     </div>
 
@@ -291,14 +300,18 @@ export default function CollectionsApprovalView({
                   <div>
                     <div style={{ display: "flex", gap: 6, alignItems: "center", justifyContent: "flex-end" }}>
                       <ToggleTestModeButton entityType="collection" entityId={c.id} isTest={c.is_test} size="sm" />
-                      {isPending ? (
+                      {isAwaitingMgtReview ? (
+                        <span style={{ fontSize: 12, color: "#5b21b6", fontWeight: 600 }}>
+                          Awaiting Management decision
+                        </span>
+                      ) : isPending ? (
                         <>
                           <button
                             className="button primary"
                             style={{ fontSize: 12, padding: "6px 12px", background: "#059669", borderColor: "#047857", whiteSpace: "nowrap" }}
                             onClick={() => setApproveCollection(c)}
                           >
-                            ✓ Approve
+                            📤 Submit for Approval
                           </button>
                           <button
                             className="button secondary"
@@ -330,9 +343,9 @@ export default function CollectionsApprovalView({
       {approveCollection && (
         <div className="modal-overlay" style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
           <div style={{ background: "#fff", borderRadius: 12, width: "100%", maxWidth: 540, padding: 24, boxShadow: "0 10px 25px rgba(0,0,0,0.2)" }}>
-            <h3 style={{ margin: "0 0 6px", fontSize: 20, color: "#059669" }}>✓ Management Approval & Acknowledgement</h3>
+            <h3 style={{ margin: "0 0 6px", fontSize: 20, color: "#059669" }}>📤 Submit for Management Approval</h3>
             <p style={{ fontSize: 13, color: "#64748b", margin: "0 0 16px" }}>
-              Approve customer payment collection for <b>{approveCollection.customer_name}</b> (Invoice: <b>{approveCollection.invoice_number}</b>).
+              Submit customer payment collection for <b>{approveCollection.customer_name}</b> (Invoice: <b>{approveCollection.invoice_number}</b>) to a Management user for a second sign-off.
             </p>
 
             <form action={`/foliodesk/api/admin/collections/${approveCollection.id}/approve`} method="post">
@@ -351,15 +364,15 @@ export default function CollectionsApprovalView({
                 </div>
               </div>
 
-              <div style={{ background: "#eff6ff", border: "1px solid #bfdbfe", padding: 12, borderRadius: 6, fontSize: 13, color: "#1e3a8a", marginBottom: 16 }}>
-                <p style={{ margin: 0, fontWeight: 700 }}>🔒 Immutability Notice:</p>
+              <div style={{ background: "#ede9fe", border: "1px solid #ddd6fe", padding: 12, borderRadius: 6, fontSize: 13, color: "#5b21b6", marginBottom: 16 }}>
+                <p style={{ margin: 0, fontWeight: 700 }}>🔎 Maker-Checker Notice:</p>
                 <p style={{ margin: "4px 0 0" }}>
-                  Upon approval, <b>Payment Advice vouchers will be immediately generated</b> for the affiliate and upline hierarchy using the locked rates. The entire transaction chain from cradle to grave becomes strictly immutable.
+                  This submits a request to a Management user. <b>Payment Advice vouchers are generated only once Management approves</b> -- not immediately by this submission. You (the submitting Admin) cannot also act as the approving Management user for this same request.
                 </p>
               </div>
 
               <div>
-                <label style={{ fontWeight: 600, fontSize: 13 }}>Management Approval Remarks</label>
+                <label style={{ fontWeight: 600, fontSize: 13 }}>Remarks for Management</label>
                 <input
                   name="approvalRemarks"
                   defaultValue="Approved and acknowledged by management. Bank receipt verified."
@@ -370,7 +383,7 @@ export default function CollectionsApprovalView({
               <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20, paddingTop: 14, borderTop: "1px solid #e2e8f0" }}>
                 <button type="button" className="button secondary" onClick={() => setApproveCollection(null)}>Cancel</button>
                 <button type="submit" className="button primary" style={{ background: "#059669", borderColor: "#047857", fontWeight: 700 }}>
-                  Confirm Approval & Generate Advices
+                  Submit for Management Approval
                 </button>
               </div>
             </form>

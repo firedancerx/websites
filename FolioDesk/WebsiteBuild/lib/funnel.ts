@@ -116,6 +116,8 @@ export interface CollectionRecord {
   affiliate_legal_name?: string;
   affiliate_code?: string;
   approver_name?: string;
+  // T-401 (plan §7.3(1)): status of this collection's maker-checker request, if any.
+  mc_request_status?: "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED" | null;
 }
 
 export interface PayoutBatchRecord {

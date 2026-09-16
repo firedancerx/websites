@@ -1,6 +1,14 @@
 import { NextResponse } from "next/server";
 import { requireAdmin, getBaseUrl } from "../../../../../../lib/auth";
-import { approveDealCollection } from "../../../../../../lib/funnel";
+import { db } from "../../../../../../lib/db";
+
+// T-401 (plan §7.3(1)): this endpoint no longer approves the collection
+// directly. It submits a maker_checker_requests row and leaves
+// deal_collections.approval_status at PENDING_APPROVAL -- nothing moves
+// (no payment advices are generated) until a Management user decides via
+// app/api/management/collections/[id]/decide/route.ts. The old direct-write
+// behavior (approveDealCollection() called straight from this route) is
+// fully decommissioned, per plan §7.7 step 6.
 
 export async function POST(
   req: Request,
@@ -18,15 +26,39 @@ export async function POST(
   const approvalRemarks = String(f.get("approvalRemarks") || "Approved and acknowledged by management").trim();
 
   try {
-    const { adviceCount } = await approveDealCollection({
-      collectionId,
-      approverUserId: admin.id,
-      approvalRemarks,
-    });
+    const [collRows] = await db().execute<any[]>(
+      "SELECT id, approval_status FROM deal_collections WHERE id=? LIMIT 1",
+      [collectionId]
+    );
+    const coll = collRows[0];
+    if (!coll) throw new Error("Collection record not found");
+    if (coll.approval_status !== "PENDING_APPROVAL") {
+      throw new Error("This collection is not awaiting approval (already decided or does not exist in a pending state).");
+    }
+
+    const [existingRows] = await db().execute<any[]>(
+      "SELECT id FROM maker_checker_requests WHERE entity_type='deal_collections' AND entity_id=? AND status='PENDING' LIMIT 1",
+      [collectionId]
+    );
+    if (existingRows.length > 0) {
+      throw new Error("A Management approval request for this collection is already pending. It cannot be submitted twice.");
+    }
+
+    await db().execute(
+      `INSERT INTO maker_checker_requests
+        (request_type, entity_type, entity_id, action_payload, status, submitted_by)
+       VALUES ('COLLECTION_APPROVAL', 'deal_collections', ?, ?, 'PENDING', ?)`,
+      [collectionId, JSON.stringify({ collectionId, approvalRemarks }), admin.id]
+    );
+
+    await db().execute(
+      "INSERT INTO audit_events(actor_user_id,action,entity_type,entity_id,event_data) VALUES(?,'COLLECTION_APPROVAL_SUBMITTED','deal_collections',?,JSON_OBJECT('approvalRemarks',?))",
+      [admin.id, String(collectionId), approvalRemarks]
+    );
 
     return NextResponse.redirect(
       new URL(
-        `/foliodesk/admin/collections?success=Collection+approved+and+acknowledged.+Generated+${adviceCount}+immutable+Payment+Advice+voucher(s)+for+affiliate+and+uplines.`,
+        `/foliodesk/admin/collections?success=Submitted+for+Management+approval.+Payment+Advice+vouchers+will+be+generated+only+once+a+Management+user+approves+this+request.`,
         getBaseUrl(req)
       ),
       303
@@ -34,7 +66,7 @@ export async function POST(
   } catch (err: any) {
     return NextResponse.redirect(
       new URL(
-        `/foliodesk/admin/collections?error=${encodeURIComponent(err?.message || "Failed to approve collection")}`,
+        `/foliodesk/admin/collections?error=${encodeURIComponent(err?.message || "Failed to submit collection for Management approval")}`,
         getBaseUrl(req)
       ),
       303
