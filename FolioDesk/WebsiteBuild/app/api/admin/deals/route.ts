@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin, getBaseUrl } from "../../../../lib/auth";
 import { db } from "../../../../lib/db";
-import { generateDealCode } from "../../../../lib/funnel";
+import { generateDealCode, checkProspectExclusivity } from "../../../../lib/funnel";
 import { isValidEmail, isValidPhone } from "../../../../lib/validation";
 
 export async function POST(req: Request) {
@@ -43,6 +43,23 @@ export async function POST(req: Request) {
     if (customerPhone && !isValidPhone(customerPhone)) {
       return NextResponse.redirect(
         new URL("/foliodesk/admin/deals?error=Invalid+phone+number+format.+Phone+numbers+cannot+contain+letters.", getBaseUrl(req)),
+        303
+      );
+    }
+
+    // F-09 (plan §8 item 7): the third of three deal-creation entry points
+    // that skipped the exclusivity check used by app/api/portal/prospects/route.ts
+    // (the reference implementation). Applied here too so an Admin-created
+    // deal cannot silently collide with a prospect an affiliate already has
+    // actively registered.
+    const exclusivityCheck = await checkProspectExclusivity(customerName);
+    if (!exclusivityCheck.isAvailable) {
+      const activeAffiliate = exclusivityCheck.activeDeal?.affiliate_legal_name || "another affiliate";
+      return NextResponse.redirect(
+        new URL(
+          `/foliodesk/admin/deals?error=Prospect+conflict:+The+company+'${encodeURIComponent(customerName)}'+is+currently+actively+registered+by+${encodeURIComponent(activeAffiliate)}.+Prospect+names+are+exclusively+protected+until+the+case+is+closed+or+stopped.`,
+          getBaseUrl(req)
+        ),
         303
       );
     }
