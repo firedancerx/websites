@@ -16,8 +16,14 @@ export async function POST(req: Request) {
     await updateAdminDataMode(mode);
   }
 
-  const res = NextResponse.redirect(new URL(redirectPath, getBaseUrl(req)), 303);
-  // Also set cookie so state persists immediately on client requests
-  res.cookies.set("admin_data_mode", mode, { path: "/", maxAge: 60 * 60 * 24 * 365 });
-  return res;
+  // F-14 (plan §8 item 10, §4): this route used to also set an
+  // admin_data_mode cookie "so state persists immediately on client
+  // requests." Nothing in the codebase ever read that cookie -- every admin
+  // page re-derives currentDataMode server-side on each request via
+  // getAdminDataMode(), which reads system_settings only. The cookie was
+  // dead write-only state and a second mechanism the value could drift
+  // against (even though nothing was reading it yet); removed so
+  // system_settings is the single source of truth, per the plan's call to
+  // collapse the two test-mode mechanisms.
+  return NextResponse.redirect(new URL(redirectPath, getBaseUrl(req)), 303);
 }
