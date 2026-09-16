@@ -276,6 +276,37 @@
         "T-504"
       ],
       "commit": "a3da386"
+    },
+    {
+      "timestamp": "2026-09-16T18:10:00Z",
+      "actor": "claude",
+      "action": "CODE_CHANGE",
+      "detail": "T-505 (F-09): app/api/portal/leads/route.ts was the deal-creation entry point that skipped both checkProspectExclusivity() and the funnel-step audit trail -- brought to parity with the reference implementation (app/api/portal/prospects/route.ts) by adding the exclusivity check, adding the initial logFunnelStep() call, and passing is_test explicitly instead of relying on the column default. app/api/admin/deals/route.ts's CREATE_DEAL action also gained the exclusivity check; its funnel-step insertion was deliberately left as a direct already-ACKNOWLEDGED INSERT (not routed through logFunnelStep(), which always creates a PENDING_REVIEW step) since an admin-created deal doesn't need to review itself.",
+      "status": "success",
+      "files": [
+        "FolioDesk/WebsiteBuild/app/api/portal/leads/route.ts",
+        "FolioDesk/WebsiteBuild/app/api/admin/deals/route.ts"
+      ],
+      "tasks": [
+        "T-505"
+      ],
+      "commit": "82b8a42"
+    },
+    {
+      "timestamp": "2026-09-16T18:25:00Z",
+      "actor": "claude",
+      "action": "CODE_CHANGE",
+      "detail": "T-506 (F-12): app/api/admin/deals/route.ts had no guard on invoice re-issuance (UPDATE_STATUS with a changed invoiceNumber) or TOGGLE_INVOICE_TARGET -- both could still fire once a deal_collections row for that deal was already sealed (is_immutable=1), desyncing billing records from a locked financial history. Both actions now block with a 303 error redirect when a locked collection exists and the invoice number or billing target is actually changing. While touching UPDATE_STATUS, also fixed a latent adjacent bug: invoice_target was set unconditionally on every call (defaulting to 'PROSPECT' when the field was absent), so the quick status-update forms in DealsView.tsx -- none of which submit an invoiceTarget field -- were silently resetting an existing 'AFFILIATE' target back to 'PROSPECT' on every unrelated status change; now only touched when the submitting form actually included the field, matching how invoiceNumber was already handled. app/admin/deals/[id]/page.tsx joins a locked_collections_count onto the deal query; DealDetailView.tsx disables the 'Re-issue / Replace Invoice' button and both billing-target toggle buttons with an explanatory title once that count is nonzero.",
+      "status": "success",
+      "files": [
+        "FolioDesk/WebsiteBuild/app/api/admin/deals/route.ts",
+        "FolioDesk/WebsiteBuild/app/admin/deals/[id]/page.tsx",
+        "FolioDesk/WebsiteBuild/app/admin/deals/[id]/DealDetailView.tsx"
+      ],
+      "tasks": [
+        "T-506"
+      ],
+      "commit": "90c63ee"
     }
   ]
 }

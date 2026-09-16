@@ -441,8 +441,8 @@
             "app/api/admin/deals/route.ts"
           ],
           "branch": "foliodesk/maker-checker-and-audit-fixes",
-          "status": "pending",
-          "notes": "app/api/portal/prospects/route.ts is the reference implementation (checkProspectExclusivity() + full funnel-step audit trail). The other two currently skip both."
+          "status": "done",
+          "notes": "app/api/portal/prospects/route.ts is the reference implementation (checkProspectExclusivity() + full funnel-step audit trail). The other two currently skip both. IMPLEMENTATION: leads/route.ts brought to full parity (exclusivity check + logFunnelStep() + explicit is_test); admin/deals/route.ts CREATE_DEAL given the exclusivity check but its funnel-step insertion intentionally kept as a direct ACKNOWLEDGED insert rather than logFunnelStep() (admin-created deals don't need to review themselves -- routing through logFunnelStep() would have been a regression, not a fix)."
         },
         {
           "id": "T-506",
@@ -455,8 +455,8 @@
             "app/admin/deals/[id]/DealDetailView.tsx"
           ],
           "branch": "foliodesk/maker-checker-and-audit-fixes",
-          "status": "pending",
-          "notes": "Block both once the deal has any approved (immutable) collection attached, so billing records can no longer desync from locked financial history."
+          "status": "done",
+          "notes": "Block both once the deal has any approved (immutable) collection attached, so billing records can no longer desync from locked financial history. IMPLEMENTATION: server-side guard in app/api/admin/deals/route.ts (UPDATE_STATUS re-issuance + target change, and TOGGLE_INVOICE_TARGET) is the real boundary; also fixed a latent bug found while touching this code -- invoice_target was being unconditionally reset to 'PROSPECT' on every UPDATE_STATUS call that omitted the field (all of DealsView.tsx's quick-action forms). Client-side disables the re-issue button and both toggle buttons in DealDetailView.tsx via a new locked_collections_count join in app/admin/deals/[id]/page.tsx."
         },
         {
           "id": "T-507",
