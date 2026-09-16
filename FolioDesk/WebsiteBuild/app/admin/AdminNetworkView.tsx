@@ -223,7 +223,7 @@ export default function AdminNetworkView({ initialApps }: { initialApps: Affilia
                   </p>
                 </div>
               ) : (
-                <Link href={detailUrl} style={{ textDecoration: "none", color: "inherit", display: "block" }}>
+                <div style={{ textDecoration: "none", color: "inherit", display: "block" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                     {depth === 0 ? (
                       hasDownlines ? (
@@ -329,13 +329,15 @@ export default function AdminNetworkView({ initialApps }: { initialApps: Affilia
                     )}
                   </div>
 
-                  <h3 style={{ fontSize: depth === 0 ? 18 : 15, margin: "6px 0 2px", color: "#0f172a" }}>
-                    {node.legal_name}
-                  </h3>
-                  <p style={{ color: "#64748b", fontSize: 13, margin: 0 }}>
-                    {node.email} · <span style={{ textTransform: "capitalize" }}>{node.applicant_type.toLowerCase()}</span>
-                  </p>
-                </Link>
+                  <Link href={detailUrl} style={{ textDecoration: "none", color: "inherit", display: "block" }}>
+                    <h3 style={{ fontSize: depth === 0 ? 18 : 15, margin: "6px 0 2px", color: "#0f172a" }}>
+                      {node.legal_name}
+                    </h3>
+                    <p style={{ color: "#64748b", fontSize: 13, margin: 0 }}>
+                      {node.email} · <span style={{ textTransform: "capitalize" }}>{node.applicant_type.toLowerCase()}</span>
+                    </p>
+                  </Link>
+                </div>
               )}
             </div>
 
