@@ -410,8 +410,8 @@
             "app/api/portal/prospects/[id]/appeal/route.ts"
           ],
           "branch": "foliodesk/maker-checker-and-audit-fixes",
-          "status": "pending",
-          "notes": "Both currently have zero status check (only login + ownership). Should match the explicit blocklist pattern already used correctly in app/api/portal/{leads,prospects}/route.ts, ideally tightened to an explicit === 'APPROVED' allowlist rather than a blocklist."
+          "status": "done",
+          "notes": "Both currently have zero status check (only login + ownership). Should match the explicit blocklist pattern already used correctly in app/api/portal/{leads,prospects}/route.ts, ideally tightened to an explicit === 'APPROVED' allowlist rather than a blocklist. IMPLEMENTATION: used the allowlist as recommended."
         },
         {
           "id": "T-504",
@@ -425,8 +425,8 @@
             "app/api/admin/toggle-test-mode/route.ts"
           ],
           "branch": "foliodesk/maker-checker-and-audit-fixes",
-          "status": "pending",
-          "notes": "Highest-severity UI finding: currently no status check at all -- can flip is_test on a locked/approved/immutable collection or a PAID advice. Server-side route also needs the guard, not just the client confirm() dialog."
+          "status": "done",
+          "notes": "Highest-severity UI finding: currently no status check at all -- can flip is_test on a locked/approved/immutable collection or a PAID advice. Server-side route also needs the guard, not just the client confirm() dialog. IMPLEMENTATION: server-side guard added for all 4 entity types (collection/payment_advice direct, deal/affiliate transitive via their child records) -- this is the real security boundary. Client-side locked/lockedReason prop added and wired at the two call sites (Collections, Payouts) where the lock data was already in scope; the deal/affiliate call sites still rely on the server-side rejection since their queries don't yet carry the joined lock data for a client-side disable."
         },
         {
           "id": "T-505",

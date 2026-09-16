@@ -244,6 +244,38 @@
         "T-502"
       ],
       "commit": "1756fcf"
+    },
+    {
+      "timestamp": "2026-09-16T17:35:00Z",
+      "actor": "claude",
+      "action": "CODE_CHANGE",
+      "detail": "T-503 (F-06): app/api/portal/prospects/[id]/step/route.ts and app/api/portal/prospects/[id]/appeal/route.ts had zero affiliate-status check (only login + deal ownership) -- a suspended/terminated/retracted affiliate could still submit funnel-step updates or force-closure appeals. Both now require affiliate_applications.status === 'APPROVED' (explicit allowlist, tightened from the blocklist pattern in app/api/portal/prospects/route.ts, per the plan's own recommendation).",
+      "status": "success",
+      "files": [
+        "FolioDesk/WebsiteBuild/app/api/portal/prospects/[id]/step/route.ts",
+        "FolioDesk/WebsiteBuild/app/api/portal/prospects/[id]/appeal/route.ts"
+      ],
+      "tasks": [
+        "T-503"
+      ],
+      "commit": "140ee2f"
+    },
+    {
+      "timestamp": "2026-09-16T17:50:00Z",
+      "actor": "claude",
+      "action": "CODE_CHANGE",
+      "detail": "T-504 (F-07, highest-severity UI finding): app/api/admin/toggle-test-mode/route.ts had no status check at all -- is_test could be flipped on a sealed/approved/rejected collection or a PAID advice. Server-side guard added for all 4 entity types: collection blocked when is_immutable=1; payment_advice blocked when payout_status='PAID'; deal and affiliate blocked transitively when ANY collection/advice beneath them has locked, since neither carries its own immutability field. ToggleTestModeButton.tsx gains an optional locked/lockedReason prop (disables the button, explains why) as a client-side UX mirror of the server guard -- wired at CollectionsApprovalView.tsx (c.is_immutable) and PayoutsView.tsx (advice.payout_status==='PAID'), the two call sites where the lock data was already in scope. DealsView.tsx/DealDetailView.tsx/AdminNetworkView.tsx/the applications correction page (deal/affiliate entity types) are left without the client-side disable for now -- their queries don't carry the joined lock data yet -- but every attempt from those buttons is still rejected by the server route regardless.",
+      "status": "success",
+      "files": [
+        "FolioDesk/WebsiteBuild/app/api/admin/toggle-test-mode/route.ts",
+        "FolioDesk/WebsiteBuild/app/admin/ToggleTestModeButton.tsx",
+        "FolioDesk/WebsiteBuild/app/admin/collections/CollectionsApprovalView.tsx",
+        "FolioDesk/WebsiteBuild/app/admin/payouts/PayoutsView.tsx"
+      ],
+      "tasks": [
+        "T-504"
+      ],
+      "commit": "a3da386"
     }
   ]
 }
