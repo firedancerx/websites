@@ -608,7 +608,17 @@ export async function approveDealCollection({
   collectionId: number;
   approverUserId: number;
   approvalRemarks?: string;
-}): Promise<{ adviceCount: number; dealId: number }> {
+}): Promise<{
+  adviceCount: number;
+  dealId: number;
+  skippedBeneficiaries: {
+    beneficiaryType: "DIRECT_AFFILIATE" | "UPLINE_L1" | "UPLINE_L2";
+    affiliateId: number;
+    affiliateLegalName: string;
+    status: string;
+    wouldBeAmountMyr: number;
+  }[];
+}> {
   // F-01 (plan §6.3 / §7.8): this function performs 6+ sequential writes across
   // 5 tables (deal_collections, payment_advices x<=3, deal_pipeline,
   // onboarded_customers, deal_funnel_steps). It must be atomic -- a mid-function
@@ -657,64 +667,133 @@ export async function approveDealCollection({
     const l2Rate = Number(coll.locked_upline_l2_rate_pct);
     const isTestVal = coll.is_test ?? deal.is_test ?? 1;
 
+    // F-04/F-02 (plan §8 items 2-3, business decision recorded 2026-09-16):
+    // vesting model is "snapshot at collection approval" -- commission rights
+    // for each beneficiary are determined by that beneficiary's
+    // affiliate_applications.status at the exact moment Management approves
+    // *this* collection, using an explicit APPROVED allowlist (not a
+    // SUSPENDED/TERMINATED/RETRACTED blocklist, so a new future status value
+    // fails closed rather than silently accruing commission). A beneficiary
+    // who is not APPROVED at this instant gets no payment_advices row for
+    // this collection -- nothing to claw back later, nothing silently paid
+    // to someone no longer in good standing. Once a payment_advices row is
+    // created here it is immutable (is_immutable=1) and stays payable
+    // regardless of what happens to that affiliate afterward -- that is the
+    // "already vested" case the plan asked this fix to preserve. Every
+    // withheld beneficiary is still recorded (skippedBeneficiaries, logged to
+    // audit_events below) so the withholding is visible and auditable rather
+    // than a silent gap in the commission trail.
+    const skippedBeneficiaries: {
+      beneficiaryType: "DIRECT_AFFILIATE" | "UPLINE_L1" | "UPLINE_L2";
+      affiliateId: number;
+      affiliateLegalName: string;
+      status: string;
+      wouldBeAmountMyr: number;
+    }[] = [];
+
     if (directAffiliate) {
       const directComm = collectedBase * (directRate / 100);
-      await conn.execute(
-        `INSERT INTO payment_advices 
-          (advice_number, collection_id, deal_id, beneficiary_affiliate_id, beneficiary_type, rate_percentage, collection_amount_base_myr, commission_amount_myr, payout_status, is_immutable, is_test)
-         VALUES (?, ?, ?, ?, 'DIRECT_AFFILIATE', ?, ?, ?, 'PENDING_DISBURSEMENT', 1, ?)`,
-        [
-          generateAdviceNumber(),
-          collectionId,
-          deal.id,
-          directAffiliate.id,
-          directRate,
-          collectedBase,
-          directComm,
-          isTestVal,
-        ]
-      );
-      adviceCount++;
+      if (directAffiliate.status === "APPROVED") {
+        await conn.execute(
+          `INSERT INTO payment_advices 
+            (advice_number, collection_id, deal_id, beneficiary_affiliate_id, beneficiary_type, rate_percentage, collection_amount_base_myr, commission_amount_myr, payout_status, is_immutable, is_test)
+           VALUES (?, ?, ?, ?, 'DIRECT_AFFILIATE', ?, ?, ?, 'PENDING_DISBURSEMENT', 1, ?)`,
+          [
+            generateAdviceNumber(),
+            collectionId,
+            deal.id,
+            directAffiliate.id,
+            directRate,
+            collectedBase,
+            directComm,
+            isTestVal,
+          ]
+        );
+        adviceCount++;
+      } else {
+        skippedBeneficiaries.push({
+          beneficiaryType: "DIRECT_AFFILIATE",
+          affiliateId: directAffiliate.id,
+          affiliateLegalName: directAffiliate.legal_name,
+          status: directAffiliate.status,
+          wouldBeAmountMyr: directComm,
+        });
+      }
     }
 
     if (uplineL1) {
       const l1Comm = collectedBase * (l1Rate / 100);
-      await conn.execute(
-        `INSERT INTO payment_advices 
-          (advice_number, collection_id, deal_id, beneficiary_affiliate_id, beneficiary_type, rate_percentage, collection_amount_base_myr, commission_amount_myr, payout_status, is_immutable, is_test)
-         VALUES (?, ?, ?, ?, 'UPLINE_L1', ?, ?, ?, 'PENDING_DISBURSEMENT', 1, ?)`,
-        [
-          generateAdviceNumber(),
-          collectionId,
-          deal.id,
-          uplineL1.id,
-          l1Rate,
-          collectedBase,
-          l1Comm,
-          isTestVal,
-        ]
-      );
-      adviceCount++;
+      if (uplineL1.status === "APPROVED") {
+        await conn.execute(
+          `INSERT INTO payment_advices 
+            (advice_number, collection_id, deal_id, beneficiary_affiliate_id, beneficiary_type, rate_percentage, collection_amount_base_myr, commission_amount_myr, payout_status, is_immutable, is_test)
+           VALUES (?, ?, ?, ?, 'UPLINE_L1', ?, ?, ?, 'PENDING_DISBURSEMENT', 1, ?)`,
+          [
+            generateAdviceNumber(),
+            collectionId,
+            deal.id,
+            uplineL1.id,
+            l1Rate,
+            collectedBase,
+            l1Comm,
+            isTestVal,
+          ]
+        );
+        adviceCount++;
+      } else {
+        skippedBeneficiaries.push({
+          beneficiaryType: "UPLINE_L1",
+          affiliateId: uplineL1.id,
+          affiliateLegalName: uplineL1.legal_name,
+          status: uplineL1.status,
+          wouldBeAmountMyr: l1Comm,
+        });
+      }
     }
 
     if (uplineL2) {
       const l2Comm = collectedBase * (l2Rate / 100);
+      if (uplineL2.status === "APPROVED") {
+        await conn.execute(
+          `INSERT INTO payment_advices 
+            (advice_number, collection_id, deal_id, beneficiary_affiliate_id, beneficiary_type, rate_percentage, collection_amount_base_myr, commission_amount_myr, payout_status, is_immutable, is_test)
+           VALUES (?, ?, ?, ?, 'UPLINE_L2', ?, ?, ?, 'PENDING_DISBURSEMENT', 1, ?)`,
+          [
+            generateAdviceNumber(),
+            collectionId,
+            deal.id,
+            uplineL2.id,
+            l2Rate,
+            collectedBase,
+            l2Comm,
+            isTestVal,
+          ]
+        );
+        adviceCount++;
+      } else {
+        skippedBeneficiaries.push({
+          beneficiaryType: "UPLINE_L2",
+          affiliateId: uplineL2.id,
+          affiliateLegalName: uplineL2.legal_name,
+          status: uplineL2.status,
+          wouldBeAmountMyr: l2Comm,
+        });
+      }
+    }
+
+    for (const skipped of skippedBeneficiaries) {
       await conn.execute(
-        `INSERT INTO payment_advices 
-          (advice_number, collection_id, deal_id, beneficiary_affiliate_id, beneficiary_type, rate_percentage, collection_amount_base_myr, commission_amount_myr, payout_status, is_immutable, is_test)
-         VALUES (?, ?, ?, ?, 'UPLINE_L2', ?, ?, ?, 'PENDING_DISBURSEMENT', 1, ?)`,
+        "INSERT INTO audit_events(actor_user_id,action,entity_type,entity_id,event_data) VALUES(?,'COMMISSION_WITHHELD_STATUS_VESTING','deal_collections',?,JSON_OBJECT('beneficiaryType',?,'affiliateId',?,'affiliateLegalName',?,'affiliateStatus',?,'wouldBeAmountMyr',?))",
         [
-          generateAdviceNumber(),
-          collectionId,
-          deal.id,
-          uplineL2.id,
-          l2Rate,
-          collectedBase,
-          l2Comm,
-          isTestVal,
+          approverUserId,
+          String(collectionId),
+          skipped.beneficiaryType,
+          String(skipped.affiliateId),
+          skipped.affiliateLegalName,
+          skipped.status,
+          skipped.wouldBeAmountMyr,
         ]
       );
-      adviceCount++;
     }
 
     const [totalCollRows] = await conn.execute<any[]>(
@@ -803,7 +882,7 @@ export async function approveDealCollection({
     }
 
     await conn.commit();
-    return { adviceCount, dealId: deal.id };
+    return { adviceCount, dealId: deal.id, skippedBeneficiaries };
   } catch (err) {
     await conn.rollback();
     throw err;

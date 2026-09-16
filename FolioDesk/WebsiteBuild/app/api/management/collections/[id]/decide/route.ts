@@ -45,12 +45,25 @@ export async function POST(
 
     const payload = typeof mcRequest.action_payload === "string" ? JSON.parse(mcRequest.action_payload) : mcRequest.action_payload;
 
+    let successMessage = decision === "APPROVE" ? "Collection approved. Payment Advice vouchers generated." : "Collection rejected.";
+
     if (decision === "APPROVE") {
-      await approveDealCollection({
+      const { skippedBeneficiaries } = await approveDealCollection({
         collectionId,
         approverUserId: management.id,
         approvalRemarks: payload.approvalRemarks,
       });
+
+      // F-04 (plan §8 item 2, business decision recorded 2026-09-16): surface
+      // any beneficiary withheld by the "snapshot at collection approval"
+      // vesting rule, so Management sees it immediately rather than having
+      // to discover it later in audit_events.
+      if (skippedBeneficiaries.length > 0) {
+        const withheldSummary = skippedBeneficiaries
+          .map((s) => `${s.affiliateLegalName} (${s.beneficiaryType}, status ${s.status})`)
+          .join("; ");
+        successMessage = `Collection approved. Payment Advice vouchers generated for eligible beneficiaries. Commission WITHHELD for: ${withheldSummary} -- not in APPROVED standing at time of approval.`;
+      }
     } else {
       await rejectDealCollection({
         collectionId,
@@ -75,7 +88,7 @@ export async function POST(
 
     return NextResponse.redirect(
       new URL(
-        `/foliodesk/management/queue?success=Collection+${decision === "APPROVE" ? "approved. Payment Advice vouchers generated." : "rejected."}`,
+        `/foliodesk/management/queue?success=${encodeURIComponent(successMessage)}`,
         getBaseUrl(req)
       ),
       303
