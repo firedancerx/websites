@@ -170,6 +170,30 @@
         "T-404"
       ],
       "commit": "2d31409"
+    },
+    {
+      "timestamp": "2026-09-16T16:00:00Z",
+      "actor": "claude",
+      "action": "TRACKER_UPDATE",
+      "detail": "Marked T-403 and T-404 as done in todo.json (code for both had already been committed as 75e94d4 and 2d31409 respectively; only the tracker bookkeeping had been deferred). No code changes in this entry.",
+      "status": "success",
+      "commit": "36b459e"
+    },
+    {
+      "timestamp": "2026-09-16T16:15:00Z",
+      "actor": "claude",
+      "action": "CODE_CHANGE",
+      "detail": "T-405: built the /management route tree. app/management/ManagementNav.tsx structurally mirrors AdminNav.tsx (currently a single 'Approval Queue' link, room to grow). app/management/queue/page.tsx is a requireManagement()-gated server component that queries every PENDING maker_checker_requests row, then batch-enriches each group by request_type/entity_type: COLLECTION_APPROVAL joins deal_collections/deal_pipeline/affiliate_applications; PAYOUT_DISBURSEMENT handles both entity_type='payment_advices' (single) and 'affiliate_batch' (consolidated) by parsing action_payload directly for batch details; APPLICATION_APPROVAL joins affiliate_applications; CLOSURE_APPEAL_ADJUDICATION joins deal_pipeline/affiliate_applications and surfaces status_before_force_closure (T-203/F-08) as 'Would Restore To'. app/management/queue/ManagementQueueView.tsx (client) renders each as a filterable card (type badge, amount, submitter, submitted-at, context fields) with Approve/Reject buttons opening a confirmation modal that posts to the matching decide route from T-401..T-404 (payouts use a shared endpoint keyed by requestId in the body; the other three post the mc-request's entity id in the URL). A request the viewing Management user submitted themselves is shown read-only with an explanatory notice, mirroring the server-side separation-of-duty check each decide route already enforces (defense in depth, not a replacement for it). This was the last missing piece before any Management user could actually use the four maker-checker flows built in T-401-T-404 -- all four decide routes already redirected to this page on success/error before it existed.",
+      "status": "success",
+      "files": [
+        "FolioDesk/WebsiteBuild/app/management/ManagementNav.tsx",
+        "FolioDesk/WebsiteBuild/app/management/queue/page.tsx",
+        "FolioDesk/WebsiteBuild/app/management/queue/ManagementQueueView.tsx"
+      ],
+      "tasks": [
+        "T-405"
+      ],
+      "commit": "6a2606b"
     }
   ]
 }

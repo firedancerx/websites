@@ -291,11 +291,11 @@
             "app/management/ManagementNav.tsx"
           ],
           "branch": "foliodesk/maker-checker-and-audit-fixes",
-          "status": "pending",
+          "status": "done",
           "depends_on": [
             "T-301"
           ],
-          "notes": "Structurally mirrors /admin, scoped to requireManagement(). Reuses existing Admin components in a read-only/decision mode (e.g. DealDetailView.tsx mode='management-review' prop)."
+          "notes": "Structurally mirrors /admin, scoped to requireManagement(). IMPLEMENTATION NOTE: rather than reusing existing Admin detail components in a read-only mode, built a purpose-made unified queue view (ManagementQueueView.tsx) that renders a normalized card per pending maker_checker_requests row across all four types, batch-enriched with just enough context (deal/affiliate/collection/advice/application fields) for an informed decision -- avoids dragging each Admin component's full edit-surface into the Management portal."
         },
         {
           "id": "T-406",
