@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS users (
   email VARCHAR(255) NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
   full_name VARCHAR(160) NOT NULL,
-  role ENUM('APPLICANT','AFFILIATE','ADMIN') NOT NULL DEFAULT 'APPLICANT',
+  role ENUM('APPLICANT','AFFILIATE','ADMIN','MANAGEMENT') NOT NULL DEFAULT 'APPLICANT',
   status ENUM('ACTIVE','SUSPENDED') NOT NULL DEFAULT 'ACTIVE',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS affiliate_applications (
   holding_id_path VARCHAR(500) NULL,
   flag_id_doc_unclear TINYINT(1) NOT NULL DEFAULT 0,
   flag_holding_id_unaccepted TINYINT(1) NOT NULL DEFAULT 0,
-  status ENUM('SUBMITTED','UNDER_REVIEW','INFORMATION_REQUIRED','CORRECTION_REQUIRED','APPROVED','REJECTED','SUSPENDED','TERMINATED','RETRACTED','RETRACTION_ACKNOWLEDGED') NOT NULL DEFAULT 'SUBMITTED',
+  status ENUM('SUBMITTED','UNDER_REVIEW','INFORMATION_REQUIRED','CORRECTION_REQUIRED','PENDING_MANAGEMENT_APPROVAL','APPROVED','REJECTED','SUSPENDED','TERMINATED','RETRACTED','RETRACTION_ACKNOWLEDGED') NOT NULL DEFAULT 'SUBMITTED',
   affiliate_code VARCHAR(32) NULL UNIQUE,
   upline_affiliate_code VARCHAR(32) NULL,
   assigned_reviewer_id BIGINT UNSIGNED NULL,
@@ -139,6 +139,7 @@ CREATE TABLE IF NOT EXISTS deal_pipeline (
   is_force_closed TINYINT(1) NOT NULL DEFAULT 0,
   force_closed_at TIMESTAMP NULL,
   force_closed_reason TEXT NULL,
+  status_before_force_closure VARCHAR(32) NULL,
   appeal_status ENUM('NONE', 'APPEAL_SUBMITTED', 'APPEAL_APPROVED', 'APPEAL_REJECTED') NOT NULL DEFAULT 'NONE',
   appeal_reason TEXT NULL,
   appeal_submitted_at TIMESTAMP NULL,
@@ -313,3 +314,32 @@ VALUES
   ('FolioDesk 3-Year 5-User License', 'FD-3YR-5USER', 158000.00, '3-year term', 1),
   ('Unlimited Master Reseller License', 'FD-MASTER-RESELLER', 1200000.00, 'per annum', 1),
   ('Design Partner Perpetual License', 'FD-DESIGN-PARTNER-LIFETIME', 300000.00, 'perpetual (max 10)', 1);
+
+-- Maker-checker approval queue (plan §7.2). Generic table shared by all four
+-- in-scope maker-checker flows: collection approval, payout disbursement,
+-- affiliate application approval, and force-closure appeal adjudication.
+CREATE TABLE IF NOT EXISTS maker_checker_requests (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  request_type ENUM(
+    'COLLECTION_APPROVAL',
+    'PAYOUT_DISBURSEMENT',
+    'APPLICATION_APPROVAL',
+    'CLOSURE_APPEAL_ADJUDICATION'
+  ) NOT NULL,
+  entity_type VARCHAR(60) NOT NULL,
+  entity_id BIGINT UNSIGNED NOT NULL,
+  action_payload JSON NOT NULL,
+  status ENUM('PENDING','APPROVED','REJECTED','CANCELLED') NOT NULL DEFAULT 'PENDING',
+  submitted_by BIGINT UNSIGNED NOT NULL,
+  submitted_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  decided_by BIGINT UNSIGNED NULL,
+  decided_at TIMESTAMP NULL,
+  decision_notes TEXT NULL,
+  is_immutable TINYINT(1) NOT NULL DEFAULT 0,
+  CONSTRAINT fk_mc_submitter FOREIGN KEY (submitted_by) REFERENCES users(id),
+  CONSTRAINT fk_mc_decider FOREIGN KEY (decided_by) REFERENCES users(id),
+  CONSTRAINT chk_mc_separation CHECK (decided_by IS NULL OR decided_by <> submitted_by),
+  INDEX idx_mc_status (status),
+  INDEX idx_mc_type (request_type),
+  INDEX idx_mc_entity (entity_type, entity_id)
+);

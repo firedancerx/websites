@@ -1,0 +1,44 @@
+{
+  "meta": {
+    "description": "Append-only execution log for CICD/todo.json. One entry per action taken (command run, file changed, git operation), timestamped, per plan §9.",
+    "format_note": "Entries are appended chronologically and never rewritten or removed once written."
+  },
+  "entries": [
+    {
+      "timestamp": "2026-09-16T00:00:00Z",
+      "actor": "claude",
+      "action": "PLAN_CONSOLIDATED",
+      "detail": "Consolidated all prior analysis and audit findings into FolioDesk_Consolidated_Plan.md (404 lines). Ran 3 automated consistency-check passes plus 1 manual re-read; fixed 3 confirmed inconsistencies (§7.3.1 cross-reference format, orphaned Finding F-03, orphaned Finding F-12) and 1 stray legacy reference ('CICD item T-002' -> 'Finding F-04 (§6.3)'). Final pass reported zero remaining issues.",
+      "status": "success"
+    },
+    {
+      "timestamp": "2026-09-16T00:05:00Z",
+      "actor": "claude",
+      "action": "FILE_TRANSFER",
+      "detail": "Initial attempt to transfer FolioDesk_Consolidated_Plan.md to device via gzip+base64+device_bash heredoc failed with gunzip CRC/length error; resulting device-side file was 410 lines (corrupted) vs. source's 404 lines.",
+      "status": "failed"
+    },
+    {
+      "timestamp": "2026-09-16T00:10:00Z",
+      "actor": "claude",
+      "action": "FILE_TRANSFER",
+      "detail": "Retried transfer of FolioDesk_Consolidated_Plan.md using device_commit_files with stagedPath under /mnt/user-data/outputs/ (container-to-device path), force=true to overwrite the corrupted file. Verified post-transfer on device via device_bash: wc -l = 404, md5sum = 30aeb6a0d8419eb416391a74b8ec711c, matching the source exactly.",
+      "status": "success",
+      "files": ["CICD/FolioDesk_Consolidated_Plan.md"]
+    },
+    {
+      "timestamp": "2026-09-16T00:15:00Z",
+      "actor": "claude",
+      "action": "TODO_CREATED",
+      "detail": "Created CICD/todo.json: 33 tasks across 6 phases (schema migrations; hard-prerequisite fixes; maker-checker auth/tooling; the four maker-checker flow changes; remaining §8 priority fixes; verification/reconciliation/cutover). Validated: all 17 Finding IDs (F-01..F-17) referenced at least once, no duplicate task IDs, no broken depends_on references.",
+      "status": "success"
+    },
+    {
+      "timestamp": "2026-09-16T00:16:00Z",
+      "actor": "claude",
+      "action": "LOG_CREATED",
+      "detail": "Created CICD/log.json (this file) as the append-only execution log referenced by plan §9.",
+      "status": "success"
+    }
+  ]
+}

@@ -219,12 +219,19 @@ export function calculateClosureDeadline(
   };
 }
 
-export async function findUplineChain(directAffiliateId: number): Promise<{
+export async function findUplineChain(
+  directAffiliateId: number,
+  executor: Pick<ReturnType<typeof db>, "execute"> = db()
+): Promise<{
   directAffiliate: any;
   uplineL1: any | null;
   uplineL2: any | null;
 }> {
-  const [directRows] = await db().execute<any[]>(
+  // executor allows callers that are already inside a DB transaction (e.g.
+  // approveDealCollection(), see F-01 fix) to pass their transaction
+  // connection so these reads participate in the same transaction, instead
+  // of implicitly going through the pool via db().
+  const [directRows] = await executor.execute<any[]>(
     "SELECT id, user_id, legal_name, affiliate_code, upline_affiliate_code, status FROM affiliate_applications WHERE id=? LIMIT 1",
     [directAffiliateId]
   );
@@ -237,14 +244,14 @@ export async function findUplineChain(directAffiliateId: number): Promise<{
   let uplineL2 = null;
 
   if (directAffiliate.upline_affiliate_code) {
-    const [l1Rows] = await db().execute<any[]>(
+    const [l1Rows] = await executor.execute<any[]>(
       "SELECT id, user_id, legal_name, affiliate_code, upline_affiliate_code, status FROM affiliate_applications WHERE affiliate_code=? LIMIT 1",
       [directAffiliate.upline_affiliate_code.trim().toUpperCase()]
     );
     uplineL1 = l1Rows[0] || null;
 
     if (uplineL1 && uplineL1.upline_affiliate_code) {
-      const [l2Rows] = await db().execute<any[]>(
+      const [l2Rows] = await executor.execute<any[]>(
         "SELECT id, user_id, legal_name, affiliate_code, upline_affiliate_code, status FROM affiliate_applications WHERE affiliate_code=? LIMIT 1",
         [uplineL1.upline_affiliate_code.trim().toUpperCase()]
       );
@@ -354,14 +361,24 @@ export async function forceCloseDeal({
   reason: string;
   adminUserId: number;
 }): Promise<void> {
+  // F-08 fix (plan §7.8, §2, §6.1): snapshot the deal's actual status before it
+  // is force-closed, so a subsequently-approved appeal can restore the real
+  // prior stage instead of a hardcoded one (see adjudicateDealAppeal() below).
+  const [dealRows] = await db().execute<any[]>(
+    "SELECT status FROM deal_pipeline WHERE id=? LIMIT 1",
+    [dealId]
+  );
+  const priorStatus = dealRows[0]?.status ?? null;
+
   await db().execute(
     `UPDATE deal_pipeline 
      SET is_force_closed=1, 
          force_closed_at=CURRENT_TIMESTAMP, 
          force_closed_reason=?, 
+         status_before_force_closure=?, 
          status='ABORTED' 
      WHERE id=?`,
-    [reason, dealId]
+    [reason, priorStatus, dealId]
   );
 
   await db().execute(
@@ -418,23 +435,36 @@ export async function adjudicateDealAppeal({
   adminUserId: number;
 }): Promise<void> {
   if (isApproved) {
+    // F-08 fix (plan §7.8, §2, §6.1): restore the deal's actual pre-closure
+    // stage (captured by forceCloseDeal() into status_before_force_closure)
+    // instead of hardcoding 'PROPOSAL_SENT'. A deal force-closed at
+    // CONTRACT_SIGNED must return to CONTRACT_SIGNED on a successful appeal,
+    // not be silently demoted. Falls back to 'PROPOSAL_SENT' only if no prior
+    // status was ever recorded (e.g. legacy rows predating this column).
+    const [dealRows] = await db().execute<any[]>(
+      "SELECT status_before_force_closure FROM deal_pipeline WHERE id=? LIMIT 1",
+      [dealId]
+    );
+    const restoredStatus = dealRows[0]?.status_before_force_closure || "PROPOSAL_SENT";
+
     await db().execute(
       `UPDATE deal_pipeline 
        SET appeal_status='APPEAL_APPROVED', 
            appeal_adjudicated_at=CURRENT_TIMESTAMP, 
            appeal_adjudication_notes=?, 
            is_force_closed=0, 
-           status='PROPOSAL_SENT', 
+           status=?, 
+           status_before_force_closure=NULL, 
            extension_days_granted = extension_days_granted + ? 
        WHERE id=?`,
-      [notes, daysExtended, dealId]
+      [notes, restoredStatus, daysExtended, dealId]
     );
 
     await db().execute(
       `INSERT INTO deal_closure_logs 
         (deal_id, action_type, days_extended, action_notes, performed_by_user_id)
        VALUES (?, 'EXTENSION_GRANTED', ?, ?, ?)`,
-      [dealId, daysExtended, `Appeal Approved: ${notes}`, adminUserId]
+      [dealId, daysExtended, `Appeal Approved (restored to ${restoredStatus}): ${notes}`, adminUserId]
     );
   } else {
     await db().execute(
@@ -577,190 +607,207 @@ export async function approveDealCollection({
   approverUserId: number;
   approvalRemarks?: string;
 }): Promise<{ adviceCount: number; dealId: number }> {
-  const [collRows] = await db().execute<any[]>(
-    "SELECT * FROM deal_collections WHERE id=? LIMIT 1",
-    [collectionId]
-  );
-  const coll = collRows[0];
-  if (!coll) throw new Error("Collection record not found");
+  // F-01 (plan §6.3 / §7.8): this function performs 6+ sequential writes across
+  // 5 tables (deal_collections, payment_advices x<=3, deal_pipeline,
+  // onboarded_customers, deal_funnel_steps). It must be atomic -- a mid-function
+  // failure must not leave partially-created commission records with no rollback
+  // path. Wrapped in a single DB transaction, matching the pattern already used
+  // correctly in app/api/register/route.ts.
+  const conn = await db().getConnection();
+  try {
+    await conn.beginTransaction();
 
-  if (coll.approval_status === "APPROVED") {
-    throw new Error("Collection has already been approved and sealed as immutable.");
-  }
-
-  const [dealRows] = await db().execute<any[]>(
-    "SELECT id, affiliate_id, contract_value_myr, status FROM deal_pipeline WHERE id=? LIMIT 1",
-    [coll.deal_id]
-  );
-  const deal = dealRows[0];
-  if (!deal) throw new Error("Deal not found");
-
-  await db().execute(
-    `UPDATE deal_collections 
-     SET approval_status='APPROVED', 
-         approved_by=?, 
-         approved_at=CURRENT_TIMESTAMP, 
-         approval_remarks=?, 
-         is_immutable=1 
-     WHERE id=?`,
-    [approverUserId, approvalRemarks || "Approved by management", collectionId]
-  );
-
-  const { directAffiliate, uplineL1, uplineL2 } = await findUplineChain(deal.affiliate_id);
-
-  let adviceCount = 0;
-  const collectedBase = Number(coll.collected_amount_myr);
-  const directRate = Number(coll.locked_direct_rate_pct);
-  const l1Rate = Number(coll.locked_upline_l1_rate_pct);
-  const l2Rate = Number(coll.locked_upline_l2_rate_pct);
-  const isTestVal = coll.is_test ?? deal.is_test ?? 1;
-
-  if (directAffiliate) {
-    const directComm = collectedBase * (directRate / 100);
-    await db().execute(
-      `INSERT INTO payment_advices 
-        (advice_number, collection_id, deal_id, beneficiary_affiliate_id, beneficiary_type, rate_percentage, collection_amount_base_myr, commission_amount_myr, payout_status, is_immutable, is_test)
-       VALUES (?, ?, ?, ?, 'DIRECT_AFFILIATE', ?, ?, ?, 'PENDING_DISBURSEMENT', 1, ?)`,
-      [
-        generateAdviceNumber(),
-        collectionId,
-        deal.id,
-        directAffiliate.id,
-        directRate,
-        collectedBase,
-        directComm,
-        isTestVal,
-      ]
+    const [collRows] = await conn.execute<any[]>(
+      "SELECT * FROM deal_collections WHERE id=? LIMIT 1 FOR UPDATE",
+      [collectionId]
     );
-    adviceCount++;
-  }
+    const coll = collRows[0];
+    if (!coll) throw new Error("Collection record not found");
 
-  if (uplineL1) {
-    const l1Comm = collectedBase * (l1Rate / 100);
-    await db().execute(
-      `INSERT INTO payment_advices 
-        (advice_number, collection_id, deal_id, beneficiary_affiliate_id, beneficiary_type, rate_percentage, collection_amount_base_myr, commission_amount_myr, payout_status, is_immutable, is_test)
-       VALUES (?, ?, ?, ?, 'UPLINE_L1', ?, ?, ?, 'PENDING_DISBURSEMENT', 1, ?)`,
-      [
-        generateAdviceNumber(),
-        collectionId,
-        deal.id,
-        uplineL1.id,
-        l1Rate,
-        collectedBase,
-        l1Comm,
-        isTestVal,
-      ]
+    if (coll.approval_status === "APPROVED") {
+      throw new Error("Collection has already been approved and sealed as immutable.");
+    }
+
+    const [dealRows] = await conn.execute<any[]>(
+      "SELECT id, affiliate_id, contract_value_myr, status FROM deal_pipeline WHERE id=? LIMIT 1",
+      [coll.deal_id]
     );
-    adviceCount++;
-  }
+    const deal = dealRows[0];
+    if (!deal) throw new Error("Deal not found");
 
-  if (uplineL2) {
-    const l2Comm = collectedBase * (l2Rate / 100);
-    await db().execute(
-      `INSERT INTO payment_advices 
-        (advice_number, collection_id, deal_id, beneficiary_affiliate_id, beneficiary_type, rate_percentage, collection_amount_base_myr, commission_amount_myr, payout_status, is_immutable, is_test)
-       VALUES (?, ?, ?, ?, 'UPLINE_L2', ?, ?, ?, 'PENDING_DISBURSEMENT', 1, ?)`,
-      [
-        generateAdviceNumber(),
-        collectionId,
-        deal.id,
-        uplineL2.id,
-        l2Rate,
-        collectedBase,
-        l2Comm,
-        isTestVal,
-      ]
+    await conn.execute(
+      `UPDATE deal_collections 
+       SET approval_status='APPROVED', 
+           approved_by=?, 
+           approved_at=CURRENT_TIMESTAMP, 
+           approval_remarks=?, 
+           is_immutable=1 
+       WHERE id=?`,
+      [approverUserId, approvalRemarks || "Approved by management", collectionId]
     );
-    adviceCount++;
-  }
 
-  const [totalCollRows] = await db().execute<any[]>(
-    "SELECT COALESCE(SUM(collected_amount_myr), 0) AS total_collected FROM deal_collections WHERE deal_id=? AND approval_status='APPROVED'",
-    [deal.id]
-  );
-  const totalApproved = parseFloat(totalCollRows[0]?.total_collected || "0");
-  const newDealStatus =
-    coll.is_final_collection || totalApproved >= Number(deal.contract_value_myr)
-      ? "FULLY_COLLECTED"
-      : "PARTIAL_COLLECTED";
+    const { directAffiliate, uplineL1, uplineL2 } = await findUplineChain(deal.affiliate_id, conn);
 
-  await db().execute(
-    "UPDATE deal_pipeline SET status=?, invoice_number=COALESCE(invoice_number, ?) WHERE id=?",
-    [newDealStatus, coll.invoice_number, deal.id]
-  );
+    let adviceCount = 0;
+    const collectedBase = Number(coll.collected_amount_myr);
+    const directRate = Number(coll.locked_direct_rate_pct);
+    const l1Rate = Number(coll.locked_upline_l1_rate_pct);
+    const l2Rate = Number(coll.locked_upline_l2_rate_pct);
+    const isTestVal = coll.is_test ?? deal.is_test ?? 1;
 
-  // Auto-sync into onboarded_customers to ensure active clients reporting is 100% accurate instantly
-  const [dealFull] = await db().execute<any[]>(
-    "SELECT * FROM deal_pipeline WHERE id=? LIMIT 1",
-    [deal.id]
-  );
-  const d = dealFull[0];
-  if (d) {
-    const [custCheck] = await db().execute<any[]>(
-      "SELECT id FROM onboarded_customers WHERE affiliate_id=? AND (customer_email=? OR customer_name=?) LIMIT 1",
-      [d.affiliate_id, d.customer_email, d.customer_name]
-    );
-    if (custCheck.length === 0) {
-      await db().execute(
-        `INSERT INTO onboarded_customers (
-          affiliate_id, customer_name, customer_email, customer_phone, signed_date,
-          package_name, package_count, annual_value_myr, status, is_test
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVE', ?)`,
+    if (directAffiliate) {
+      const directComm = collectedBase * (directRate / 100);
+      await conn.execute(
+        `INSERT INTO payment_advices 
+          (advice_number, collection_id, deal_id, beneficiary_affiliate_id, beneficiary_type, rate_percentage, collection_amount_base_myr, commission_amount_myr, payout_status, is_immutable, is_test)
+         VALUES (?, ?, ?, ?, 'DIRECT_AFFILIATE', ?, ?, ?, 'PENDING_DISBURSEMENT', 1, ?)`,
         [
-          d.affiliate_id,
-          d.customer_name,
-          d.customer_email,
-          d.customer_phone,
-          coll.collection_date || d.created_at,
-          d.package_name,
-          d.package_count || 1,
-          d.annual_value_myr || d.package_amount_myr || 0,
-          d.is_test || 0,
+          generateAdviceNumber(),
+          collectionId,
+          deal.id,
+          directAffiliate.id,
+          directRate,
+          collectedBase,
+          directComm,
+          isTestVal,
         ]
       );
-    } else {
-      await db().execute(
-        "UPDATE onboarded_customers SET status='ACTIVE', is_test=? WHERE id=?",
-        [d.is_test || 0, custCheck[0].id]
+      adviceCount++;
+    }
+
+    if (uplineL1) {
+      const l1Comm = collectedBase * (l1Rate / 100);
+      await conn.execute(
+        `INSERT INTO payment_advices 
+          (advice_number, collection_id, deal_id, beneficiary_affiliate_id, beneficiary_type, rate_percentage, collection_amount_base_myr, commission_amount_myr, payout_status, is_immutable, is_test)
+         VALUES (?, ?, ?, ?, 'UPLINE_L1', ?, ?, ?, 'PENDING_DISBURSEMENT', 1, ?)`,
+        [
+          generateAdviceNumber(),
+          collectionId,
+          deal.id,
+          uplineL1.id,
+          l1Rate,
+          collectedBase,
+          l1Comm,
+          isTestVal,
+        ]
+      );
+      adviceCount++;
+    }
+
+    if (uplineL2) {
+      const l2Comm = collectedBase * (l2Rate / 100);
+      await conn.execute(
+        `INSERT INTO payment_advices 
+          (advice_number, collection_id, deal_id, beneficiary_affiliate_id, beneficiary_type, rate_percentage, collection_amount_base_myr, commission_amount_myr, payout_status, is_immutable, is_test)
+         VALUES (?, ?, ?, ?, 'UPLINE_L2', ?, ?, ?, 'PENDING_DISBURSEMENT', 1, ?)`,
+        [
+          generateAdviceNumber(),
+          collectionId,
+          deal.id,
+          uplineL2.id,
+          l2Rate,
+          collectedBase,
+          l2Comm,
+          isTestVal,
+        ]
+      );
+      adviceCount++;
+    }
+
+    const [totalCollRows] = await conn.execute<any[]>(
+      "SELECT COALESCE(SUM(collected_amount_myr), 0) AS total_collected FROM deal_collections WHERE deal_id=? AND approval_status='APPROVED'",
+      [deal.id]
+    );
+    const totalApproved = parseFloat(totalCollRows[0]?.total_collected || "0");
+    const newDealStatus =
+      coll.is_final_collection || totalApproved >= Number(deal.contract_value_myr)
+        ? "FULLY_COLLECTED"
+        : "PARTIAL_COLLECTED";
+
+    await conn.execute(
+      "UPDATE deal_pipeline SET status=?, invoice_number=COALESCE(invoice_number, ?) WHERE id=?",
+      [newDealStatus, coll.invoice_number, deal.id]
+    );
+
+    // Auto-sync into onboarded_customers to ensure active clients reporting is 100% accurate instantly
+    const [dealFull] = await conn.execute<any[]>(
+      "SELECT * FROM deal_pipeline WHERE id=? LIMIT 1",
+      [deal.id]
+    );
+    const d = dealFull[0];
+    if (d) {
+      const [custCheck] = await conn.execute<any[]>(
+        "SELECT id FROM onboarded_customers WHERE affiliate_id=? AND (customer_email=? OR customer_name=?) LIMIT 1",
+        [d.affiliate_id, d.customer_email, d.customer_name]
+      );
+      if (custCheck.length === 0) {
+        await conn.execute(
+          `INSERT INTO onboarded_customers (
+            affiliate_id, customer_name, customer_email, customer_phone, signed_date,
+            package_name, package_count, annual_value_myr, status, is_test
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVE', ?)`,
+          [
+            d.affiliate_id,
+            d.customer_name,
+            d.customer_email,
+            d.customer_phone,
+            coll.collection_date || d.created_at,
+            d.package_name,
+            d.package_count || 1,
+            d.annual_value_myr || d.package_amount_myr || 0,
+            d.is_test || 0,
+          ]
+        );
+      } else {
+        await conn.execute(
+          "UPDATE onboarded_customers SET status='ACTIVE', is_test=? WHERE id=?",
+          [d.is_test || 0, custCheck[0].id]
+        );
+      }
+    }
+
+    // Auto-acknowledge any pending steps and record collection step in funnel history
+    await conn.execute(
+      `UPDATE deal_funnel_steps 
+       SET admin_review_status='ACKNOWLEDGED', 
+           admin_remarks=COALESCE(admin_remarks, 'Auto-acknowledged upon management collection approval'), 
+           reviewed_by_user_id=?, 
+           reviewed_at=CURRENT_TIMESTAMP 
+       WHERE deal_id=? AND admin_review_status='PENDING_REVIEW'`,
+      [approverUserId, deal.id]
+    );
+
+    const [existingCollStep] = await conn.execute<any[]>(
+      "SELECT id FROM deal_funnel_steps WHERE deal_id=? AND to_stage=? LIMIT 1",
+      [deal.id, newDealStatus]
+    );
+    if (existingCollStep.length === 0) {
+      await conn.execute(
+        `INSERT INTO deal_funnel_steps 
+          (deal_id, from_stage, to_stage, step_title, affiliate_notes, submitted_by_user_id, admin_review_status, admin_remarks, reviewed_by_user_id, reviewed_at, is_immutable, is_test)
+         VALUES (?, ?, ?, ?, ?, ?, 'ACKNOWLEDGED', 'Auto-generated upon collection management approval', ?, CURRENT_TIMESTAMP, 1, ?)`,
+        [
+          deal.id,
+          deal.status,
+          newDealStatus,
+          newDealStatus === "FULLY_COLLECTED" ? "6. Customer Payment Collection Fully Approved & Sealed" : "5. Milestone Customer Collection Approved",
+          `Customer payment collection of RM ${collectedBase.toLocaleString("en-MY", { minimumFractionDigits: 2 })} acknowledged and approved by management.`,
+          approverUserId,
+          approverUserId,
+          isTestVal,
+        ]
       );
     }
+
+    await conn.commit();
+    return { adviceCount, dealId: deal.id };
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
   }
-
-  // Auto-acknowledge any pending steps and record collection step in funnel history
-  await db().execute(
-    `UPDATE deal_funnel_steps 
-     SET admin_review_status='ACKNOWLEDGED', 
-         admin_remarks=COALESCE(admin_remarks, 'Auto-acknowledged upon management collection approval'), 
-         reviewed_by_user_id=?, 
-         reviewed_at=CURRENT_TIMESTAMP 
-     WHERE deal_id=? AND admin_review_status='PENDING_REVIEW'`,
-    [approverUserId, deal.id]
-  );
-
-  const [existingCollStep] = await db().execute<any[]>(
-    "SELECT id FROM deal_funnel_steps WHERE deal_id=? AND to_stage=? LIMIT 1",
-    [deal.id, newDealStatus]
-  );
-  if (existingCollStep.length === 0) {
-    await db().execute(
-      `INSERT INTO deal_funnel_steps 
-        (deal_id, from_stage, to_stage, step_title, affiliate_notes, submitted_by_user_id, admin_review_status, admin_remarks, reviewed_by_user_id, reviewed_at, is_immutable, is_test)
-       VALUES (?, ?, ?, ?, ?, ?, 'ACKNOWLEDGED', 'Auto-generated upon collection management approval', ?, CURRENT_TIMESTAMP, 1, ?)`,
-      [
-        deal.id,
-        deal.status,
-        newDealStatus,
-        newDealStatus === "FULLY_COLLECTED" ? "6. Customer Payment Collection Fully Approved & Sealed" : "5. Milestone Customer Collection Approved",
-        `Customer payment collection of RM ${collectedBase.toLocaleString("en-MY", { minimumFractionDigits: 2 })} acknowledged and approved by management.`,
-        approverUserId,
-        approverUserId,
-        isTestVal,
-      ]
-    );
-  }
-
-  return { adviceCount, dealId: deal.id };
 }
 
 /**
@@ -818,54 +865,69 @@ export async function settleConsolidatedPayout({
   payoutNotes?: string;
   disbursedByUserId: number;
 }): Promise<{ batchId: number; batchCode: string; totalAmount: number; adviceCount: number }> {
-  let query = "SELECT id, commission_amount_myr, is_test FROM payment_advices WHERE beneficiary_affiliate_id=? AND payout_status='PENDING_DISBURSEMENT'";
-  const params: any[] = [beneficiaryAffiliateId];
+  // F-01 (plan §6.3 / §7.8): insert-then-update-N pattern across payout_batches
+  // and payment_advices must be atomic -- a crash between steps must not leave
+  // an orphaned batch row or unpaid advices under a "settled" batch.
+  const conn = await db().getConnection();
+  try {
+    await conn.beginTransaction();
 
-  if (adviceIds && adviceIds.length > 0) {
-    query += ` AND id IN (${adviceIds.map(() => "?").join(",")})`;
-    params.push(...adviceIds);
+    let query = "SELECT id, commission_amount_myr, is_test FROM payment_advices WHERE beneficiary_affiliate_id=? AND payout_status='PENDING_DISBURSEMENT'";
+    const params: any[] = [beneficiaryAffiliateId];
+
+    if (adviceIds && adviceIds.length > 0) {
+      query += ` AND id IN (${adviceIds.map(() => "?").join(",")})`;
+      params.push(...adviceIds);
+    }
+    query += " FOR UPDATE";
+
+    const [advices] = await conn.execute<any[]>(query, params);
+    if (advices.length === 0) {
+      throw new Error("No pending payment advices found to disburse for this affiliate.");
+    }
+
+    const totalAmount = advices.reduce((sum, a) => sum + Number(a.commission_amount_myr || 0), 0);
+    const adviceCount = advices.length;
+    const batchCode = generateBatchCode();
+    const isTestVal = advices[0]?.is_test ?? 1;
+
+    const [batchRes]: any = await conn.execute(
+      `INSERT INTO payout_batches 
+        (batch_code, beneficiary_affiliate_id, total_amount_myr, advice_count, manual_bank_tx_ref, bank_name, bank_account_number, payout_notes, disbursed_by, is_test)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        batchCode,
+        beneficiaryAffiliateId,
+        totalAmount,
+        adviceCount,
+        manualBankTxRef,
+        bankName || null,
+        bankAccountNumber || null,
+        payoutNotes || null,
+        disbursedByUserId,
+        isTestVal,
+      ]
+    );
+    const batchId = batchRes.insertId;
+
+    const targetIds = advices.map((a) => a.id);
+    await conn.execute(
+      `UPDATE payment_advices 
+       SET payout_status='PAID', 
+           paid_at=CURRENT_TIMESTAMP, 
+           manual_bank_tx_ref=?, 
+           payout_notes=?, 
+           payout_batch_id=? 
+       WHERE id IN (${targetIds.map(() => "?").join(",")})`,
+      [manualBankTxRef, payoutNotes || null, batchId, ...targetIds]
+    );
+
+    await conn.commit();
+    return { batchId, batchCode, totalAmount, adviceCount };
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
   }
-
-  const [advices] = await db().execute<any[]>(query, params);
-  if (advices.length === 0) {
-    throw new Error("No pending payment advices found to disburse for this affiliate.");
-  }
-
-  const totalAmount = advices.reduce((sum, a) => sum + Number(a.commission_amount_myr || 0), 0);
-  const adviceCount = advices.length;
-  const batchCode = generateBatchCode();
-  const isTestVal = advices[0]?.is_test ?? 1;
-
-  const [batchRes]: any = await db().execute(
-    `INSERT INTO payout_batches 
-      (batch_code, beneficiary_affiliate_id, total_amount_myr, advice_count, manual_bank_tx_ref, bank_name, bank_account_number, payout_notes, disbursed_by, is_test)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      batchCode,
-      beneficiaryAffiliateId,
-      totalAmount,
-      adviceCount,
-      manualBankTxRef,
-      bankName || null,
-      bankAccountNumber || null,
-      payoutNotes || null,
-      disbursedByUserId,
-      isTestVal,
-    ]
-  );
-  const batchId = batchRes.insertId;
-
-  const targetIds = advices.map((a) => a.id);
-  await db().execute(
-    `UPDATE payment_advices 
-     SET payout_status='PAID', 
-         paid_at=CURRENT_TIMESTAMP, 
-         manual_bank_tx_ref=?, 
-         payout_notes=?, 
-         payout_batch_id=? 
-     WHERE id IN (${targetIds.map(() => "?").join(",")})`,
-    [manualBankTxRef, payoutNotes || null, batchId, ...targetIds]
-  );
-
-  return { batchId, batchCode, totalAmount, adviceCount };
 }
