@@ -31,10 +31,16 @@ export default async function AdminDealDetailPage({
        a.legal_name AS affiliate_legal_name,
        a.affiliate_code AS affiliate_code,
        u.email AS affiliate_email,
-       COALESCE((SELECT SUM(c.collected_amount_myr) FROM deal_collections c WHERE c.deal_id = dp.id AND c.approval_status='APPROVED'), 0) AS total_collected_myr
+       COALESCE((SELECT SUM(c.collected_amount_myr) FROM deal_collections c WHERE c.deal_id = dp.id AND c.approval_status='APPROVED'), 0) AS total_collected_myr,
+       mcr.status AS mc_request_status
      FROM deal_pipeline dp
      JOIN affiliate_applications a ON a.id = dp.affiliate_id
      LEFT JOIN users u ON u.id = a.user_id
+     LEFT JOIN maker_checker_requests mcr
+       ON mcr.entity_type = 'deal_pipeline'
+       AND mcr.entity_id = dp.id
+       AND mcr.request_type = 'CLOSURE_APPEAL_ADJUDICATION'
+       AND mcr.status = 'PENDING'
      WHERE dp.id = ?
      LIMIT 1`,
     [dealId]

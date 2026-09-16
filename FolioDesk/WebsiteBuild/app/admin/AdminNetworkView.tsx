@@ -161,6 +161,10 @@ function filterTree(nodes: TreeNode[], q: string): TreeNode[] {
 export default function AdminNetworkView({ initialApps }: { initialApps: AffiliateItem[] }) {
   const [searchQuery, setSearchQuery] = useState("");
 
+  // T-406 (plan §7.5, F-11): per-row double-submit guard for the decision form,
+  // matching the pattern applied to Collections, Payouts and the appeal modal.
+  const [submittingId, setSubmittingId] = useState<number | null>(null);
+
   const fullTree = useMemo(() => buildUplineTree(initialApps), [initialApps]);
   const filteredTree = useMemo(() => filterTree(fullTree, searchQuery), [fullTree, searchQuery]);
 
@@ -484,7 +488,12 @@ export default function AdminNetworkView({ initialApps }: { initialApps: Affilia
                     action={`/foliodesk/api/admin/applications/${node.id}`}
                     method="post"
                     style={{ display: "inline-flex", gap: 4 }}
+                    onSubmit={() => setSubmittingId(node.id)}
                   >
+                    <fieldset
+                      disabled={submittingId === node.id}
+                      style={{ display: "inline-flex", gap: 4, border: "none", margin: 0, padding: 0, opacity: submittingId === node.id ? 0.6 : 1 }}
+                    >
                     {node.status === "RETRACTED" && (
                       <button
                         name="decision"
@@ -529,6 +538,7 @@ export default function AdminNetworkView({ initialApps }: { initialApps: Affilia
                         Reject
                       </button>
                     )}
+                    </fieldset>
                   </form>
                 </div>
               )}

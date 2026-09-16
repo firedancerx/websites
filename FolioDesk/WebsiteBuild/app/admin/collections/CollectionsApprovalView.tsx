@@ -16,6 +16,10 @@ export default function CollectionsApprovalView({
   const [approveCollection, setApproveCollection] = useState<CollectionRecord | null>(null);
   const [rejectCollection, setRejectCollection] = useState<CollectionRecord | null>(null);
 
+  // T-406 (plan §7.5, F-11): shared double-submit guard, matching the pattern
+  // already applied to the payout disbursement form in PayoutsView.tsx.
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const filteredCollections = useMemo(() => {
     return collections.filter((c) => {
       if (activeTab === "PENDING" && c.approval_status !== "PENDING_APPROVAL") return false;
@@ -348,7 +352,7 @@ export default function CollectionsApprovalView({
               Submit customer payment collection for <b>{approveCollection.customer_name}</b> (Invoice: <b>{approveCollection.invoice_number}</b>) to a Management user for a second sign-off.
             </p>
 
-            <form action={`/foliodesk/api/admin/collections/${approveCollection.id}/approve`} method="post">
+            <form action={`/foliodesk/api/admin/collections/${approveCollection.id}/approve`} method="post" onSubmit={() => setIsSubmitting(true)}>
               <div style={{ background: "#f0fdf4", padding: 14, borderRadius: 8, border: "1.5px solid #bbf7d0", marginBottom: 16 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
@@ -381,9 +385,14 @@ export default function CollectionsApprovalView({
               </div>
 
               <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20, paddingTop: 14, borderTop: "1px solid #e2e8f0" }}>
-                <button type="button" className="button secondary" onClick={() => setApproveCollection(null)}>Cancel</button>
-                <button type="submit" className="button primary" style={{ background: "#059669", borderColor: "#047857", fontWeight: 700 }}>
-                  Submit for Management Approval
+                <button type="button" className="button secondary" onClick={() => setApproveCollection(null)} disabled={isSubmitting}>Cancel</button>
+                <button
+                  type="submit"
+                  className="button primary"
+                  disabled={isSubmitting}
+                  style={{ background: "#059669", borderColor: "#047857", fontWeight: 700, opacity: isSubmitting ? 0.6 : 1, cursor: isSubmitting ? "not-allowed" : "pointer" }}
+                >
+                  {isSubmitting ? "Submitting…" : "Submit for Management Approval"}
                 </button>
               </div>
             </form>
@@ -400,7 +409,7 @@ export default function CollectionsApprovalView({
               Reject payment collection for <b>{rejectCollection.customer_name}</b> (Invoice: <b>{rejectCollection.invoice_number}</b>).
             </p>
 
-            <form action={`/foliodesk/api/admin/collections/${rejectCollection.id}/reject`} method="post">
+            <form action={`/foliodesk/api/admin/collections/${rejectCollection.id}/reject`} method="post" onSubmit={() => setIsSubmitting(true)}>
               <div>
                 <label style={{ fontWeight: 600, fontSize: 13 }}>Reason for Rejection *</label>
                 <textarea
@@ -413,9 +422,14 @@ export default function CollectionsApprovalView({
               </div>
 
               <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20, paddingTop: 14, borderTop: "1px solid #e2e8f0" }}>
-                <button type="button" className="button secondary" onClick={() => setRejectCollection(null)}>Cancel</button>
-                <button type="submit" className="button primary" style={{ background: "#dc2626", borderColor: "#b91c1c", fontWeight: 700 }}>
-                  Confirm Rejection
+                <button type="button" className="button secondary" onClick={() => setRejectCollection(null)} disabled={isSubmitting}>Cancel</button>
+                <button
+                  type="submit"
+                  className="button primary"
+                  disabled={isSubmitting}
+                  style={{ background: "#dc2626", borderColor: "#b91c1c", fontWeight: 700, opacity: isSubmitting ? 0.6 : 1, cursor: isSubmitting ? "not-allowed" : "pointer" }}
+                >
+                  {isSubmitting ? "Submitting…" : "Confirm Rejection"}
                 </button>
               </div>
             </form>

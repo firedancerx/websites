@@ -33,6 +33,10 @@ export default function DealDetailView({
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   const [isInvoiceDocOpen, setIsInvoiceDocOpen] = useState(false);
 
+  // T-406 (plan §7.5, F-11): double-submit guard for the appeal-recommendation
+  // form, matching the pattern already applied to Collections and Payouts.
+  const [isSubmittingAppeal, setIsSubmittingAppeal] = useState(false);
+
   const isInvoiceIssued = Boolean(deal.invoice_number);
   const invoiceTarget = deal.invoice_target || "PROSPECT";
   const totalApprovedCollected = Number(deal.total_collected_myr || 0);
@@ -41,6 +45,10 @@ export default function DealDetailView({
   const isFullyFinalized = isFullyCollected || (deal.status as string) === "CLIENT_ONBOARDED" || (deal.status as string) === "CLOSED_WON";
   const isClosed = deal.status === "ABORTED" || deal.is_force_closed === 1 || isFullyFinalized;
   const hasAppeal = deal.appeal_status === "APPEAL_SUBMITTED";
+  // T-406 (plan §7.5): mirrors the mc_request_status badge/hide-button treatment
+  // already given to Collections and Payouts -- once the Admin has submitted an
+  // appeal recommendation, it must not be resubmittable until Management decides.
+  const isAwaitingMgtReview = deal.mc_request_status === "PENDING";
 
   function getStepBadge(status: StepReviewStatus) {
     switch (status) {
@@ -78,7 +86,12 @@ export default function DealDetailView({
                   🧪 TESTER DATA
                 </span>
               )}
-              {hasAppeal && (
+              {hasAppeal && isAwaitingMgtReview && (
+                <span className="badge" style={{ background: "#ede9fe", color: "#5b21b6", border: "1px solid #ddd6fe", fontWeight: 700, fontSize: 11 }}>
+                  🔎 PENDING MANAGEMENT REVIEW
+                </span>
+              )}
+              {hasAppeal && !isAwaitingMgtReview && (
                 <span className="badge" style={{ background: "#fef3c7", color: "#92400e", fontWeight: 700, fontSize: 11 }}>
                   ⚖️ Extension Appeal Pending
                 </span>
@@ -95,7 +108,7 @@ export default function DealDetailView({
           {/* ADMIN MANAGEMENT ACTION BUTTONS */}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
             <ToggleTestModeButton entityType="deal" entityId={deal.id} isTest={deal.is_test} size="md" />
-            {hasAppeal && (
+            {hasAppeal && !isAwaitingMgtReview && (
               <button
                 className="button primary"
                 onClick={() => setIsAppealModalOpen(true)}
@@ -103,6 +116,14 @@ export default function DealDetailView({
               >
                 ⚖️ Review Affiliate Appeal
               </button>
+            )}
+            {hasAppeal && isAwaitingMgtReview && (
+              <span
+                className="badge"
+                style={{ background: "#ede9fe", color: "#5b21b6", border: "1px solid #ddd6fe", fontWeight: 700, fontSize: 12, padding: "8px 12px" }}
+              >
+                Awaiting Management decision
+              </span>
             )}
 
             {isFullyFinalized ? (
@@ -622,7 +643,7 @@ export default function DealDetailView({
               {deal.appeal_reason}
             </div>
 
-            <form action={`/foliodesk/api/admin/deals/${deal.id}/closure`} method="post">
+            <form action={`/foliodesk/api/admin/deals/${deal.id}/closure`} method="post" onSubmit={() => setIsSubmittingAppeal(true)}>
               <input type="hidden" name="action" value="ADJUDICATE_APPEAL" />
 
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -658,9 +679,14 @@ export default function DealDetailView({
               </div>
 
               <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20, paddingTop: 14, borderTop: "1px solid #e2e8f0" }}>
-                <button type="button" className="button secondary" onClick={() => setIsAppealModalOpen(false)}>Cancel</button>
-                <button type="submit" className="button primary" style={{ background: "#0f766e", borderColor: "#0d655e", fontWeight: 700 }}>
-                  📤 Submit Recommendation for Management Sign-off
+                <button type="button" className="button secondary" onClick={() => setIsAppealModalOpen(false)} disabled={isSubmittingAppeal}>Cancel</button>
+                <button
+                  type="submit"
+                  className="button primary"
+                  disabled={isSubmittingAppeal}
+                  style={{ background: "#0f766e", borderColor: "#0d655e", fontWeight: 700, opacity: isSubmittingAppeal ? 0.6 : 1, cursor: isSubmittingAppeal ? "not-allowed" : "pointer" }}
+                >
+                  {isSubmittingAppeal ? "Submitting…" : "📤 Submit Recommendation for Management Sign-off"}
                 </button>
               </div>
             </form>
