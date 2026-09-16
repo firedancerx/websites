@@ -554,7 +554,7 @@ export async function submitDealCollection({
     throw new Error("Cannot record collection: An official invoice must be issued first for this deal.");
   }
 
-  if (deal.status === "FULLY_COLLECTED" || deal.status === "CLIENT_ONBOARDED" || deal.status === "CLOSED_WON" || deal.status === "ABORTED") {
+  if (deal.status === "FULLY_COLLECTED" || deal.status === "ABORTED" || deal.status === "UNCOLLECTIBLE") {
     throw new Error(`This deal is already ${deal.status.replaceAll("_", " ")}; no further collections can be recorded.`);
   }
 

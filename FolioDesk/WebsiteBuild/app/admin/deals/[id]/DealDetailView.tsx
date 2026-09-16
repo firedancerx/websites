@@ -42,8 +42,8 @@ export default function DealDetailView({
   const totalApprovedCollected = Number(deal.total_collected_myr || 0);
   const contractVal = Number(deal.contract_value_myr || 0);
   const isFullyCollected = deal.status === "FULLY_COLLECTED" || (contractVal > 0 && totalApprovedCollected >= contractVal);
-  const isFullyFinalized = isFullyCollected || (deal.status as string) === "CLIENT_ONBOARDED" || (deal.status as string) === "CLOSED_WON";
-  const isClosed = deal.status === "ABORTED" || deal.is_force_closed === 1 || isFullyFinalized;
+  const isFullyFinalized = isFullyCollected;
+  const isClosed = deal.status === "ABORTED" || (deal.status as string) === "UNCOLLECTIBLE" || deal.is_force_closed === 1 || isFullyFinalized;
   const hasAppeal = deal.appeal_status === "APPEAL_SUBMITTED";
   // T-406 (plan §7.5): mirrors the mc_request_status badge/hide-button treatment
   // already given to Collections and Payouts -- once the Admin has submitted an
