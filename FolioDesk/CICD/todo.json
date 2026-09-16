@@ -470,8 +470,8 @@
             "lib/settings.ts"
           ],
           "branch": "foliodesk/maker-checker-and-audit-fixes",
-          "status": "pending",
-          "notes": "is_test propagation inconsistent across insert paths (leads route relies on DB default instead of passing explicitly); separate admin_data_mode stored in both system_settings and a cookie can drift."
+          "status": "done",
+          "notes": "is_test propagation inconsistent across insert paths (leads route relies on DB default instead of passing explicitly); separate admin_data_mode stored in both system_settings and a cookie can drift. IMPLEMENTATION: is_test propagation already fixed as a side effect of T-505. Verified (grep) the admin_data_mode cookie was write-only -- never read anywhere -- so removed it entirely; system_settings is now the sole source of truth."
         },
         {
           "id": "T-508",
@@ -485,8 +485,8 @@
             "lib/funnel.ts"
           ],
           "branch": "foliodesk/maker-checker-and-audit-fixes",
-          "status": "pending",
-          "notes": "NEGOTIATION, CLOSURE_PENDING, PARTIALLY_COLLECTED, CLIENT_ONBOARDED, CLOSED_WON -- none exist in the real deal_pipeline.status enum."
+          "status": "done",
+          "notes": "NEGOTIATION, CLOSURE_PENDING, PARTIALLY_COLLECTED, CLIENT_ONBOARDED, CLOSED_WON -- none exist in the real deal_pipeline.status enum. IMPLEMENTATION: NEGOTIATION/CLOSURE_PENDING/CLIENT_ONBOARDED/CLOSED_WON/EXPIRED removed as truly dead (unreachable); PARTIALLY_COLLECTED was actually a typo for the real value PARTIAL_COLLECTED (a live styling bug, not dead code) -- fixed. Also extended app/admin/deals/[id]/DealDetailView.tsx to the file list on inspection (same class of dead-branch bug, isFullyFinalized's CLIENT_ONBOARDED/CLOSED_WON checks) and used UNCOLLECTIBLE (a real, already-used terminal status) to close two adjacent real gaps found while auditing these branches."
         },
         {
           "id": "T-509",
