@@ -2,14 +2,20 @@
   "meta": {
     "document": "FolioDesk_Consolidated_Plan.md",
     "generated_at": "2026-09-16T00:00:00Z",
-    "source_of_truth": "CICD/FolioDesk_Consolidated_Plan.md (see §6.3 Finding Register, §7 Maker-Checker Design, §8 Priority Recommendations, §9 Execution Framework)",
-    "execution_order_note": "All code changes land first on 'main' via a feature branch (never committed directly to main), then reconciled into 'codex/foliodesk-digitalocean' by merging/rebasing that feature branch into it (§0, §9) -- not by hand-copying files.",
+    "source_of_truth": "CICD/FolioDesk_Consolidated_Plan.md (see \u00a76.3 Finding Register, \u00a77 Maker-Checker Design, \u00a78 Priority Recommendations, \u00a79 Execution Framework)",
+    "execution_order_note": "All code changes land first on 'main' via a feature branch (never committed directly to main), then reconciled into 'codex/foliodesk-digitalocean' by merging/rebasing that feature branch into it (\u00a70, \u00a79) -- not by hand-copying files.",
     "repo": "github.com/firedancerx/websites.git (outer monorepo folder name: website; FolioDesk lives at Website/FolioDesk within it)",
     "base_branch": "main",
     "target_branch_do": "codex/foliodesk-digitalocean",
     "feature_branch": "foliodesk/maker-checker-and-audit-fixes",
-    "db_constraint_note": "No Docker/MySQL runtime is reachable from the automation environment (§9). All schema migration steps are WRITTEN AND STATICALLY CHECKED against db/mysql-schema.sql only -- NOT executed or verified against a live database. Must be manually verified/applied before release per §7.7.",
-    "status_values": ["pending", "in_progress", "done", "blocked", "skipped"],
+    "db_constraint_note": "No Docker/MySQL runtime is reachable from the automation environment (\u00a79). All schema migration steps are WRITTEN AND STATICALLY CHECKED against db/mysql-schema.sql only -- NOT executed or verified against a live database. Must be manually verified/applied before release per \u00a77.7.",
+    "status_values": [
+      "pending",
+      "in_progress",
+      "done",
+      "blocked",
+      "skipped"
+    ],
     "pre_existing_changes_note": "Pre-existing uncommitted changes already present in the working trees (not made by this CICD process) must never be staged, committed, or discarded. Only files touched by tasks in this plan are committed.",
     "push_policy": "Push the feature branch to origin only. Do not merge into main or codex/foliodesk-digitalocean, and do not auto-create/merge a PR. Stop after push."
   },
@@ -17,120 +23,164 @@
     {
       "phase": 1,
       "name": "Schema migrations (additive, pure, no behavior change)",
-      "ref": "§7.7 step 1, §7.1, §7.2, §7.4",
+      "ref": "\u00a77.7 step 1, \u00a77.1, \u00a77.2, \u00a77.4",
       "tasks": [
         {
           "id": "T-101",
-          "finding_ids": ["F-10"],
+          "finding_ids": [
+            "F-10"
+          ],
           "title": "Add MANAGEMENT role to users.role enum",
-          "ref": "§7.1",
-          "files": ["db/mysql-schema.sql", "CICD/migrations/001_add_management_role.sql"],
+          "ref": "\u00a77.1",
+          "files": [
+            "db/mysql-schema.sql",
+            "CICD/migrations/001_add_management_role.sql"
+          ],
           "branch": "foliodesk/maker-checker-and-audit-fixes",
-          "status": "pending",
+          "status": "done",
           "db_verification": "static_only",
           "notes": "ALTER TABLE users MODIFY COLUMN role ENUM('APPLICANT','AFFILIATE','ADMIN','MANAGEMENT') NOT NULL DEFAULT 'APPLICANT'"
         },
         {
           "id": "T-102",
-          "finding_ids": ["F-10"],
+          "finding_ids": [
+            "F-10"
+          ],
           "title": "Create maker_checker_requests table",
-          "ref": "§7.2",
-          "files": ["db/mysql-schema.sql", "CICD/migrations/002_create_maker_checker_requests.sql"],
+          "ref": "\u00a77.2",
+          "files": [
+            "db/mysql-schema.sql",
+            "CICD/migrations/002_create_maker_checker_requests.sql"
+          ],
           "branch": "foliodesk/maker-checker-and-audit-fixes",
-          "status": "pending",
+          "status": "done",
           "db_verification": "static_only",
           "notes": "Includes chk_mc_separation CHECK constraint (decided_by <> submitted_by), FKs to users(id), indexes on status/type/entity"
         },
         {
           "id": "T-103",
-          "finding_ids": ["F-10"],
+          "finding_ids": [
+            "F-10"
+          ],
           "title": "Add PENDING_MANAGEMENT_APPROVAL to affiliate_applications.status enum",
-          "ref": "§7.4",
-          "files": ["db/mysql-schema.sql", "CICD/migrations/003_add_pending_management_approval_status.sql"],
+          "ref": "\u00a77.4",
+          "files": [
+            "db/mysql-schema.sql",
+            "CICD/migrations/003_add_pending_management_approval_status.sql"
+          ],
           "branch": "foliodesk/maker-checker-and-audit-fixes",
-          "status": "pending",
+          "status": "done",
           "db_verification": "static_only",
-          "depends_on": ["T-101"]
+          "depends_on": [
+            "T-101"
+          ]
         }
       ]
     },
     {
       "phase": 2,
       "name": "Hard prerequisite fixes (must ship with or before maker-checker flows)",
-      "ref": "§7.8",
+      "ref": "\u00a77.8",
       "tasks": [
         {
           "id": "T-201",
-          "finding_ids": ["F-01"],
+          "finding_ids": [
+            "F-01"
+          ],
           "title": "Wrap approveDealCollection() in a DB transaction",
-          "ref": "§7.8, §3",
-          "files": ["lib/funnel.ts"],
+          "ref": "\u00a77.8, \u00a73",
+          "files": [
+            "lib/funnel.ts"
+          ],
           "branch": "foliodesk/maker-checker-and-audit-fixes",
-          "status": "pending",
-          "notes": "6+ sequential writes across deal_collections, payment_advices (≤3), deal_pipeline, onboarded_customers, deal_funnel_steps must be atomic (conn.beginTransaction/commit/rollback pattern, matching app/api/register/route.ts's existing correct usage)"
+          "status": "done",
+          "notes": "6+ sequential writes across deal_collections, payment_advices (\u22643), deal_pipeline, onboarded_customers, deal_funnel_steps must be atomic (conn.beginTransaction/commit/rollback pattern, matching app/api/register/route.ts's existing correct usage)"
         },
         {
           "id": "T-202",
-          "finding_ids": ["F-01"],
+          "finding_ids": [
+            "F-01"
+          ],
           "title": "Wrap settleConsolidatedPayout() in a DB transaction",
-          "ref": "§7.8, §3",
-          "files": ["lib/funnel.ts"],
+          "ref": "\u00a77.8, \u00a73",
+          "files": [
+            "lib/funnel.ts"
+          ],
           "branch": "foliodesk/maker-checker-and-audit-fixes",
-          "status": "pending",
+          "status": "done",
           "notes": "insert payout_batches row + bulk-update N advices must be atomic"
         },
         {
           "id": "T-203",
-          "finding_ids": ["F-08"],
+          "finding_ids": [
+            "F-08"
+          ],
           "title": "Fix adjudicateDealAppeal() to restore actual pre-closure stage instead of hardcoded PROPOSAL_SENT",
-          "ref": "§7.8, §2, §6.1",
-          "files": ["lib/funnel.ts"],
+          "ref": "\u00a77.8, \u00a72, \u00a76.1",
+          "files": [
+            "lib/funnel.ts"
+          ],
           "branch": "foliodesk/maker-checker-and-audit-fixes",
-          "status": "pending",
-          "notes": "Must capture/restore the deal's actual status at time of force-closure (e.g. from deal_closure_logs) rather than hardcoding PROPOSAL_SENT. Required before §7.3(4) can let a Management checker meaningfully review the decision."
+          "status": "done",
+          "notes": "Must capture/restore the deal's actual status at time of force-closure (e.g. from deal_closure_logs) rather than hardcoding PROPOSAL_SENT. Required before \u00a77.3(4) can let a Management checker meaningfully review the decision. IMPLEMENTATION NOTE: required an additional additive column (deal_pipeline.status_before_force_closure) beyond what was originally scoped in Phase 1 migrations -- added as migrations/004_add_status_before_force_closure.sql and to db/mysql-schema.sql, since forceCloseDeal() had no way to snapshot the deal's true pre-closure stage otherwise."
         }
       ]
     },
     {
       "phase": 3,
       "name": "Maker-checker: auth, admin tooling, and role provisioning",
-      "ref": "§7.1, §7.5, §7.6, §7.7 steps 2-3",
+      "ref": "\u00a77.1, \u00a77.5, \u00a77.6, \u00a77.7 steps 2-3",
       "tasks": [
         {
           "id": "T-301",
-          "finding_ids": ["F-10"],
+          "finding_ids": [
+            "F-10"
+          ],
           "title": "Add requireManagement() auth helper",
-          "ref": "§7.1",
-          "files": ["lib/auth.ts"],
+          "ref": "\u00a77.1",
+          "files": [
+            "lib/auth.ts"
+          ],
           "branch": "foliodesk/maker-checker-and-audit-fixes",
-          "status": "pending"
+          "status": "done"
         },
         {
           "id": "T-302",
-          "finding_ids": ["F-10"],
+          "finding_ids": [
+            "F-10"
+          ],
           "title": "Build app/admin/users role-management screen + API route enforcing strict separation of duties",
-          "ref": "§7.1, §7.6, §7.7 step 2",
-          "files": ["app/api/admin/users/route.ts", "app/admin/users/page.tsx"],
+          "ref": "\u00a77.1, \u00a77.6, \u00a77.7 step 2",
+          "files": [
+            "app/api/admin/users/route.ts",
+            "app/admin/users/page.tsx"
+          ],
           "branch": "foliodesk/maker-checker-and-audit-fixes",
-          "status": "pending",
+          "status": "done",
           "notes": "Must reject promoting an ex-ADMIN to MANAGEMENT or an ex-MANAGEMENT to ADMIN, checked against that user's audit_events history (org-wide, not just same-transaction)."
         },
         {
           "id": "T-303",
-          "finding_ids": ["F-05"],
+          "finding_ids": [
+            "F-05"
+          ],
           "title": "Fix users.status desync for RETRACTED/RETRACTION_ACKNOWLEDGED decisions",
-          "ref": "§6.2 Finding 2, §7.8",
-          "files": ["app/api/admin/applications/[id]/route.ts"],
+          "ref": "\u00a76.2 Finding 2, \u00a77.8",
+          "files": [
+            "app/api/admin/applications/[id]/route.ts"
+          ],
           "branch": "foliodesk/maker-checker-and-audit-fixes",
-          "status": "pending",
+          "status": "done",
           "notes": "Currently: const userStatus = (decision === 'SUSPENDED' || decision === 'TERMINATED') ? 'SUSPENDED' : 'ACTIVE' -- falls through to ACTIVE for RETRACTED/RETRACTION_ACKNOWLEDGED. Land in same window as T-302 since the new user-management screen surfaces users.status directly.",
-          "depends_on": ["T-302"]
+          "depends_on": [
+            "T-302"
+          ]
         },
         {
           "id": "T-304",
           "finding_ids": [],
           "title": "Provision Management accounts (staging) -- operational step",
-          "ref": "§7.7 step 3",
+          "ref": "\u00a77.7 step 3",
           "files": [],
           "branch": null,
           "status": "pending",
@@ -141,79 +191,143 @@
     {
       "phase": 4,
       "name": "Maker-checker: the four in-scope flow changes",
-      "ref": "§7.3, §7.5",
+      "ref": "\u00a77.3, \u00a77.5",
       "tasks": [
         {
           "id": "T-401",
-          "finding_ids": ["F-10"],
+          "finding_ids": [
+            "F-10"
+          ],
           "title": "Collection approval: route through maker_checker_requests instead of direct approveDealCollection() call",
-          "ref": "§7.3(1)",
-          "files": ["app/api/admin/collections/[id]/approve/route.ts", "app/api/management/collections/[id]/decide/route.ts"],
+          "ref": "\u00a77.3(1)",
+          "files": [
+            "app/api/admin/collections/[id]/approve/route.ts",
+            "app/api/management/collections/[id]/decide/route.ts"
+          ],
           "branch": "foliodesk/maker-checker-and-audit-fixes",
-          "status": "pending",
-          "depends_on": ["T-102", "T-201", "T-301"],
+          "status": "done",
+          "depends_on": [
+            "T-102",
+            "T-201",
+            "T-301"
+          ],
           "notes": "Admin action inserts maker_checker_requests row (request_type=COLLECTION_APPROVAL), leaves deal_collections.approval_status at PENDING_APPROVAL. New Management decide endpoint rejects decided_by===submitted_by, calls approveDealCollection() (must include F-01 fix) only on approval."
         },
         {
           "id": "T-402",
-          "finding_ids": ["F-10", "F-02", "F-03"],
+          "finding_ids": [
+            "F-10",
+            "F-02",
+            "F-03"
+          ],
           "title": "Payout disbursement: route through maker_checker_requests; rebuild single-advice payout route with immutability guard; rebuild PayoutsView disburse-button condition",
-          "ref": "§7.3(2)",
-          "files": ["app/api/admin/payouts/[id]/route.ts", "app/api/admin/payouts/batch/route.ts", "app/api/management/payouts/decide/route.ts", "app/admin/payouts/PayoutsView.tsx"],
+          "ref": "\u00a77.3(2)",
+          "files": [
+            "app/api/admin/payouts/[id]/route.ts",
+            "app/api/admin/payouts/batch/route.ts",
+            "app/api/management/payouts/decide/route.ts",
+            "app/admin/payouts/PayoutsView.tsx"
+          ],
           "branch": "foliodesk/maker-checker-and-audit-fixes",
-          "status": "pending",
-          "depends_on": ["T-102", "T-202", "T-301"],
-          "notes": "F-02 (no re-flip guard on PAID/CANCELLED) and F-03 (Disburse button only excludes PAID, not CANCELLED) are both fixed as part of this rewrite per §7.3(2) -- F-03 does not need a standalone fix since the old button is replaced. Management approves-as-submitted or rejects-with-reason; cannot re-author amounts."
+          "status": "done",
+          "depends_on": [
+            "T-102",
+            "T-202",
+            "T-301"
+          ],
+          "notes": "F-02 (no re-flip guard on PAID/CANCELLED) and F-03 (Disburse button only excludes PAID, not CANCELLED) are both fixed as part of this rewrite per \u00a77.3(2) -- F-03 does not need a standalone fix since the old button is replaced. Management approves-as-submitted or rejects-with-reason; cannot re-author amounts."
         },
         {
           "id": "T-403",
-          "finding_ids": ["F-10"],
+          "finding_ids": [
+            "F-10"
+          ],
           "title": "Application approval: gate only the APPROVED transition through maker_checker_requests + PENDING_MANAGEMENT_APPROVAL status",
-          "ref": "§7.3(3), §7.4",
-          "files": ["app/api/admin/applications/[id]/route.ts", "app/api/management/applications/[id]/decide/route.ts"],
+          "ref": "\u00a77.3(3), \u00a77.4",
+          "files": [
+            "app/api/admin/applications/[id]/route.ts",
+            "app/api/management/applications/[id]/decide/route.ts"
+          ],
           "branch": "foliodesk/maker-checker-and-audit-fixes",
           "status": "pending",
-          "depends_on": ["T-102", "T-103", "T-301", "T-303"],
+          "depends_on": [
+            "T-102",
+            "T-103",
+            "T-301",
+            "T-303"
+          ],
           "notes": "Only the APPROVED transition requires sign-off; other 8 transitions unchanged. Management reject reverts application to UNDER_REVIEW with reason logged."
         },
         {
           "id": "T-404",
-          "finding_ids": ["F-10", "F-08"],
+          "finding_ids": [
+            "F-10",
+            "F-08"
+          ],
           "title": "Force-closure appeal adjudication: route through maker_checker_requests",
-          "ref": "§7.3(4)",
-          "files": ["app/api/admin/deals/[id]/closure/route.ts", "app/api/management/deals/[id]/closure/decide/route.ts"],
+          "ref": "\u00a77.3(4)",
+          "files": [
+            "app/api/admin/deals/[id]/closure/route.ts",
+            "app/api/management/deals/[id]/closure/decide/route.ts"
+          ],
           "branch": "foliodesk/maker-checker-and-audit-fixes",
           "status": "pending",
-          "depends_on": ["T-102", "T-203", "T-301"],
+          "depends_on": [
+            "T-102",
+            "T-203",
+            "T-301"
+          ],
           "notes": "Applies to adjudication of an APPEAL_SUBMITTED appeal specifically, not the initial force-close action. Requires F-08 fix so Management reviews the actual target stage, not a hardcoded one."
         },
         {
           "id": "T-405",
-          "finding_ids": ["F-10"],
+          "finding_ids": [
+            "F-10"
+          ],
           "title": "Build /management route tree (unified inbox + per-type decision views)",
-          "ref": "§7.5",
-          "files": ["app/management/queue/page.tsx", "app/management/ManagementNav.tsx"],
+          "ref": "\u00a77.5",
+          "files": [
+            "app/management/queue/page.tsx",
+            "app/management/ManagementNav.tsx"
+          ],
           "branch": "foliodesk/maker-checker-and-audit-fixes",
           "status": "pending",
-          "depends_on": ["T-301"],
+          "depends_on": [
+            "T-301"
+          ],
           "notes": "Structurally mirrors /admin, scoped to requireManagement(). Reuses existing Admin components in a read-only/decision mode (e.g. DealDetailView.tsx mode='management-review' prop)."
         },
         {
           "id": "T-406",
-          "finding_ids": ["F-10", "F-11"],
+          "finding_ids": [
+            "F-10",
+            "F-11"
+          ],
           "title": "Admin-side UI changes: submit-for-Management-approval copy + Pending Management Review badges + shared disabled/loading submit-button component",
-          "ref": "§7.5",
-          "files": ["app/admin/collections/CollectionsApprovalView.tsx", "app/admin/payouts/PayoutsView.tsx", "app/admin/applications/[id]/correction/page.tsx", "app/admin/deals/[id]/DealDetailView.tsx"],
+          "ref": "\u00a77.5",
+          "files": [
+            "app/admin/collections/CollectionsApprovalView.tsx",
+            "app/admin/payouts/PayoutsView.tsx",
+            "app/admin/applications/[id]/correction/page.tsx",
+            "app/admin/deals/[id]/DealDetailView.tsx"
+          ],
           "branch": "foliodesk/maker-checker-and-audit-fixes",
           "status": "pending",
-          "depends_on": ["T-401", "T-402", "T-403", "T-404"],
-          "notes": "F-11 (systemic double-submit risk) fixed here as a shared submit-button/hook, applied across all touched Admin and Management forms while they're already being edited (per §8 item 9 and §7.5)."
+          "depends_on": [
+            "T-401",
+            "T-402",
+            "T-403",
+            "T-404"
+          ],
+          "notes": "F-11 (systemic double-submit risk) fixed here as a shared submit-button/hook, applied across all touched Admin and Management forms while they're already being edited (per \u00a78 item 9 and \u00a77.5)."
         },
         {
           "id": "T-407",
-          "finding_ids": ["F-10"],
+          "finding_ids": [
+            "F-10"
+          ],
           "title": "Notifications: notify Management users when a request is waiting",
-          "ref": "§7.6",
+          "ref": "\u00a77.6",
           "files": [],
           "branch": "foliodesk/maker-checker-and-audit-fixes",
           "status": "blocked",
@@ -221,130 +335,201 @@
         },
         {
           "id": "T-408",
-          "finding_ids": ["F-10"],
+          "finding_ids": [
+            "F-10"
+          ],
           "title": "Audit trail: write one audit_events row per maker-checker decision",
-          "ref": "§7.6",
-          "files": ["app/api/management/collections/[id]/decide/route.ts", "app/api/management/payouts/decide/route.ts", "app/api/management/applications/[id]/decide/route.ts", "app/api/management/deals/[id]/closure/decide/route.ts"],
+          "ref": "\u00a77.6",
+          "files": [
+            "app/api/management/collections/[id]/decide/route.ts",
+            "app/api/management/payouts/decide/route.ts",
+            "app/api/management/applications/[id]/decide/route.ts",
+            "app/api/management/deals/[id]/closure/decide/route.ts"
+          ],
           "branch": "foliodesk/maker-checker-and-audit-fixes",
           "status": "pending",
-          "depends_on": ["T-401", "T-402", "T-403", "T-404"],
+          "depends_on": [
+            "T-401",
+            "T-402",
+            "T-403",
+            "T-404"
+          ],
           "notes": "action='MAKER_CHECKER_DECISION', cross-referencing maker_checker_requests.id, for consistency with existing audit_events coverage."
         }
       ]
     },
     {
       "phase": 5,
-      "name": "Remaining §8 priority fixes (vesting/eligibility, status gating, hygiene)",
-      "ref": "§8 items 2-13, §6.2, §6.3",
+      "name": "Remaining \u00a78 priority fixes (vesting/eligibility, status gating, hygiene)",
+      "ref": "\u00a78 items 2-13, \u00a76.2, \u00a76.3",
       "tasks": [
         {
           "id": "T-501",
-          "finding_ids": ["F-04"],
+          "finding_ids": [
+            "F-04"
+          ],
           "title": "Decide and implement the vesting/eligibility model for commission rights across affiliate-status changes",
-          "ref": "§8 item 2, §6.2 Finding 5",
-          "files": ["lib/funnel.ts", "db/mysql-schema.sql"],
+          "ref": "\u00a78 item 2, \u00a76.2 Finding 5",
+          "files": [
+            "lib/funnel.ts",
+            "db/mysql-schema.sql"
+          ],
           "branch": "foliodesk/maker-checker-and-audit-fixes",
           "status": "blocked",
           "notes": "Requires an explicit business decision (e.g. snapshot affiliate status at deal-collection-approval time to distinguish already-vested commission from future commission on a still-open deal). Natural surfacing point is the new Management collection-approval screen (T-401). Blocked pending that decision.",
-          "depends_on": ["T-401"]
+          "depends_on": [
+            "T-401"
+          ]
         },
         {
           "id": "T-502",
-          "finding_ids": ["F-04"],
+          "finding_ids": [
+            "F-04"
+          ],
           "title": "Add status guard to findUplineChain() / approveDealCollection() so suspended/terminated/retracted affiliates stop accruing NEW commissions",
-          "ref": "§8 item 3, §6.2 Finding 1",
-          "files": ["lib/funnel.ts"],
+          "ref": "\u00a78 item 3, \u00a76.2 Finding 1",
+          "files": [
+            "lib/funnel.ts"
+          ],
           "branch": "foliodesk/maker-checker-and-audit-fixes",
           "status": "blocked",
           "notes": "Must still pay what's already vested per the model decided in T-501. Currently status is fetched but never filtered on in findUplineChain().",
-          "depends_on": ["T-501"]
+          "depends_on": [
+            "T-501"
+          ]
         },
         {
           "id": "T-503",
-          "finding_ids": ["F-06"],
+          "finding_ids": [
+            "F-06"
+          ],
           "title": "Add affiliate-status checks to funnel-step submission and appeal submission routes",
-          "ref": "§8 item 5, §6.2 Finding 3",
-          "files": ["app/api/portal/prospects/[id]/step/route.ts", "app/api/portal/prospects/[id]/appeal/route.ts"],
+          "ref": "\u00a78 item 5, \u00a76.2 Finding 3",
+          "files": [
+            "app/api/portal/prospects/[id]/step/route.ts",
+            "app/api/portal/prospects/[id]/appeal/route.ts"
+          ],
           "branch": "foliodesk/maker-checker-and-audit-fixes",
           "status": "pending",
           "notes": "Both currently have zero status check (only login + ownership). Should match the explicit blocklist pattern already used correctly in app/api/portal/{leads,prospects}/route.ts, ideally tightened to an explicit === 'APPROVED' allowlist rather than a blocklist."
         },
         {
           "id": "T-504",
-          "finding_ids": ["F-07"],
+          "finding_ids": [
+            "F-07"
+          ],
           "title": "Gate ToggleTestModeButton off immutable/approved/paid records",
-          "ref": "§8 item 6, §6.1",
-          "files": ["app/admin/ToggleTestModeButton.tsx", "app/api/admin/toggle-test-mode/route.ts"],
+          "ref": "\u00a78 item 6, \u00a76.1",
+          "files": [
+            "app/admin/ToggleTestModeButton.tsx",
+            "app/api/admin/toggle-test-mode/route.ts"
+          ],
           "branch": "foliodesk/maker-checker-and-audit-fixes",
           "status": "pending",
           "notes": "Highest-severity UI finding: currently no status check at all -- can flip is_test on a locked/approved/immutable collection or a PAID advice. Server-side route also needs the guard, not just the client confirm() dialog."
         },
         {
           "id": "T-505",
-          "finding_ids": ["F-09"],
+          "finding_ids": [
+            "F-09"
+          ],
           "title": "Unify the three deal-creation entry points through one exclusivity-check + logFunnelStep() path",
-          "ref": "§8 item 7",
-          "files": ["app/api/portal/prospects/route.ts", "app/api/portal/leads/route.ts", "app/api/admin/deals/route.ts"],
+          "ref": "\u00a78 item 7",
+          "files": [
+            "app/api/portal/prospects/route.ts",
+            "app/api/portal/leads/route.ts",
+            "app/api/admin/deals/route.ts"
+          ],
           "branch": "foliodesk/maker-checker-and-audit-fixes",
           "status": "pending",
           "notes": "app/api/portal/prospects/route.ts is the reference implementation (checkProspectExclusivity() + full funnel-step audit trail). The other two currently skip both."
         },
         {
           "id": "T-506",
-          "finding_ids": ["F-12"],
+          "finding_ids": [
+            "F-12"
+          ],
           "title": "Gate invoice re-issue and invoice-target toggle by deal/collection immutability state",
-          "ref": "§8 item 8",
-          "files": ["app/admin/deals/[id]/DealDetailView.tsx"],
+          "ref": "\u00a78 item 8",
+          "files": [
+            "app/admin/deals/[id]/DealDetailView.tsx"
+          ],
           "branch": "foliodesk/maker-checker-and-audit-fixes",
           "status": "pending",
           "notes": "Block both once the deal has any approved (immutable) collection attached, so billing records can no longer desync from locked financial history."
         },
         {
           "id": "T-507",
-          "finding_ids": ["F-14"],
+          "finding_ids": [
+            "F-14"
+          ],
           "title": "Collapse the two test-mode mechanisms (is_test propagation + admin_data_mode cookie/setting)",
-          "ref": "§8 item 10, §4",
-          "files": ["app/api/portal/leads/route.ts", "lib/settings.ts"],
+          "ref": "\u00a78 item 10, \u00a74",
+          "files": [
+            "app/api/portal/leads/route.ts",
+            "lib/settings.ts"
+          ],
           "branch": "foliodesk/maker-checker-and-audit-fixes",
           "status": "pending",
           "notes": "is_test propagation inconsistent across insert paths (leads route relies on DB default instead of passing explicitly); separate admin_data_mode stored in both system_settings and a cookie can drift."
         },
         {
           "id": "T-508",
-          "finding_ids": ["F-13"],
+          "finding_ids": [
+            "F-13"
+          ],
           "title": "Remove dead status branches referencing non-existent enum values",
-          "ref": "§8 item 11",
-          "files": ["app/admin/applications/[id]/correction/page.tsx", "lib/funnel.ts"],
+          "ref": "\u00a78 item 11",
+          "files": [
+            "app/admin/applications/[id]/correction/page.tsx",
+            "lib/funnel.ts"
+          ],
           "branch": "foliodesk/maker-checker-and-audit-fixes",
           "status": "pending",
           "notes": "NEGOTIATION, CLOSURE_PENDING, PARTIALLY_COLLECTED, CLIENT_ONBOARDED, CLOSED_WON -- none exist in the real deal_pipeline.status enum."
         },
         {
           "id": "T-509",
-          "finding_ids": ["F-16"],
+          "finding_ids": [
+            "F-16"
+          ],
           "title": "Remove leftover IIS artifacts and gitignore build artifact on DO branch",
-          "ref": "§8 item 11, §5",
-          "files": ["web.config", "setup-iis.ps1", "tsconfig.tsbuildinfo", ".gitignore"],
+          "ref": "\u00a78 item 11, \u00a75",
+          "files": [
+            "web.config",
+            "setup-iis.ps1",
+            "tsconfig.tsbuildinfo",
+            ".gitignore"
+          ],
           "branch": "codex/foliodesk-digitalocean",
           "status": "pending",
-          "notes": "web.config/setup-iis.ps1 are byte-identical dead files on codex/foliodesk-digitalocean only. This task applies directly on the DO branch after phase-1-5 work is reconciled into it (§0), not on main, since main is the IIS-era codebase where these files are legitimate."
+          "notes": "web.config/setup-iis.ps1 are byte-identical dead files on codex/foliodesk-digitalocean only. This task applies directly on the DO branch after phase-1-5 work is reconciled into it (\u00a70), not on main, since main is the IIS-era codebase where these files are legitimate."
         },
         {
           "id": "T-510",
-          "finding_ids": ["F-15"],
+          "finding_ids": [
+            "F-15"
+          ],
           "title": "Security hardening: CSRF protection, rate limiting on login/register, session revocation on password change",
-          "ref": "§8 item 12",
-          "files": ["lib/auth.ts"],
+          "ref": "\u00a78 item 12",
+          "files": [
+            "lib/auth.ts"
+          ],
           "branch": "foliodesk/maker-checker-and-audit-fixes",
           "status": "blocked",
-          "notes": "Longer-term item per §6.3. Explicitly does NOT get resolved by maker-checker (§F-15 note) -- a forged request could still submit, or approve, a request. Treat as a separate follow-up phase; marked blocked here pending scoping/scheduling decision."
+          "notes": "Longer-term item per \u00a76.3. Explicitly does NOT get resolved by maker-checker (\u00a7F-15 note) -- a forged request could still submit, or approve, a request. Treat as a separate follow-up phase; marked blocked here pending scoping/scheduling decision."
         },
         {
           "id": "T-511",
-          "finding_ids": ["F-17"],
+          "finding_ids": [
+            "F-17"
+          ],
           "title": "Reconfirm FILE_STORAGE_PROVIDER=spaces is pinned in every DO environment",
-          "ref": "§8 item 13, §5",
-          "files": [".do/app-production.yaml", ".do/app-staging.yaml"],
+          "ref": "\u00a78 item 13, \u00a75",
+          "files": [
+            ".do/app-production.yaml",
+            ".do/app-staging.yaml"
+          ],
           "branch": "codex/foliodesk-digitalocean",
           "status": "pending",
           "notes": "Operational control, not a code fix. DO App Platform instance disks are ephemeral -- uploads silently vanish on redeploy if this env var is ever left unset/misconfigured back to 'local'."
@@ -354,40 +539,51 @@
     {
       "phase": 6,
       "name": "Verification, reconciliation to DO branch, and cutover readiness",
-      "ref": "§7.7 steps 4-6, §9",
+      "ref": "\u00a77.7 steps 4-6, \u00a79",
       "tasks": [
         {
           "id": "T-601",
           "finding_ids": [],
           "title": "End-to-end test all four maker/checker flows in staging with real Management accounts",
-          "ref": "§7.7 step 4",
+          "ref": "\u00a77.7 step 4",
           "files": [],
           "branch": "foliodesk/maker-checker-and-audit-fixes",
           "status": "blocked",
           "notes": "Requires a live DB/staging environment -- cannot be performed from the automation environment used to write this code (no Docker/MySQL reachable). Manual/CI step.",
-          "depends_on": ["T-401", "T-402", "T-403", "T-404", "T-304"]
+          "depends_on": [
+            "T-401",
+            "T-402",
+            "T-403",
+            "T-404",
+            "T-304"
+          ]
         },
         {
           "id": "T-602",
           "finding_ids": [],
           "title": "Reconcile feature branch into codex/foliodesk-digitalocean via merge/rebase",
-          "ref": "§0, §9",
+          "ref": "\u00a70, \u00a79",
           "files": [],
           "branch": "codex/foliodesk-digitalocean",
           "status": "pending",
           "notes": "Not hand-copying files -- both branches share repo history. Merge or rebase foliodesk/maker-checker-and-audit-fixes onto codex/foliodesk-digitalocean after main-side changes are committed.",
-          "depends_on": ["T-509"]
+          "depends_on": [
+            "T-509"
+          ]
         },
         {
           "id": "T-603",
           "finding_ids": [],
           "title": "Post-cutover verification checklist",
-          "ref": "§7.7 step 6",
+          "ref": "\u00a77.7 step 6",
           "files": [],
           "branch": null,
           "status": "blocked",
           "notes": "Confirm chk_mc_separation constraint is active; confirm >=2 Management accounts exist (avoid single point of failure); confirm old direct-approval code paths are fully decommissioned, not just superseded. Requires live DB access -- manual/CI step.",
-          "depends_on": ["T-601", "T-602"]
+          "depends_on": [
+            "T-601",
+            "T-602"
+          ]
         },
         {
           "id": "T-604",

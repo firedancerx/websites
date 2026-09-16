@@ -1,6 +1,6 @@
 {
   "meta": {
-    "description": "Append-only execution log for CICD/todo.json. One entry per action taken (command run, file changed, git operation), timestamped, per plan §9.",
+    "description": "Append-only execution log for CICD/todo.json. One entry per action taken (command run, file changed, git operation), timestamped, per plan \u00a79.",
     "format_note": "Entries are appended chronologically and never rewritten or removed once written."
   },
   "entries": [
@@ -8,7 +8,7 @@
       "timestamp": "2026-09-16T00:00:00Z",
       "actor": "claude",
       "action": "PLAN_CONSOLIDATED",
-      "detail": "Consolidated all prior analysis and audit findings into FolioDesk_Consolidated_Plan.md (404 lines). Ran 3 automated consistency-check passes plus 1 manual re-read; fixed 3 confirmed inconsistencies (§7.3.1 cross-reference format, orphaned Finding F-03, orphaned Finding F-12) and 1 stray legacy reference ('CICD item T-002' -> 'Finding F-04 (§6.3)'). Final pass reported zero remaining issues.",
+      "detail": "Consolidated all prior analysis and audit findings into FolioDesk_Consolidated_Plan.md (404 lines). Ran 3 automated consistency-check passes plus 1 manual re-read; fixed 3 confirmed inconsistencies (\u00a77.3.1 cross-reference format, orphaned Finding F-03, orphaned Finding F-12) and 1 stray legacy reference ('CICD item T-002' -> 'Finding F-04 (\u00a76.3)'). Final pass reported zero remaining issues.",
       "status": "success"
     },
     {
@@ -24,21 +24,120 @@
       "action": "FILE_TRANSFER",
       "detail": "Retried transfer of FolioDesk_Consolidated_Plan.md using device_commit_files with stagedPath under /mnt/user-data/outputs/ (container-to-device path), force=true to overwrite the corrupted file. Verified post-transfer on device via device_bash: wc -l = 404, md5sum = 30aeb6a0d8419eb416391a74b8ec711c, matching the source exactly.",
       "status": "success",
-      "files": ["CICD/FolioDesk_Consolidated_Plan.md"]
+      "files": [
+        "CICD/FolioDesk_Consolidated_Plan.md"
+      ]
     },
     {
       "timestamp": "2026-09-16T00:15:00Z",
       "actor": "claude",
       "action": "TODO_CREATED",
-      "detail": "Created CICD/todo.json: 33 tasks across 6 phases (schema migrations; hard-prerequisite fixes; maker-checker auth/tooling; the four maker-checker flow changes; remaining §8 priority fixes; verification/reconciliation/cutover). Validated: all 17 Finding IDs (F-01..F-17) referenced at least once, no duplicate task IDs, no broken depends_on references.",
+      "detail": "Created CICD/todo.json: 33 tasks across 6 phases (schema migrations; hard-prerequisite fixes; maker-checker auth/tooling; the four maker-checker flow changes; remaining \u00a78 priority fixes; verification/reconciliation/cutover). Validated: all 17 Finding IDs (F-01..F-17) referenced at least once, no duplicate task IDs, no broken depends_on references.",
       "status": "success"
     },
     {
       "timestamp": "2026-09-16T00:16:00Z",
       "actor": "claude",
       "action": "LOG_CREATED",
-      "detail": "Created CICD/log.json (this file) as the append-only execution log referenced by plan §9.",
+      "detail": "Created CICD/log.json (this file) as the append-only execution log referenced by plan \u00a79.",
       "status": "success"
+    },
+    {
+      "timestamp": "2026-09-16T00:30:00Z",
+      "actor": "claude",
+      "action": "CODE_CHANGE",
+      "detail": "Phase 1 (schema migrations): added MANAGEMENT to users.role enum, created maker_checker_requests table, added PENDING_MANAGEMENT_APPROVAL to affiliate_applications.status enum. Applied directly to db/mysql-schema.sql plus 3 standalone files in CICD/migrations/ (001-003). All additive, statically checked only per \u00a79 constraint (no live DB reachable).",
+      "status": "success",
+      "files": [
+        "FolioDesk/WebsiteBuild/db/mysql-schema.sql",
+        "FolioDesk/CICD/migrations/001_add_management_role.sql",
+        "FolioDesk/CICD/migrations/002_create_maker_checker_requests.sql",
+        "FolioDesk/CICD/migrations/003_add_pending_management_approval_status.sql"
+      ],
+      "tasks": [
+        "T-101",
+        "T-102",
+        "T-103"
+      ]
+    },
+    {
+      "timestamp": "2026-09-16T00:45:00Z",
+      "actor": "claude",
+      "action": "CODE_CHANGE",
+      "detail": "Phase 2 (hard prerequisites, plan \u00a77.8): wrapped approveDealCollection() and settleConsolidatedPayout() in DB transactions (conn.beginTransaction/commit/rollback, matching app/api/register/route.ts's existing pattern) to fix F-01. Added optional 'executor' parameter to findUplineChain() so it participates in the caller's transaction. Fixed F-08 by adding deal_pipeline.status_before_force_closure column (migration 004, additive) -- forceCloseDeal() now snapshots the deal's true pre-closure status, and adjudicateDealAppeal() restores it on appeal approval instead of hardcoding 'PROPOSAL_SENT'.",
+      "status": "success",
+      "files": [
+        "FolioDesk/WebsiteBuild/lib/funnel.ts",
+        "FolioDesk/WebsiteBuild/db/mysql-schema.sql",
+        "FolioDesk/CICD/migrations/004_add_status_before_force_closure.sql"
+      ],
+      "tasks": [
+        "T-201",
+        "T-202",
+        "T-203"
+      ],
+      "verification_note": "No TypeScript compiler runnable in this environment (local tsc binary is Windows-native, requires node.exe not present in the device_bash Linux sandbox). Verified structurally instead: brace/paren balance check on lib/funnel.ts (112/112 braces, 262/262 parens), confirmed all 16 exported functions still present and in original order, confirmed no other callers of findUplineChain() were broken by its new optional parameter. Full type-check must be run manually (or via CI) before this branch is considered mergeable."
+    },
+    {
+      "timestamp": "2026-09-16T13:30:00Z",
+      "actor": "claude",
+      "action": "CODE_CHANGE",
+      "detail": "Phase 3: added requireManagement() to lib/auth.ts; fixed F-05 (users.status desync for RETRACTED/RETRACTION_ACKNOWLEDGED); built ADMIN-only /admin/users role-management screen and /api/admin/users route enforcing strict, permanent, org-wide separation of duties between ADMIN and MANAGEMENT (checked against current role + full audit_events role-change history). Added nav link in AdminNav.tsx.",
+      "status": "success",
+      "files": [
+        "FolioDesk/WebsiteBuild/lib/auth.ts",
+        "FolioDesk/WebsiteBuild/app/api/admin/applications/[id]/route.ts",
+        "FolioDesk/WebsiteBuild/app/api/admin/users/route.ts",
+        "FolioDesk/WebsiteBuild/app/admin/users/page.tsx",
+        "FolioDesk/WebsiteBuild/app/admin/users/AdminUsersView.tsx",
+        "FolioDesk/WebsiteBuild/app/admin/AdminNav.tsx"
+      ],
+      "tasks": [
+        "T-301",
+        "T-302",
+        "T-303"
+      ]
+    },
+    {
+      "timestamp": "2026-09-16T13:31:00Z",
+      "actor": "claude",
+      "action": "GIT_OPERATIONAL_NOTE",
+      "detail": "git status/git commit calls in the FolioDesk/../Websites outer repo working tree are slow (large tree, many pre-existing modified/untracked files) and can exceed a 120s tool timeout even when they eventually succeed. Encountered a second stale index.lock (0-byte, no running git process, same signature as the earlier documented incident) after a timed-out compound command. Removed it after confirming via `ps aux` that no git process was running, then retried with a longer timeout and the commit succeeded cleanly (6 files, exactly the intended set). No data was lost; the earlier `git add` had actually succeeded despite its wrapping command reporting a timeout.",
+      "status": "success"
+    },
+    {
+      "timestamp": "2026-09-16T15:20:00Z",
+      "actor": "claude",
+      "action": "CODE_CHANGE",
+      "detail": "T-401: Admin collection-approve route now submits a maker_checker_requests row instead of approving directly; new app/api/management/collections/[id]/decide/route.ts (MANAGEMENT-only) approves-as-submitted or rejects. CollectionsApprovalView.tsx updated with 'PENDING MANAGEMENT REVIEW' badge and submit-for-approval copy (mc_request_status join added to page.tsx query).",
+      "status": "success",
+      "files": [
+        "FolioDesk/WebsiteBuild/lib/funnel.ts",
+        "FolioDesk/WebsiteBuild/app/admin/collections/CollectionsApprovalView.tsx",
+        "FolioDesk/WebsiteBuild/app/admin/collections/page.tsx",
+        "FolioDesk/WebsiteBuild/app/api/admin/collections/[id]/approve/route.ts",
+        "FolioDesk/WebsiteBuild/app/api/management/collections/[id]/decide/route.ts"
+      ],
+      "tasks": [
+        "T-401"
+      ]
+    },
+    {
+      "timestamp": "2026-09-16T15:35:00Z",
+      "actor": "claude",
+      "action": "CODE_CHANGE",
+      "detail": "T-402 (highest-risk flow): both single-advice and batch payout disbursement routes now submit maker_checker_requests instead of writing payout_status='PAID' directly. New app/api/management/payouts/decide/route.ts (MANAGEMENT-only, takes requestId in body since it disambiguates single vs batch entity types) executes settleConsolidatedPayout() (batch) or a guarded direct UPDATE (single) on approval. F-02 fixed: re-flip guard added to both the new single-settlement path and the separate CANCEL_PAYOUT action (WHERE payout_status='PENDING_DISBURSEMENT'). F-03 fixed: PayoutsView.tsx's Disburse button condition rebuilt as isDisbursable (excludes PAID, CANCELLED, and advices already pending Management review) instead of the old isPaid-only check. F-11 fixed on this form: disabled/loading state added to the disbursement submit button.",
+      "status": "success",
+      "files": [
+        "FolioDesk/WebsiteBuild/app/api/admin/payouts/[id]/route.ts",
+        "FolioDesk/WebsiteBuild/app/api/admin/payouts/batch/route.ts",
+        "FolioDesk/WebsiteBuild/app/api/management/payouts/decide/route.ts",
+        "FolioDesk/WebsiteBuild/app/admin/payouts/PayoutsView.tsx",
+        "FolioDesk/WebsiteBuild/app/admin/payouts/page.tsx"
+      ],
+      "tasks": [
+        "T-402"
+      ]
     }
   ]
 }
