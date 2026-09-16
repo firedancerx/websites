@@ -35,6 +35,67 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Entity not found" }, { status: 404 });
     }
 
+    // F-07 (plan §8 item 6, §6.1, "highest-severity UI finding"): this route had
+    // no status check at all -- is_test could be flipped on a locked/approved
+    // collection or a PAID advice, silently desyncing a sealed financial record
+    // from the test/actual reporting split. Gated here at the server, not just
+    // the client confirm() dialog, since the client check alone is not a
+    // security boundary. Each entity type is checked against its own locked
+    // condition, and a deal/affiliate is additionally blocked once ANY
+    // financial record beneath it has locked, since flipping the parent would
+    // desync the reporting split around records it has no direct field for.
+    if (entityType === "collection") {
+      const [collRows] = await db().execute<any[]>(
+        "SELECT is_immutable FROM deal_collections WHERE id=? LIMIT 1",
+        [entityId]
+      );
+      if (Number(collRows[0]?.is_immutable) === 1) {
+        return NextResponse.json(
+          { error: "This collection has been approved or rejected and sealed as immutable. Data mode can no longer be changed." },
+          { status: 409 }
+        );
+      }
+    } else if (entityType === "payment_advice") {
+      const [advRows] = await db().execute<any[]>(
+        "SELECT payout_status FROM payment_advices WHERE id=? LIMIT 1",
+        [entityId]
+      );
+      if (advRows[0]?.payout_status === "PAID") {
+        return NextResponse.json(
+          { error: "This payment advice has already been paid out. Data mode can no longer be changed." },
+          { status: 409 }
+        );
+      }
+    } else if (entityType === "deal") {
+      const [lockedRows] = await db().execute<any[]>(
+        `SELECT
+           (SELECT COUNT(*) FROM deal_collections WHERE deal_id=? AND is_immutable=1) AS locked_collections,
+           (SELECT COUNT(*) FROM payment_advices WHERE deal_id=? AND payout_status='PAID') AS paid_advices`,
+        [entityId, entityId]
+      );
+      const locked = lockedRows[0];
+      if (Number(locked?.locked_collections) > 0 || Number(locked?.paid_advices) > 0) {
+        return NextResponse.json(
+          { error: "This deal has an approved/rejected collection or a paid advice attached. Data mode can no longer be changed." },
+          { status: 409 }
+        );
+      }
+    } else if (entityType === "affiliate") {
+      const [lockedRows] = await db().execute<any[]>(
+        `SELECT
+           (SELECT COUNT(*) FROM deal_collections dc JOIN deal_pipeline dp ON dp.id=dc.deal_id WHERE dp.affiliate_id=? AND dc.is_immutable=1) AS locked_collections,
+           (SELECT COUNT(*) FROM payment_advices WHERE beneficiary_affiliate_id=? AND payout_status='PAID') AS paid_advices`,
+        [entityId, entityId]
+      );
+      const locked = lockedRows[0];
+      if (Number(locked?.locked_collections) > 0 || Number(locked?.paid_advices) > 0) {
+        return NextResponse.json(
+          { error: "This affiliate has an approved/rejected collection or a paid advice attached. Data mode can no longer be changed." },
+          { status: 409 }
+        );
+      }
+    }
+
     const currentIsTest = Number(rows[0].is_test || 0);
     const newIsTest = typeof targetMode === "number" ? targetMode : (currentIsTest === 1 ? 0 : 1);
 

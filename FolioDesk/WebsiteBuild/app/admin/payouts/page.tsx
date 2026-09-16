@@ -39,11 +39,16 @@ export default async function AdminPayoutsPage({
        dp.customer_name,
        dc.invoice_number,
        dc.bank_receipt_ref,
-       dc.collection_date
+       dc.collection_date,
+       mcr.status AS mc_request_status
      FROM payment_advices pa
      JOIN affiliate_applications a ON a.id = pa.beneficiary_affiliate_id
      JOIN deal_pipeline dp ON dp.id = pa.deal_id
      JOIN deal_collections dc ON dc.id = pa.collection_id
+     LEFT JOIN maker_checker_requests mcr
+       ON mcr.entity_type = 'payment_advices'
+       AND mcr.entity_id = pa.id
+       AND mcr.status = 'PENDING'
      ${adviceWhere}
      ORDER BY pa.created_at DESC`
   );

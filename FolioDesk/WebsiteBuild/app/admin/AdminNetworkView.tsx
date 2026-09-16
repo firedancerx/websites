@@ -161,6 +161,10 @@ function filterTree(nodes: TreeNode[], q: string): TreeNode[] {
 export default function AdminNetworkView({ initialApps }: { initialApps: AffiliateItem[] }) {
   const [searchQuery, setSearchQuery] = useState("");
 
+  // T-406 (plan §7.5, F-11): per-row double-submit guard for the decision form,
+  // matching the pattern applied to Collections, Payouts and the appeal modal.
+  const [submittingId, setSubmittingId] = useState<number | null>(null);
+
   const fullTree = useMemo(() => buildUplineTree(initialApps), [initialApps]);
   const filteredTree = useMemo(() => filterTree(fullTree, searchQuery), [fullTree, searchQuery]);
 
@@ -407,6 +411,8 @@ export default function AdminNetworkView({ initialApps }: { initialApps: Affilia
                           ? "#e0e7ff"
                           : node.status === "CORRECTION_REQUIRED" || node.status === "INFORMATION_REQUIRED"
                           ? "#fef3c7"
+                          : node.status === "PENDING_MANAGEMENT_APPROVAL"
+                          ? "#ede9fe"
                           : node.status === "APPROVED"
                           ? "#dcfce7"
                           : node.status === "SUSPENDED"
@@ -425,6 +431,8 @@ export default function AdminNetworkView({ initialApps }: { initialApps: Affilia
                           ? "#3730a3"
                           : node.status === "CORRECTION_REQUIRED" || node.status === "INFORMATION_REQUIRED"
                           ? "#92400e"
+                          : node.status === "PENDING_MANAGEMENT_APPROVAL"
+                          ? "#5b21b6"
                           : node.status === "APPROVED"
                           ? "#166534"
                           : node.status === "SUSPENDED"
@@ -443,6 +451,8 @@ export default function AdminNetworkView({ initialApps }: { initialApps: Affilia
                           ? "1px solid #c7d2fe"
                           : node.status === "CORRECTION_REQUIRED" || node.status === "INFORMATION_REQUIRED"
                           ? "1px solid #fde68a"
+                          : node.status === "PENDING_MANAGEMENT_APPROVAL"
+                          ? "1px solid #ddd6fe"
                           : node.status === "APPROVED"
                           ? "1px solid #bbf7d0"
                           : node.status === "SUSPENDED"
@@ -478,7 +488,12 @@ export default function AdminNetworkView({ initialApps }: { initialApps: Affilia
                     action={`/foliodesk/api/admin/applications/${node.id}`}
                     method="post"
                     style={{ display: "inline-flex", gap: 4 }}
+                    onSubmit={() => setSubmittingId(node.id)}
                   >
+                    <fieldset
+                      disabled={submittingId === node.id}
+                      style={{ display: "inline-flex", gap: 4, border: "none", margin: 0, padding: 0, opacity: submittingId === node.id ? 0.6 : 1 }}
+                    >
                     {node.status === "RETRACTED" && (
                       <button
                         name="decision"
@@ -490,11 +505,21 @@ export default function AdminNetworkView({ initialApps }: { initialApps: Affilia
                       </button>
                     )}
 
-                    {node.status !== "APPROVED" && node.status !== "TERMINATED" && node.status !== "RETRACTED" && node.status !== "RETRACTION_ACKNOWLEDGED" && (
-                      <button className="approve" name="decision" value="APPROVED" title={node.status === "SUSPENDED" ? "Reactivate affiliate" : "Approve application"}>
-                        {node.status === "SUSPENDED" ? "Reactivate" : "Approve"}
-                      </button>
+                    {node.status === "PENDING_MANAGEMENT_APPROVAL" && (
+                      <span style={{ fontSize: 12, color: "#5b21b6", fontWeight: 600, padding: "4px 8px" }}>
+                        Awaiting Management decision
+                      </span>
                     )}
+
+                    {node.status !== "APPROVED" &&
+                      node.status !== "TERMINATED" &&
+                      node.status !== "RETRACTED" &&
+                      node.status !== "RETRACTION_ACKNOWLEDGED" &&
+                      node.status !== "PENDING_MANAGEMENT_APPROVAL" && (
+                        <button className="approve" name="decision" value="APPROVED" title={node.status === "SUSPENDED" ? "Reactivate affiliate" : "Submit for Management approval"}>
+                          {node.status === "SUSPENDED" ? "Reactivate" : "Submit for Approval"}
+                        </button>
+                      )}
 
                     {node.status === "APPROVED" && (
                       <button name="decision" value="SUSPENDED" title="Suspend affiliate">
@@ -513,6 +538,7 @@ export default function AdminNetworkView({ initialApps }: { initialApps: Affilia
                         Reject
                       </button>
                     )}
+                    </fieldset>
                   </form>
                 </div>
               )}

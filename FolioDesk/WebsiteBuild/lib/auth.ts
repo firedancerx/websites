@@ -23,6 +23,10 @@ export async function currentUser(){
   return rows[0]||null;
 }
 export async function requireAdmin(){const user=await currentUser(); return user?.role==="ADMIN"?user:null;}
+// T-301 (plan §7.1): parallel helper to requireAdmin(), scoped to the new MANAGEMENT role.
+// Matches requireAdmin()'s return-null-on-failure convention rather than throwing, since every
+// existing caller in this codebase checks the return value for null (see app/api/admin/*/route.ts).
+export async function requireManagement(){const user=await currentUser(); return user?.role==="MANAGEMENT"?user:null;}
 export function getBaseUrl(req: Request) {
   const host = req.headers.get("host") || "localhost";
   const proto = req.headers.get("x-forwarded-proto") || "http";

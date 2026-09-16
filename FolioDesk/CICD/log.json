@@ -1,0 +1,312 @@
+{
+  "meta": {
+    "description": "Append-only execution log for CICD/todo.json. One entry per action taken (command run, file changed, git operation), timestamped, per plan \u00a79.",
+    "format_note": "Entries are appended chronologically and never rewritten or removed once written."
+  },
+  "entries": [
+    {
+      "timestamp": "2026-09-16T00:00:00Z",
+      "actor": "claude",
+      "action": "PLAN_CONSOLIDATED",
+      "detail": "Consolidated all prior analysis and audit findings into FolioDesk_Consolidated_Plan.md (404 lines). Ran 3 automated consistency-check passes plus 1 manual re-read; fixed 3 confirmed inconsistencies (\u00a77.3.1 cross-reference format, orphaned Finding F-03, orphaned Finding F-12) and 1 stray legacy reference ('CICD item T-002' -> 'Finding F-04 (\u00a76.3)'). Final pass reported zero remaining issues.",
+      "status": "success"
+    },
+    {
+      "timestamp": "2026-09-16T00:05:00Z",
+      "actor": "claude",
+      "action": "FILE_TRANSFER",
+      "detail": "Initial attempt to transfer FolioDesk_Consolidated_Plan.md to device via gzip+base64+device_bash heredoc failed with gunzip CRC/length error; resulting device-side file was 410 lines (corrupted) vs. source's 404 lines.",
+      "status": "failed"
+    },
+    {
+      "timestamp": "2026-09-16T00:10:00Z",
+      "actor": "claude",
+      "action": "FILE_TRANSFER",
+      "detail": "Retried transfer of FolioDesk_Consolidated_Plan.md using device_commit_files with stagedPath under /mnt/user-data/outputs/ (container-to-device path), force=true to overwrite the corrupted file. Verified post-transfer on device via device_bash: wc -l = 404, md5sum = 30aeb6a0d8419eb416391a74b8ec711c, matching the source exactly.",
+      "status": "success",
+      "files": [
+        "CICD/FolioDesk_Consolidated_Plan.md"
+      ]
+    },
+    {
+      "timestamp": "2026-09-16T00:15:00Z",
+      "actor": "claude",
+      "action": "TODO_CREATED",
+      "detail": "Created CICD/todo.json: 33 tasks across 6 phases (schema migrations; hard-prerequisite fixes; maker-checker auth/tooling; the four maker-checker flow changes; remaining \u00a78 priority fixes; verification/reconciliation/cutover). Validated: all 17 Finding IDs (F-01..F-17) referenced at least once, no duplicate task IDs, no broken depends_on references.",
+      "status": "success"
+    },
+    {
+      "timestamp": "2026-09-16T00:16:00Z",
+      "actor": "claude",
+      "action": "LOG_CREATED",
+      "detail": "Created CICD/log.json (this file) as the append-only execution log referenced by plan \u00a79.",
+      "status": "success"
+    },
+    {
+      "timestamp": "2026-09-16T00:30:00Z",
+      "actor": "claude",
+      "action": "CODE_CHANGE",
+      "detail": "Phase 1 (schema migrations): added MANAGEMENT to users.role enum, created maker_checker_requests table, added PENDING_MANAGEMENT_APPROVAL to affiliate_applications.status enum. Applied directly to db/mysql-schema.sql plus 3 standalone files in CICD/migrations/ (001-003). All additive, statically checked only per \u00a79 constraint (no live DB reachable).",
+      "status": "success",
+      "files": [
+        "FolioDesk/WebsiteBuild/db/mysql-schema.sql",
+        "FolioDesk/CICD/migrations/001_add_management_role.sql",
+        "FolioDesk/CICD/migrations/002_create_maker_checker_requests.sql",
+        "FolioDesk/CICD/migrations/003_add_pending_management_approval_status.sql"
+      ],
+      "tasks": [
+        "T-101",
+        "T-102",
+        "T-103"
+      ]
+    },
+    {
+      "timestamp": "2026-09-16T00:45:00Z",
+      "actor": "claude",
+      "action": "CODE_CHANGE",
+      "detail": "Phase 2 (hard prerequisites, plan \u00a77.8): wrapped approveDealCollection() and settleConsolidatedPayout() in DB transactions (conn.beginTransaction/commit/rollback, matching app/api/register/route.ts's existing pattern) to fix F-01. Added optional 'executor' parameter to findUplineChain() so it participates in the caller's transaction. Fixed F-08 by adding deal_pipeline.status_before_force_closure column (migration 004, additive) -- forceCloseDeal() now snapshots the deal's true pre-closure status, and adjudicateDealAppeal() restores it on appeal approval instead of hardcoding 'PROPOSAL_SENT'.",
+      "status": "success",
+      "files": [
+        "FolioDesk/WebsiteBuild/lib/funnel.ts",
+        "FolioDesk/WebsiteBuild/db/mysql-schema.sql",
+        "FolioDesk/CICD/migrations/004_add_status_before_force_closure.sql"
+      ],
+      "tasks": [
+        "T-201",
+        "T-202",
+        "T-203"
+      ],
+      "verification_note": "No TypeScript compiler runnable in this environment (local tsc binary is Windows-native, requires node.exe not present in the device_bash Linux sandbox). Verified structurally instead: brace/paren balance check on lib/funnel.ts (112/112 braces, 262/262 parens), confirmed all 16 exported functions still present and in original order, confirmed no other callers of findUplineChain() were broken by its new optional parameter. Full type-check must be run manually (or via CI) before this branch is considered mergeable."
+    },
+    {
+      "timestamp": "2026-09-16T13:30:00Z",
+      "actor": "claude",
+      "action": "CODE_CHANGE",
+      "detail": "Phase 3: added requireManagement() to lib/auth.ts; fixed F-05 (users.status desync for RETRACTED/RETRACTION_ACKNOWLEDGED); built ADMIN-only /admin/users role-management screen and /api/admin/users route enforcing strict, permanent, org-wide separation of duties between ADMIN and MANAGEMENT (checked against current role + full audit_events role-change history). Added nav link in AdminNav.tsx.",
+      "status": "success",
+      "files": [
+        "FolioDesk/WebsiteBuild/lib/auth.ts",
+        "FolioDesk/WebsiteBuild/app/api/admin/applications/[id]/route.ts",
+        "FolioDesk/WebsiteBuild/app/api/admin/users/route.ts",
+        "FolioDesk/WebsiteBuild/app/admin/users/page.tsx",
+        "FolioDesk/WebsiteBuild/app/admin/users/AdminUsersView.tsx",
+        "FolioDesk/WebsiteBuild/app/admin/AdminNav.tsx"
+      ],
+      "tasks": [
+        "T-301",
+        "T-302",
+        "T-303"
+      ]
+    },
+    {
+      "timestamp": "2026-09-16T13:31:00Z",
+      "actor": "claude",
+      "action": "GIT_OPERATIONAL_NOTE",
+      "detail": "git status/git commit calls in the FolioDesk/../Websites outer repo working tree are slow (large tree, many pre-existing modified/untracked files) and can exceed a 120s tool timeout even when they eventually succeed. Encountered a second stale index.lock (0-byte, no running git process, same signature as the earlier documented incident) after a timed-out compound command. Removed it after confirming via `ps aux` that no git process was running, then retried with a longer timeout and the commit succeeded cleanly (6 files, exactly the intended set). No data was lost; the earlier `git add` had actually succeeded despite its wrapping command reporting a timeout.",
+      "status": "success"
+    },
+    {
+      "timestamp": "2026-09-16T15:20:00Z",
+      "actor": "claude",
+      "action": "CODE_CHANGE",
+      "detail": "T-401: Admin collection-approve route now submits a maker_checker_requests row instead of approving directly; new app/api/management/collections/[id]/decide/route.ts (MANAGEMENT-only) approves-as-submitted or rejects. CollectionsApprovalView.tsx updated with 'PENDING MANAGEMENT REVIEW' badge and submit-for-approval copy (mc_request_status join added to page.tsx query).",
+      "status": "success",
+      "files": [
+        "FolioDesk/WebsiteBuild/lib/funnel.ts",
+        "FolioDesk/WebsiteBuild/app/admin/collections/CollectionsApprovalView.tsx",
+        "FolioDesk/WebsiteBuild/app/admin/collections/page.tsx",
+        "FolioDesk/WebsiteBuild/app/api/admin/collections/[id]/approve/route.ts",
+        "FolioDesk/WebsiteBuild/app/api/management/collections/[id]/decide/route.ts"
+      ],
+      "tasks": [
+        "T-401"
+      ]
+    },
+    {
+      "timestamp": "2026-09-16T15:35:00Z",
+      "actor": "claude",
+      "action": "CODE_CHANGE",
+      "detail": "T-402 (highest-risk flow): both single-advice and batch payout disbursement routes now submit maker_checker_requests instead of writing payout_status='PAID' directly. New app/api/management/payouts/decide/route.ts (MANAGEMENT-only, takes requestId in body since it disambiguates single vs batch entity types) executes settleConsolidatedPayout() (batch) or a guarded direct UPDATE (single) on approval. F-02 fixed: re-flip guard added to both the new single-settlement path and the separate CANCEL_PAYOUT action (WHERE payout_status='PENDING_DISBURSEMENT'). F-03 fixed: PayoutsView.tsx's Disburse button condition rebuilt as isDisbursable (excludes PAID, CANCELLED, and advices already pending Management review) instead of the old isPaid-only check. F-11 fixed on this form: disabled/loading state added to the disbursement submit button.",
+      "status": "success",
+      "files": [
+        "FolioDesk/WebsiteBuild/app/api/admin/payouts/[id]/route.ts",
+        "FolioDesk/WebsiteBuild/app/api/admin/payouts/batch/route.ts",
+        "FolioDesk/WebsiteBuild/app/api/management/payouts/decide/route.ts",
+        "FolioDesk/WebsiteBuild/app/admin/payouts/PayoutsView.tsx",
+        "FolioDesk/WebsiteBuild/app/admin/payouts/page.tsx"
+      ],
+      "tasks": [
+        "T-402"
+      ]
+    },
+    {
+      "timestamp": "2026-09-16T15:45:00Z",
+      "actor": "claude",
+      "action": "CODE_CHANGE",
+      "detail": "T-403: only the APPROVED transition in the admin application-decision route is now gated -- it sets affiliate_applications.status='PENDING_MANAGEMENT_APPROVAL' (no affiliate_code assigned yet, no decided_at) and submits a maker_checker_requests row instead of approving directly; the other 8 decision values (REJECTED, SUSPENDED, TERMINATED, RETRACTED, RETRACTION_ACKNOWLEDGED, etc.) proceed through the original code path unchanged, including the F-05 users.status fix from T-303. New app/api/management/applications/[id]/decide/route.ts (MANAGEMENT-only): on APPROVE, generates affiliate_code (if not already assigned, e.g. on a reinstatement), sets status='APPROVED', decided_at=NOW(), and users.status='ACTIVE'/role='AFFILIATE'; on REJECT, reverts affiliate_applications.status to 'UNDER_REVIEW' (non-terminal -- Management disagreeing with the Admin's recommendation, not a decision about the applicant) with the reason logged to application_status_history. AdminNetworkView.tsx updated with PENDING_MANAGEMENT_APPROVAL badge styling and 'Awaiting Management decision' button-area copy; Approve/Reactivate button text changed to 'Submit for Approval'.",
+      "status": "success",
+      "files": [
+        "FolioDesk/WebsiteBuild/app/api/admin/applications/[id]/route.ts",
+        "FolioDesk/WebsiteBuild/app/api/management/applications/[id]/decide/route.ts",
+        "FolioDesk/WebsiteBuild/app/admin/AdminNetworkView.tsx"
+      ],
+      "tasks": [
+        "T-403"
+      ],
+      "commit": "75e94d4"
+    },
+    {
+      "timestamp": "2026-09-16T15:50:00Z",
+      "actor": "claude",
+      "action": "CODE_CHANGE",
+      "detail": "T-404: force-closure appeal adjudication now routes through maker_checker_requests. In app/api/admin/deals/[id]/closure/route.ts, FORCE_CLOSE and EXTEND_DIRECT actions are left completely unchanged (out of scope per plan §7.3(4)); ADJUDICATE_APPEAL no longer calls adjudicateDealAppeal() directly -- it checks for an existing PENDING request (entity_type='deal_pipeline', request_type='CLOSURE_APPEAL_ADJUDICATION') then submits one with payload {dealId, isApproved, daysExtended, notes}. New app/api/management/deals/[id]/closure/decide/route.ts (MANAGEMENT-only): on APPROVE, calls adjudicateDealAppeal() with the exact payload the Admin submitted (Management confirms-as-submitted, cannot silently change days), then re-reads deal_pipeline.status to report the actual restored stage (leveraging the T-203/F-08 fix that populates status_before_force_closure) rather than assuming a fixed outcome; on REJECT, does NOT call adjudicateDealAppeal() -- appeal_status is left untouched at APPEAL_SUBMITTED so the appeal remains open for the Admin to resubmit a different recommendation. DealDetailView.tsx appeal modal updated: title changed to 'Review Extension Appeal', added a maker-checker notice box, submit button changed to 'Submit Recommendation for Management Sign-off'. This completes all four of the plan's mandatory maker-checker flows (T-401 through T-404).",
+      "status": "success",
+      "files": [
+        "FolioDesk/WebsiteBuild/app/api/admin/deals/[id]/closure/route.ts",
+        "FolioDesk/WebsiteBuild/app/api/management/deals/[id]/closure/decide/route.ts",
+        "FolioDesk/WebsiteBuild/app/admin/deals/[id]/DealDetailView.tsx"
+      ],
+      "tasks": [
+        "T-404"
+      ],
+      "commit": "2d31409"
+    },
+    {
+      "timestamp": "2026-09-16T16:00:00Z",
+      "actor": "claude",
+      "action": "TRACKER_UPDATE",
+      "detail": "Marked T-403 and T-404 as done in todo.json (code for both had already been committed as 75e94d4 and 2d31409 respectively; only the tracker bookkeeping had been deferred). No code changes in this entry.",
+      "status": "success",
+      "commit": "36b459e"
+    },
+    {
+      "timestamp": "2026-09-16T16:15:00Z",
+      "actor": "claude",
+      "action": "CODE_CHANGE",
+      "detail": "T-405: built the /management route tree. app/management/ManagementNav.tsx structurally mirrors AdminNav.tsx (currently a single 'Approval Queue' link, room to grow). app/management/queue/page.tsx is a requireManagement()-gated server component that queries every PENDING maker_checker_requests row, then batch-enriches each group by request_type/entity_type: COLLECTION_APPROVAL joins deal_collections/deal_pipeline/affiliate_applications; PAYOUT_DISBURSEMENT handles both entity_type='payment_advices' (single) and 'affiliate_batch' (consolidated) by parsing action_payload directly for batch details; APPLICATION_APPROVAL joins affiliate_applications; CLOSURE_APPEAL_ADJUDICATION joins deal_pipeline/affiliate_applications and surfaces status_before_force_closure (T-203/F-08) as 'Would Restore To'. app/management/queue/ManagementQueueView.tsx (client) renders each as a filterable card (type badge, amount, submitter, submitted-at, context fields) with Approve/Reject buttons opening a confirmation modal that posts to the matching decide route from T-401..T-404 (payouts use a shared endpoint keyed by requestId in the body; the other three post the mc-request's entity id in the URL). A request the viewing Management user submitted themselves is shown read-only with an explanatory notice, mirroring the server-side separation-of-duty check each decide route already enforces (defense in depth, not a replacement for it). This was the last missing piece before any Management user could actually use the four maker-checker flows built in T-401-T-404 -- all four decide routes already redirected to this page on success/error before it existed.",
+      "status": "success",
+      "files": [
+        "FolioDesk/WebsiteBuild/app/management/ManagementNav.tsx",
+        "FolioDesk/WebsiteBuild/app/management/queue/page.tsx",
+        "FolioDesk/WebsiteBuild/app/management/queue/ManagementQueueView.tsx"
+      ],
+      "tasks": [
+        "T-405"
+      ],
+      "commit": "6a2606b"
+    },
+    {
+      "timestamp": "2026-09-16T16:45:00Z",
+      "actor": "claude",
+      "action": "CODE_CHANGE",
+      "detail": "T-406 (F-11, systemic double-submit risk): extended the disabled/opacity submit-button guard already applied to the Payouts disbursement form (T-402) to the remaining maker-checker submission forms. app/admin/deals/[id]/page.tsx now joins mc_request_status onto the deal query so DealDetailView.tsx can distinguish an appeal not yet submitted to Management ('Extension Appeal Pending') from one already awaiting sign-off ('PENDING MANAGEMENT REVIEW' badge, button replaced with 'Awaiting Management decision'), matching the treatment Collections and Payouts already had; also added a double-submit guard to the appeal-recommendation form itself. CollectionsApprovalView.tsx: added the same guard to both the approve and reject modals. AdminNetworkView.tsx: added a per-row double-submit guard (fieldset disabled keyed by node.id) around the application decision buttons, since that file -- not app/admin/applications/[id]/correction/page.tsx, which was in the original task file list but only ever submits CORRECTION_REQUIRED/RETRACTION_ACKNOWLEDGED -- is where the gated APPROVED decision button actually lives.",
+      "status": "success",
+      "files": [
+        "FolioDesk/WebsiteBuild/app/admin/deals/[id]/page.tsx",
+        "FolioDesk/WebsiteBuild/app/admin/deals/[id]/DealDetailView.tsx",
+        "FolioDesk/WebsiteBuild/app/admin/collections/CollectionsApprovalView.tsx",
+        "FolioDesk/WebsiteBuild/app/admin/AdminNetworkView.tsx"
+      ],
+      "tasks": [
+        "T-406"
+      ],
+      "commit": "33deac5"
+    },
+    {
+      "timestamp": "2026-09-16T16:50:00Z",
+      "actor": "claude",
+      "action": "VERIFICATION",
+      "detail": "T-408: verified (grep) that all four Management decide routes already write a MAKER_CHECKER_DECISION audit_events row cross-referencing maker_checker_requests.id, as built inline during T-401..T-404 rather than deferred to a separate pass. No additional code change required. Marked done on verification, no new commit.",
+      "status": "success",
+      "tasks": [
+        "T-408"
+      ]
+    },
+    {
+      "timestamp": "2026-09-16T17:10:00Z",
+      "actor": "claude",
+      "action": "BUSINESS_DECISION",
+      "detail": "F-04 vesting model decided via user prompt (AskUserQuestion): 'Snapshot at collection approval' -- commission rights for a given beneficiary are locked in based on that beneficiary's affiliate_applications.status at the moment Management approves the specific collection in question. If suspended/terminated/retracted by then, no commission accrues on that collection, even if the underlying deal was signed while the affiliate was active. This unblocks T-501 and T-502.",
+      "status": "success"
+    },
+    {
+      "timestamp": "2026-09-16T17:20:00Z",
+      "actor": "claude",
+      "action": "CODE_CHANGE",
+      "detail": "T-501 + T-502 (implemented as one change, since the decided vesting model makes them the same enforcement point): lib/funnel.ts's approveDealCollection() now gates each of the three payment_advices inserts (DIRECT_AFFILIATE, UPLINE_L1, UPLINE_L2) on that beneficiary's affiliate_applications.status === 'APPROVED' at the moment of approval (explicit allowlist, not a blocklist, so an unanticipated future status value fails closed). A beneficiary who fails the check is pushed to a new skippedBeneficiaries array (returned from the function) and logged as a COMMISSION_WITHHELD_STATUS_VESTING audit_events row inside the same DB transaction as the approval itself, so the withholding can never be silently unlogged even under a mid-transaction failure. Nothing already created is touched -- an existing payment_advices row stays is_immutable=1 and payable regardless of what happens to that affiliate afterward, satisfying the 'must still pay what's already vested' requirement. app/api/management/collections/[id]/decide/route.ts reads the new skippedBeneficiaries return value and, when non-empty, replaces the generic success message with one naming exactly who was withheld and why, so Management sees it immediately in the queue rather than having to discover it later in audit_events. No schema change needed -- audit_events.action is a free-form VARCHAR(100), not an enum.",
+      "status": "success",
+      "files": [
+        "FolioDesk/WebsiteBuild/lib/funnel.ts",
+        "FolioDesk/WebsiteBuild/app/api/management/collections/[id]/decide/route.ts"
+      ],
+      "tasks": [
+        "T-501",
+        "T-502"
+      ],
+      "commit": "1756fcf"
+    },
+    {
+      "timestamp": "2026-09-16T17:35:00Z",
+      "actor": "claude",
+      "action": "CODE_CHANGE",
+      "detail": "T-503 (F-06): app/api/portal/prospects/[id]/step/route.ts and app/api/portal/prospects/[id]/appeal/route.ts had zero affiliate-status check (only login + deal ownership) -- a suspended/terminated/retracted affiliate could still submit funnel-step updates or force-closure appeals. Both now require affiliate_applications.status === 'APPROVED' (explicit allowlist, tightened from the blocklist pattern in app/api/portal/prospects/route.ts, per the plan's own recommendation).",
+      "status": "success",
+      "files": [
+        "FolioDesk/WebsiteBuild/app/api/portal/prospects/[id]/step/route.ts",
+        "FolioDesk/WebsiteBuild/app/api/portal/prospects/[id]/appeal/route.ts"
+      ],
+      "tasks": [
+        "T-503"
+      ],
+      "commit": "140ee2f"
+    },
+    {
+      "timestamp": "2026-09-16T17:50:00Z",
+      "actor": "claude",
+      "action": "CODE_CHANGE",
+      "detail": "T-504 (F-07, highest-severity UI finding): app/api/admin/toggle-test-mode/route.ts had no status check at all -- is_test could be flipped on a sealed/approved/rejected collection or a PAID advice. Server-side guard added for all 4 entity types: collection blocked when is_immutable=1; payment_advice blocked when payout_status='PAID'; deal and affiliate blocked transitively when ANY collection/advice beneath them has locked, since neither carries its own immutability field. ToggleTestModeButton.tsx gains an optional locked/lockedReason prop (disables the button, explains why) as a client-side UX mirror of the server guard -- wired at CollectionsApprovalView.tsx (c.is_immutable) and PayoutsView.tsx (advice.payout_status==='PAID'), the two call sites where the lock data was already in scope. DealsView.tsx/DealDetailView.tsx/AdminNetworkView.tsx/the applications correction page (deal/affiliate entity types) are left without the client-side disable for now -- their queries don't carry the joined lock data yet -- but every attempt from those buttons is still rejected by the server route regardless.",
+      "status": "success",
+      "files": [
+        "FolioDesk/WebsiteBuild/app/api/admin/toggle-test-mode/route.ts",
+        "FolioDesk/WebsiteBuild/app/admin/ToggleTestModeButton.tsx",
+        "FolioDesk/WebsiteBuild/app/admin/collections/CollectionsApprovalView.tsx",
+        "FolioDesk/WebsiteBuild/app/admin/payouts/PayoutsView.tsx"
+      ],
+      "tasks": [
+        "T-504"
+      ],
+      "commit": "a3da386"
+    },
+    {
+      "timestamp": "2026-09-16T18:10:00Z",
+      "actor": "claude",
+      "action": "CODE_CHANGE",
+      "detail": "T-505 (F-09): app/api/portal/leads/route.ts was the deal-creation entry point that skipped both checkProspectExclusivity() and the funnel-step audit trail -- brought to parity with the reference implementation (app/api/portal/prospects/route.ts) by adding the exclusivity check, adding the initial logFunnelStep() call, and passing is_test explicitly instead of relying on the column default. app/api/admin/deals/route.ts's CREATE_DEAL action also gained the exclusivity check; its funnel-step insertion was deliberately left as a direct already-ACKNOWLEDGED INSERT (not routed through logFunnelStep(), which always creates a PENDING_REVIEW step) since an admin-created deal doesn't need to review itself.",
+      "status": "success",
+      "files": [
+        "FolioDesk/WebsiteBuild/app/api/portal/leads/route.ts",
+        "FolioDesk/WebsiteBuild/app/api/admin/deals/route.ts"
+      ],
+      "tasks": [
+        "T-505"
+      ],
+      "commit": "82b8a42"
+    },
+    {
+      "timestamp": "2026-09-16T18:25:00Z",
+      "actor": "claude",
+      "action": "CODE_CHANGE",
+      "detail": "T-506 (F-12): app/api/admin/deals/route.ts had no guard on invoice re-issuance (UPDATE_STATUS with a changed invoiceNumber) or TOGGLE_INVOICE_TARGET -- both could still fire once a deal_collections row for that deal was already sealed (is_immutable=1), desyncing billing records from a locked financial history. Both actions now block with a 303 error redirect when a locked collection exists and the invoice number or billing target is actually changing. While touching UPDATE_STATUS, also fixed a latent adjacent bug: invoice_target was set unconditionally on every call (defaulting to 'PROSPECT' when the field was absent), so the quick status-update forms in DealsView.tsx -- none of which submit an invoiceTarget field -- were silently resetting an existing 'AFFILIATE' target back to 'PROSPECT' on every unrelated status change; now only touched when the submitting form actually included the field, matching how invoiceNumber was already handled. app/admin/deals/[id]/page.tsx joins a locked_collections_count onto the deal query; DealDetailView.tsx disables the 'Re-issue / Replace Invoice' button and both billing-target toggle buttons with an explanatory title once that count is nonzero.",
+      "status": "success",
+      "files": [
+        "FolioDesk/WebsiteBuild/app/api/admin/deals/route.ts",
+        "FolioDesk/WebsiteBuild/app/admin/deals/[id]/page.tsx",
+        "FolioDesk/WebsiteBuild/app/admin/deals/[id]/DealDetailView.tsx"
+      ],
+      "tasks": [
+        "T-506"
+      ],
+      "commit": "90c63ee"
+    }
+  ]
+}

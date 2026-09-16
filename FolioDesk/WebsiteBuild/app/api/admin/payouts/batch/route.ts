@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server";
 import { requireAdmin, getBaseUrl } from "../../../../../lib/auth";
-import { settleConsolidatedPayout } from "../../../../../lib/funnel";
-import { errorMessage } from "../../../../../lib/errors";
+import { db } from "../../../../../lib/db";
+
+// T-402 (plan §7.3(2)): batch disbursement no longer calls
+// settleConsolidatedPayout() directly. It snapshots the exact set of
+// PENDING_DISBURSEMENT advice IDs for the affiliate at submission time and
+// submits a maker_checker_requests row; nothing is disbursed until a
+// Management user approves via app/api/management/payouts/decide/route.ts,
+// which then executes settleConsolidatedPayout() with that exact snapshot
+// (Management approves-as-submitted, cannot re-author amounts).
 
 export async function POST(req: Request) {
   const admin = await requireAdmin();
@@ -24,18 +31,34 @@ export async function POST(req: Request) {
   }
 
   try {
-    const { batchCode, totalAmount, adviceCount } = await settleConsolidatedPayout({
-      beneficiaryAffiliateId: affiliateId,
-      manualBankTxRef,
-      bankName,
-      bankAccountNumber,
-      payoutNotes,
-      disbursedByUserId: admin.id,
-    });
+    const [advices] = await db().execute<any[]>(
+      "SELECT id FROM payment_advices WHERE beneficiary_affiliate_id=? AND payout_status='PENDING_DISBURSEMENT'",
+      [affiliateId]
+    );
+    if (advices.length === 0) {
+      throw new Error("No pending payment advices found to disburse for this affiliate.");
+    }
+    const adviceIds = advices.map((a) => a.id);
+
+    await db().execute(
+      `INSERT INTO maker_checker_requests
+        (request_type, entity_type, entity_id, action_payload, status, submitted_by)
+       VALUES ('PAYOUT_DISBURSEMENT', 'affiliate_batch', ?, ?, 'PENDING', ?)`,
+      [
+        affiliateId,
+        JSON.stringify({ mode: "batch", beneficiaryAffiliateId: affiliateId, adviceIds, manualBankTxRef, bankName, bankAccountNumber, payoutNotes }),
+        admin.id,
+      ]
+    );
+
+    await db().execute(
+      "INSERT INTO audit_events(actor_user_id,action,entity_type,entity_id,event_data) VALUES(?,'PAYOUT_BATCH_DISBURSEMENT_SUBMITTED','affiliate_batch',?,JSON_OBJECT('adviceCount',?,'manualBankTxRef',?))",
+      [admin.id, String(affiliateId), adviceIds.length, manualBankTxRef]
+    );
 
     return NextResponse.redirect(
       new URL(
-        `/foliodesk/admin/payouts?tab=batches&success=Consolidated+payout+voucher+${batchCode}+settled+successfully.+Disbursed+RM+${totalAmount.toFixed(2)}+across+${adviceCount}+payment+advice(s).`,
+        `/foliodesk/admin/payouts?tab=batches&success=Submitted+consolidated+payout+for+Management+approval+(${adviceIds.length}+advice(s)).+Funds+are+not+disbursed+until+approved.`,
         getBaseUrl(req)
       ),
       303
@@ -43,7 +66,7 @@ export async function POST(req: Request) {
   } catch (err) {
     return NextResponse.redirect(
       new URL(
-        `/foliodesk/admin/payouts?error=${encodeURIComponent(errorMessage(err, "Failed to settle consolidated payout"))}`,
+        `/foliodesk/admin/payouts?error=${encodeURIComponent(err?.message || "Failed to submit consolidated payout for Management approval")}`,
         getBaseUrl(req)
       ),
       303

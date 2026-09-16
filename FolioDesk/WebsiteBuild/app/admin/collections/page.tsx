@@ -36,11 +36,16 @@ export default async function AdminCollectionsPage({
        dp.customer_name,
        a.legal_name AS affiliate_legal_name,
        a.affiliate_code,
-       u.full_name AS approver_name
+       u.full_name AS approver_name,
+       mcr.status AS mc_request_status
      FROM deal_collections dc
      JOIN deal_pipeline dp ON dp.id = dc.deal_id
      JOIN affiliate_applications a ON a.id = dp.affiliate_id
      LEFT JOIN users u ON u.id = dc.approved_by
+     LEFT JOIN maker_checker_requests mcr
+       ON mcr.entity_type = 'deal_collections'
+       AND mcr.entity_id = dc.id
+       AND mcr.status = 'PENDING'
      ${whereClause}
      ORDER BY dc.created_at DESC`
   );

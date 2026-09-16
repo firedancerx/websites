@@ -16,8 +16,8 @@ export async function POST(
   const { id } = await params;
   const dealId = Number(id);
 
-  const [apps] = await db().execute<DatabaseRow[]>(
-    "SELECT id FROM affiliate_applications WHERE user_id=? ORDER BY submitted_at DESC LIMIT 1",
+  const [apps] = await db().execute<any[]>(
+    "SELECT id, status FROM affiliate_applications WHERE user_id=? ORDER BY submitted_at DESC LIMIT 1",
     [user.id]
   );
   const app = apps[0];
@@ -25,7 +25,16 @@ export async function POST(
     return NextResponse.redirect(new URL("/foliodesk/portal", getBaseUrl(req)), 303);
   }
 
-  const [deals] = await db().execute<DatabaseRow[]>(
+  // T-503 (plan §8 item 5, §6.2 Finding 3): same APPROVED allowlist as the
+  // funnel-step route -- this route also had zero affiliate-status check.
+  if (app.status !== "APPROVED") {
+    return NextResponse.redirect(
+      new URL("/foliodesk/portal/prospects?error=Your+affiliateship+is+not+active+for+submitting+appeals", getBaseUrl(req)),
+      303
+    );
+  }
+
+  const [deals] = await db().execute<any[]>(
     "SELECT * FROM deal_pipeline WHERE id=? AND affiliate_id=? LIMIT 1",
     [dealId, app.id]
   );

@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin, getBaseUrl } from "../../../../lib/auth";
 import { db } from "../../../../lib/db";
-import { generateDealCode } from "../../../../lib/funnel";
+import { generateDealCode, checkProspectExclusivity } from "../../../../lib/funnel";
 import { isValidEmail, isValidPhone } from "../../../../lib/validation";
 
 export async function POST(req: Request) {
@@ -43,6 +43,23 @@ export async function POST(req: Request) {
     if (customerPhone && !isValidPhone(customerPhone)) {
       return NextResponse.redirect(
         new URL("/foliodesk/admin/deals?error=Invalid+phone+number+format.+Phone+numbers+cannot+contain+letters.", getBaseUrl(req)),
+        303
+      );
+    }
+
+    // F-09 (plan §8 item 7): the third of three deal-creation entry points
+    // that skipped the exclusivity check used by app/api/portal/prospects/route.ts
+    // (the reference implementation). Applied here too so an Admin-created
+    // deal cannot silently collide with a prospect an affiliate already has
+    // actively registered.
+    const exclusivityCheck = await checkProspectExclusivity(customerName);
+    if (!exclusivityCheck.isAvailable) {
+      const activeAffiliate = exclusivityCheck.activeDeal?.affiliate_legal_name || "another affiliate";
+      return NextResponse.redirect(
+        new URL(
+          `/foliodesk/admin/deals?error=Prospect+conflict:+The+company+'${encodeURIComponent(customerName)}'+is+currently+actively+registered+by+${encodeURIComponent(activeAffiliate)}.+Prospect+names+are+exclusively+protected+until+the+case+is+closed+or+stopped.`,
+          getBaseUrl(req)
+        ),
         303
       );
     }
@@ -111,12 +128,40 @@ export async function POST(req: Request) {
       );
     }
 
-    const [existingRows] = await db().execute<DatabaseRow[]>("SELECT invoice_number, status FROM deal_pipeline WHERE id=? LIMIT 1", [dealId]);
+    const [existingRows] = await db().execute<any[]>("SELECT invoice_number, invoice_target, status FROM deal_pipeline WHERE id=? LIMIT 1", [dealId]);
     const existingDeal = existingRows[0] || null;
     const isReissuance = existingDeal?.invoice_number && existingDeal.invoice_number !== invoiceNumber;
+    // F-12 (plan §8 item 8): only touch invoice_target when the submitting form
+    // actually included it -- the quick status-update forms in DealsView.tsx
+    // don't send this field, and unconditionally defaulting it to 'PROSPECT'
+    // here would silently reset an existing 'AFFILIATE' target on every such
+    // update. Explicit-only, same discipline invoiceNumber already had.
+    const invoiceTargetProvided = f.has("invoiceTarget");
+    const isTargetChange = invoiceTargetProvided && existingDeal && invoiceTarget !== existingDeal.invoice_target;
 
-    let query = "UPDATE deal_pipeline SET status=?, status_note=COALESCE(?, status_note), invoice_target=?";
-    const params: unknown[] = [targetStatus, statusNote, invoiceTarget];
+    if (isReissuance || isTargetChange) {
+      const [lockedRows] = await db().execute<any[]>(
+        "SELECT COUNT(*) AS locked_count FROM deal_collections WHERE deal_id=? AND is_immutable=1",
+        [dealId]
+      );
+      if (Number(lockedRows[0]?.locked_count) > 0) {
+        return NextResponse.redirect(
+          new URL(
+            "/foliodesk/admin/deals?error=This+deal+has+an+approved+or+rejected+(sealed)+collection+attached.+The+invoice+number+and+billing+target+can+no+longer+be+changed.",
+            getBaseUrl(req)
+          ),
+          303
+        );
+      }
+    }
+
+    let query = "UPDATE deal_pipeline SET status=?, status_note=COALESCE(?, status_note)";
+    const params: any[] = [targetStatus, statusNote];
+
+    if (invoiceTargetProvided) {
+      query += ", invoice_target=?";
+      params.push(invoiceTarget);
+    }
 
     if (targetStatus === "SUSPENDED_EFFORT") {
       query += ", suspended_reason=?";
@@ -180,6 +225,26 @@ export async function POST(req: Request) {
 
   if (action === "TOGGLE_INVOICE_TARGET" && dealId) {
     const target = String(f.get("invoiceTarget") || "PROSPECT").toUpperCase() === "AFFILIATE" ? "AFFILIATE" : "PROSPECT";
+
+    // F-12 (plan §8 item 8): same immutability guard as the UPDATE_STATUS
+    // invoice-reissue path above -- once any collection on this deal is
+    // sealed (approved or rejected), its locked commission rates were
+    // derived against the invoice/billing target at that moment, so the
+    // target can no longer be switched underneath it.
+    const [lockedRows] = await db().execute<any[]>(
+      "SELECT COUNT(*) AS locked_count FROM deal_collections WHERE deal_id=? AND is_immutable=1",
+      [dealId]
+    );
+    if (Number(lockedRows[0]?.locked_count) > 0) {
+      return NextResponse.redirect(
+        new URL(
+          `/foliodesk/admin/deals/${dealId}?error=This+deal+has+an+approved+or+rejected+(sealed)+collection+attached.+The+billing+target+can+no+longer+be+changed.`,
+          getBaseUrl(req)
+        ),
+        303
+      );
+    }
+
     await db().execute("UPDATE deal_pipeline SET invoice_target=? WHERE id=?", [target, dealId]);
     return NextResponse.redirect(
       new URL(`/foliodesk/admin/deals/${dealId}?success=Invoicing+target+updated+to+${target}`, getBaseUrl(req)),

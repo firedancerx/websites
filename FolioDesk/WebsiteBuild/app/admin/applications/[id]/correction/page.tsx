@@ -34,7 +34,7 @@ export default async function RequestCorrectionPage({
        COALESCE((SELECT SUM(collected_amount_myr) FROM deal_collections WHERE deal_id = d.id AND approval_status = 'APPROVED'), 0) as total_collected_myr
      FROM deal_pipeline d 
      WHERE d.affiliate_id = ?
-       AND d.status NOT IN ('FULLY_COLLECTED', 'CLIENT_ONBOARDED', 'CLOSED_WON', 'ABORTED', 'EXPIRED')
+       AND d.status NOT IN ('FULLY_COLLECTED', 'ABORTED', 'UNCOLLECTIBLE')
      ORDER BY d.created_at DESC`,
     [a.id]
   );
@@ -44,7 +44,7 @@ export default async function RequestCorrectionPage({
        COALESCE((SELECT SUM(collected_amount_myr) FROM deal_collections WHERE deal_id = d.id AND approval_status = 'APPROVED'), 0) as total_collected_myr
      FROM deal_pipeline d 
      WHERE d.affiliate_id = ?
-       AND d.status IN ('FULLY_COLLECTED', 'CLIENT_ONBOARDED', 'CLOSED_WON')
+       AND d.status = 'FULLY_COLLECTED'
      ORDER BY d.updated_at DESC`,
     [a.id]
   );
@@ -487,14 +487,12 @@ export default async function RequestCorrectionPage({
                           ? "2. Qualified Lead"
                           : p.status === "PROPOSAL_SENT"
                           ? "3. Proposal Sent"
-                          : p.status === "NEGOTIATION"
-                          ? "4. Negotiation"
-                          : p.status === "CLOSURE_PENDING"
-                          ? "5. Closure Pending"
                           : p.status === "CONTRACT_SIGNED"
-                          ? "6. Contract Signed"
-                          : p.status === "PARTIALLY_COLLECTED"
-                          ? "7. Partially Collected"
+                          ? "4. Contract Signed"
+                          : p.status === "INVOICED"
+                          ? "5. Invoiced"
+                          : p.status === "PARTIAL_COLLECTED"
+                          ? "6. Partially Collected"
                           : p.status === "SUSPENDED_EFFORT"
                           ? "⏸️ Effort Suspended"
                           : p.status.replaceAll("_", " ");
@@ -506,13 +504,11 @@ export default async function RequestCorrectionPage({
                           ? "#e0e7ff"
                           : p.status === "PROPOSAL_SENT"
                           ? "#f3e8ff"
-                          : p.status === "NEGOTIATION"
-                          ? "#fef3c7"
-                          : p.status === "CLOSURE_PENDING"
-                          ? "#ffedd5"
                           : p.status === "CONTRACT_SIGNED"
                           ? "#dcfce7"
-                          : p.status === "PARTIALLY_COLLECTED"
+                          : p.status === "INVOICED"
+                          ? "#ffedd5"
+                          : p.status === "PARTIAL_COLLECTED"
                           ? "#ccfbf1"
                           : "#fee2e2";
 
@@ -523,13 +519,11 @@ export default async function RequestCorrectionPage({
                           ? "#3730a3"
                           : p.status === "PROPOSAL_SENT"
                           ? "#6b21a8"
-                          : p.status === "NEGOTIATION"
-                          ? "#92400e"
-                          : p.status === "CLOSURE_PENDING"
-                          ? "#c2410c"
                           : p.status === "CONTRACT_SIGNED"
                           ? "#166534"
-                          : p.status === "PARTIALLY_COLLECTED"
+                          : p.status === "INVOICED"
+                          ? "#c2410c"
+                          : p.status === "PARTIAL_COLLECTED"
                           ? "#0f766e"
                           : "#991b1b";
 
