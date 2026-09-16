@@ -609,10 +609,13 @@ export default function DealDetailView({
       {isAppealModalOpen && (
         <div className="modal-overlay" style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
           <div style={{ background: "#fff", borderRadius: 12, width: "100%", maxWidth: 540, padding: 26, boxShadow: "0 10px 25px rgba(0,0,0,0.2)" }}>
-            <h3 style={{ margin: "0 0 6px", fontSize: 20, color: "#b45309" }}>⚖️ Adjudicate Extension Appeal</h3>
+            <h3 style={{ margin: "0 0 6px", fontSize: 20, color: "#b45309" }}>⚖️ Review Extension Appeal</h3>
             <p style={{ margin: "0 0 12px", color: "#64748b", fontSize: 13 }}>
               Submitted by <b>{deal.affiliate_legal_name}</b> on {deal.appeal_submitted_at ? new Date(deal.appeal_submitted_at).toLocaleDateString("en-MY") : ""}
             </p>
+            <div style={{ background: "#ede9fe", border: "1px solid #ddd6fe", padding: 10, borderRadius: 6, marginBottom: 14, fontSize: 12, color: "#5b21b6" }}>
+              🔎 Your recommendation below is submitted to a Management user for sign-off. Nothing changes on this deal until Management approves.
+            </div>
 
             <div style={{ background: "#fef3c7", padding: 12, borderRadius: 6, border: "1px solid #fde68a", marginBottom: 16, fontSize: 13, color: "#92400e" }}>
               <b>Affiliate Justification:</b><br />
@@ -657,7 +660,7 @@ export default function DealDetailView({
               <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 20, paddingTop: 14, borderTop: "1px solid #e2e8f0" }}>
                 <button type="button" className="button secondary" onClick={() => setIsAppealModalOpen(false)}>Cancel</button>
                 <button type="submit" className="button primary" style={{ background: "#0f766e", borderColor: "#0d655e", fontWeight: 700 }}>
-                  Save Adjudication
+                  📤 Submit Recommendation for Management Sign-off
                 </button>
               </div>
             </form>
