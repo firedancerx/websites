@@ -339,7 +339,14 @@ export default function PayoutsView({
 
                   {/* ACTION BUTTONS */}
                   <div style={{ display: "flex", gap: 6, alignItems: "center", justifyContent: "flex-end" }}>
-                    <ToggleTestModeButton entityType="payment_advice" entityId={advice.id} isTest={advice.is_test} size="sm" />
+                    <ToggleTestModeButton
+                      entityType="payment_advice"
+                      entityId={advice.id}
+                      isTest={advice.is_test}
+                      size="sm"
+                      locked={advice.payout_status === "PAID"}
+                      lockedReason="This payment advice has already been paid out."
+                    />
                     
                     {isDisbursable && (
                       <button

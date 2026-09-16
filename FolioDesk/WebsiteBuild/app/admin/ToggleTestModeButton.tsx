@@ -10,6 +10,12 @@ interface Props {
   label?: string;
   size?: "sm" | "md" | "lg";
   onSuccess?: (newMode: number) => void;
+  // F-07 (plan §8 item 6, §6.1): client-side mirror of the server-side lock
+  // guard now enforced in app/api/admin/toggle-test-mode/route.ts. This is a
+  // UX convenience (disables the button, explains why) -- the server route
+  // is the actual security boundary and rejects the request either way.
+  locked?: boolean;
+  lockedReason?: string;
 }
 
 export default function ToggleTestModeButton({
@@ -19,6 +25,8 @@ export default function ToggleTestModeButton({
   label,
   size = "sm",
   onSuccess,
+  locked = false,
+  lockedReason,
 }: Props) {
   const [loading, setLoading] = useState(false);
   const [currentIsTest, setCurrentIsTest] = useState(isTest);
@@ -29,6 +37,11 @@ export default function ToggleTestModeButton({
   const handleToggle = async (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
+
+    if (locked) {
+      alert(lockedReason || "This record is sealed as immutable and its data mode can no longer be changed.");
+      return;
+    }
 
     const targetModeName = isTester ? "Actual Production Data" : "Tester Data";
     if (!confirm(`Switch this ${entityType} to ${targetModeName}?`)) {
@@ -69,9 +82,15 @@ export default function ToggleTestModeButton({
     <button
       type="button"
       onClick={handleToggle}
-      disabled={loading}
+      disabled={loading || locked}
       className="button secondary"
-      title={isTester ? "Click to change mode to Actual Production Data" : "Click to change mode to Tester Data"}
+      title={
+        locked
+          ? lockedReason || "Sealed as immutable -- data mode can no longer be changed"
+          : isTester
+          ? "Click to change mode to Actual Production Data"
+          : "Click to change mode to Tester Data"
+      }
       style={{
         display: "inline-flex",
         alignItems: "center",
@@ -80,15 +99,17 @@ export default function ToggleTestModeButton({
         fontSize,
         fontWeight: 700,
         borderRadius: 6,
-        cursor: loading ? "wait" : "pointer",
-        background: isTester ? "#fffbeb" : "#f0fdf4",
-        color: isTester ? "#b45309" : "#15803d",
-        borderColor: isTester ? "#fde68a" : "#bbf7d0",
+        cursor: locked ? "not-allowed" : loading ? "wait" : "pointer",
+        background: locked ? "#f1f5f9" : isTester ? "#fffbeb" : "#f0fdf4",
+        color: locked ? "#94a3b8" : isTester ? "#b45309" : "#15803d",
+        borderColor: locked ? "#e2e8f0" : isTester ? "#fde68a" : "#bbf7d0",
         whiteSpace: "nowrap",
-        opacity: loading ? 0.6 : 1,
+        opacity: loading || locked ? 0.6 : 1,
       }}
     >
-      {loading ? (
+      {locked ? (
+        "🔒 Sealed"
+      ) : loading ? (
         "⏳ Updating..."
       ) : label ? (
         label

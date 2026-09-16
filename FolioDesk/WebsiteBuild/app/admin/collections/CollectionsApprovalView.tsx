@@ -303,7 +303,14 @@ export default function CollectionsApprovalView({
                   {/* ACTION BUTTONS */}
                   <div>
                     <div style={{ display: "flex", gap: 6, alignItems: "center", justifyContent: "flex-end" }}>
-                      <ToggleTestModeButton entityType="collection" entityId={c.id} isTest={c.is_test} size="sm" />
+                      <ToggleTestModeButton
+                        entityType="collection"
+                        entityId={c.id}
+                        isTest={c.is_test}
+                        size="sm"
+                        locked={c.is_immutable === 1}
+                        lockedReason="This collection has been approved or rejected and sealed as immutable."
+                      />
                       {isAwaitingMgtReview ? (
                         <span style={{ fontSize: 12, color: "#5b21b6", fontWeight: 600 }}>
                           Awaiting Management decision
