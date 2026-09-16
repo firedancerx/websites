@@ -375,8 +375,8 @@
             "db/mysql-schema.sql"
           ],
           "branch": "foliodesk/maker-checker-and-audit-fixes",
-          "status": "blocked",
-          "notes": "Requires an explicit business decision (e.g. snapshot affiliate status at deal-collection-approval time to distinguish already-vested commission from future commission on a still-open deal). Natural surfacing point is the new Management collection-approval screen (T-401). Blocked pending that decision.",
+          "status": "done",
+          "notes": "BUSINESS DECISION (recorded 2026-09-16, via user prompt): 'Snapshot at collection approval' -- commission rights lock in based on each beneficiary's affiliate_applications.status at the exact moment Management approves that collection (explicit APPROVED allowlist). Implemented jointly with T-502 as a single change in lib/funnel.ts's approveDealCollection() -- see that commit for details. Withheld beneficiaries are recorded in a COMMISSION_WITHHELD_STATUS_VESTING audit_events row and surfaced in the Management decide route's success message.",
           "depends_on": [
             "T-401"
           ]
@@ -392,8 +392,8 @@
             "lib/funnel.ts"
           ],
           "branch": "foliodesk/maker-checker-and-audit-fixes",
-          "status": "blocked",
-          "notes": "Must still pay what's already vested per the model decided in T-501. Currently status is fetched but never filtered on in findUplineChain().",
+          "status": "done",
+          "notes": "Must still pay what's already vested per the model decided in T-501 -- satisfied: a payment_advices row already created before a status change is untouched (is_immutable=1) and stays payable. The guard landed in approveDealCollection() itself (per-beneficiary status==='APPROVED' check before creating each payment_advices row) rather than inside findUplineChain(), since findUplineChain() is also used for display/lookup purposes elsewhere and should keep returning the full chain regardless of status -- gating belongs at the point commission is actually created.",
           "depends_on": [
             "T-501"
           ]

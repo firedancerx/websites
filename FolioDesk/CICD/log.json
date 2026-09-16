@@ -221,6 +221,29 @@
       "tasks": [
         "T-408"
       ]
+    },
+    {
+      "timestamp": "2026-09-16T17:10:00Z",
+      "actor": "claude",
+      "action": "BUSINESS_DECISION",
+      "detail": "F-04 vesting model decided via user prompt (AskUserQuestion): 'Snapshot at collection approval' -- commission rights for a given beneficiary are locked in based on that beneficiary's affiliate_applications.status at the moment Management approves the specific collection in question. If suspended/terminated/retracted by then, no commission accrues on that collection, even if the underlying deal was signed while the affiliate was active. This unblocks T-501 and T-502.",
+      "status": "success"
+    },
+    {
+      "timestamp": "2026-09-16T17:20:00Z",
+      "actor": "claude",
+      "action": "CODE_CHANGE",
+      "detail": "T-501 + T-502 (implemented as one change, since the decided vesting model makes them the same enforcement point): lib/funnel.ts's approveDealCollection() now gates each of the three payment_advices inserts (DIRECT_AFFILIATE, UPLINE_L1, UPLINE_L2) on that beneficiary's affiliate_applications.status === 'APPROVED' at the moment of approval (explicit allowlist, not a blocklist, so an unanticipated future status value fails closed). A beneficiary who fails the check is pushed to a new skippedBeneficiaries array (returned from the function) and logged as a COMMISSION_WITHHELD_STATUS_VESTING audit_events row inside the same DB transaction as the approval itself, so the withholding can never be silently unlogged even under a mid-transaction failure. Nothing already created is touched -- an existing payment_advices row stays is_immutable=1 and payable regardless of what happens to that affiliate afterward, satisfying the 'must still pay what's already vested' requirement. app/api/management/collections/[id]/decide/route.ts reads the new skippedBeneficiaries return value and, when non-empty, replaces the generic success message with one naming exactly who was withheld and why, so Management sees it immediately in the queue rather than having to discover it later in audit_events. No schema change needed -- audit_events.action is a free-form VARCHAR(100), not an enum.",
+      "status": "success",
+      "files": [
+        "FolioDesk/WebsiteBuild/lib/funnel.ts",
+        "FolioDesk/WebsiteBuild/app/api/management/collections/[id]/decide/route.ts"
+      ],
+      "tasks": [
+        "T-501",
+        "T-502"
+      ],
+      "commit": "1756fcf"
     }
   ]
 }
