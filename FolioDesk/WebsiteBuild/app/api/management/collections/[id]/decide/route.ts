@@ -3,6 +3,7 @@ import { requireManagement, getBaseUrl } from "../../../../../../lib/auth";
 import { db } from "../../../../../../lib/db";
 import { approveDealCollection, rejectDealCollection } from "../../../../../../lib/funnel";
 import { validateCsrfFromForm } from "../../../../../../lib/csrf";
+import { errorMessage } from "../../../../../../lib/errors";
 
 // T-401 (plan §7.3(1), §7.6): Management's decision endpoint for a
 // COLLECTION_APPROVAL request. MANAGEMENT-only. Approves-as-submitted or
@@ -105,7 +106,7 @@ export async function POST(
   } catch (err: any) {
     return NextResponse.redirect(
       new URL(
-        `/foliodesk/management/queue?error=${encodeURIComponent(err?.message || "Failed to decide on collection approval request")}`,
+        `/foliodesk/management/queue?error=${encodeURIComponent(errorMessage(err, "Failed to decide on collection approval request"))}`,
         getBaseUrl(req)
       ),
       303

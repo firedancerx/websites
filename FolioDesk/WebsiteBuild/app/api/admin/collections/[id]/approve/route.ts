@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin, getBaseUrl } from "../../../../../../lib/auth";
 import { db } from "../../../../../../lib/db";
 import { validateCsrfFromForm } from "../../../../../../lib/csrf";
+import { errorMessage } from "../../../../../../lib/errors";
 
 // T-401 (plan §7.3(1)): this endpoint no longer approves the collection
 // directly. It submits a maker_checker_requests row and leaves
@@ -75,7 +76,7 @@ export async function POST(
   } catch (err) {
     return NextResponse.redirect(
       new URL(
-        `/foliodesk/admin/collections?error=${encodeURIComponent(err?.message || "Failed to submit collection for Management approval")}`,
+        `/foliodesk/admin/collections?error=${encodeURIComponent(errorMessage(err, "Failed to submit collection for Management approval"))}`,
         getBaseUrl(req)
       ),
       303

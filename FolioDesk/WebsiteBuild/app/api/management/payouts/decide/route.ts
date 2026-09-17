@@ -3,6 +3,7 @@ import { requireManagement, getBaseUrl } from "../../../../../lib/auth";
 import { db } from "../../../../../lib/db";
 import { settleConsolidatedPayout } from "../../../../../lib/funnel";
 import { validateCsrfFromForm } from "../../../../../lib/csrf";
+import { errorMessage } from "../../../../../lib/errors";
 
 // T-402 (plan §7.3(2), §7.6): Management's decision endpoint for a
 // PAYOUT_DISBURSEMENT request -- single-advice or consolidated batch (both
@@ -111,7 +112,7 @@ export async function POST(req: Request) {
   } catch (err: any) {
     return NextResponse.redirect(
       new URL(
-        `/foliodesk/management/queue?error=${encodeURIComponent(err?.message || "Failed to decide on payout disbursement request")}`,
+        `/foliodesk/management/queue?error=${encodeURIComponent(errorMessage(err, "Failed to decide on payout disbursement request"))}`,
         getBaseUrl(req)
       ),
       303

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin, getBaseUrl } from "../../../../../lib/auth";
 import { db } from "../../../../../lib/db";
 import { validateCsrfFromForm } from "../../../../../lib/csrf";
+import { errorMessage } from "../../../../../lib/errors";
 
 // T-402 (plan §7.3(2)): SETTLE_PAYOUT no longer writes payout_status='PAID'
 // directly. It submits a maker_checker_requests row capturing the exact
@@ -93,7 +94,7 @@ export async function POST(
     } catch (err: any) {
       return NextResponse.redirect(
         new URL(
-          `/foliodesk/admin/payouts?error=${encodeURIComponent(err?.message || "Failed to submit payout for Management approval")}`,
+          `/foliodesk/admin/payouts?error=${encodeURIComponent(errorMessage(err, "Failed to submit payout for Management approval"))}`,
           getBaseUrl(req)
         ),
         303

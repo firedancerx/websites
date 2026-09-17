@@ -66,6 +66,10 @@ export interface DealRecord {
   affiliate_email?: string;
   total_collected_myr?: number;
   pending_steps_count?: number;
+  locked_collections_count?: number;
+  // T-406 (plan §7.5): status of this deal's force-closure-appeal
+  // maker-checker request, if any -- mirrors CollectionRecord.mc_request_status.
+  mc_request_status?: "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED" | null;
 }
 
 export interface FunnelStepRecord {

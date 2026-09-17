@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin, getBaseUrl } from "../../../../../lib/auth";
 import { db } from "../../../../../lib/db";
 import { validateCsrfFromForm } from "../../../../../lib/csrf";
+import { errorMessage } from "../../../../../lib/errors";
 
 // T-402 (plan §7.3(2)): batch disbursement no longer calls
 // settleConsolidatedPayout() directly. It snapshots the exact set of
@@ -75,7 +76,7 @@ export async function POST(req: Request) {
   } catch (err) {
     return NextResponse.redirect(
       new URL(
-        `/foliodesk/admin/payouts?error=${encodeURIComponent(err?.message || "Failed to submit consolidated payout for Management approval")}`,
+        `/foliodesk/admin/payouts?error=${encodeURIComponent(errorMessage(err, "Failed to submit consolidated payout for Management approval"))}`,
         getBaseUrl(req)
       ),
       303

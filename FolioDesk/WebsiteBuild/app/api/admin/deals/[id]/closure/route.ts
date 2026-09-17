@@ -3,6 +3,7 @@ import { requireAdmin, getBaseUrl } from "../../../../../../lib/auth";
 import { db } from "../../../../../../lib/db";
 import { forceCloseDeal, extendDealDirectly } from "../../../../../../lib/funnel";
 import { validateCsrfFromForm } from "../../../../../../lib/csrf";
+import { errorMessage } from "../../../../../../lib/errors";
 
 export async function POST(
   req: Request,

@@ -3,6 +3,7 @@ import { requireManagement, getBaseUrl } from "../../../../../../../lib/auth";
 import { db } from "../../../../../../../lib/db";
 import { adjudicateDealAppeal } from "../../../../../../../lib/funnel";
 import { validateCsrfFromForm } from "../../../../../../../lib/csrf";
+import { errorMessage } from "../../../../../../../lib/errors";
 
 // T-404 (plan §7.3(4), §7.6, §7.8): Management's decision endpoint for a
 // CLOSURE_APPEAL_ADJUDICATION request. MANAGEMENT-only.
@@ -104,7 +105,7 @@ export async function POST(
   } catch (err: any) {
     return NextResponse.redirect(
       new URL(
-        `/foliodesk/management/queue?error=${encodeURIComponent(err?.message || "Failed to decide on appeal adjudication request")}`,
+        `/foliodesk/management/queue?error=${encodeURIComponent(errorMessage(err, "Failed to decide on appeal adjudication request"))}`,
         getBaseUrl(req)
       ),
       303

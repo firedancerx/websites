@@ -3,6 +3,7 @@ import { randomBytes } from "node:crypto";
 import { requireManagement, getBaseUrl } from "../../../../../../lib/auth";
 import { db } from "../../../../../../lib/db";
 import { validateCsrfFromForm } from "../../../../../../lib/csrf";
+import { errorMessage } from "../../../../../../lib/errors";
 
 // T-403 (plan §7.3(3), §7.4, §7.6): Management's decision endpoint for an
 // APPLICATION_APPROVAL request. MANAGEMENT-only.
@@ -124,7 +125,7 @@ export async function POST(
   } catch (err: any) {
     return NextResponse.redirect(
       new URL(
-        `/foliodesk/management/queue?error=${encodeURIComponent(err?.message || "Failed to decide on application approval request")}`,
+        `/foliodesk/management/queue?error=${encodeURIComponent(errorMessage(err, "Failed to decide on application approval request"))}`,
         getBaseUrl(req)
       ),
       303
