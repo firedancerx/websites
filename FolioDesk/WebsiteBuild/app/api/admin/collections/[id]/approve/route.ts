@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin, getBaseUrl } from "../../../../../../lib/auth";
 import { db } from "../../../../../../lib/db";
+import { validateCsrfFromForm } from "../../../../../../lib/csrf";
 
 // T-401 (plan §7.3(1)): this endpoint no longer approves the collection
 // directly. It submits a maker_checker_requests row and leaves
@@ -24,6 +25,14 @@ export async function POST(
 
   const f = await req.formData();
   const approvalRemarks = String(f.get("approvalRemarks") || "Approved and acknowledged by management").trim();
+
+  // T-510 (F-15): CSRF synchronizer-token check. Must run before any mutation below.
+  if (!(await validateCsrfFromForm(f, admin.session_csrf_hash))) {
+    return NextResponse.redirect(
+      new URL(`/foliodesk/admin/collections?error=Your+session+expired.+Please+try+again.`, getBaseUrl(req)),
+      303
+    );
+  }
 
   try {
     const [collRows] = await db().execute<any[]>(

@@ -1,5 +1,7 @@
 import Link from "next/link";
+import { ensureCsrfCookie, CSRF_FIELD } from "../../lib/csrf";
 
+export const dynamic = "force-dynamic";
 export const metadata = {
   title: "Sign in | FolioDesk",
   robots: { index: false, follow: false },
@@ -11,6 +13,7 @@ export default async function Login({
   searchParams: Promise<{ error?: string; registered?: string; success?: string }>;
 }) {
   const q = await searchParams;
+  const csrfToken = await ensureCsrfCookie();
 
   return (
     <section className="login-wrap">
@@ -37,6 +40,7 @@ export default async function Login({
         {q.error && <p className="notice error">{q.error}</p>}
 
         <form action="/foliodesk/api/login" method="post">
+          <input type="hidden" name={CSRF_FIELD} value={csrfToken} />
           <div className="field">
             <label htmlFor="email">Email</label>
             <input id="email" name="email" type="email" required />

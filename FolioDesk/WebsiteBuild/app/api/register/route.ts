@@ -4,12 +4,39 @@ import { db } from "../../../lib/db";
 import { hashPassword, getBaseUrl, generateAffiliateCode, currentUser } from "../../../lib/auth";
 import { saveUpload, validateUpload } from "../../../lib/storage";
 import { errorCode } from "../../../lib/errors";
+import { validateCsrfFromForm } from "../../../lib/csrf";
+import { checkRateLimit, getClientIp } from "../../../lib/rate-limit";
+
+// T-510 (F-15): 8 submissions per 15-minute window per IP. Registration is
+// heavier (writes users + affiliate_applications + uploads) than login, so
+// the window is longer and the cap lower to make automated account creation
+// materially slower without blocking a real applicant who mistypes a field
+// and resubmits a few times.
+const REGISTER_MAX_ATTEMPTS = 8;
+const REGISTER_WINDOW_SECONDS = 900;
 
 export async function POST(req: Request) {
   try {
     const f = await req.formData();
     const isReinstatement = f.get("isReinstatement") === "1";
     const loggedInUser = await currentUser();
+
+    if (!(await validateCsrfFromForm(f, loggedInUser?.session_csrf_hash))) {
+      return NextResponse.redirect(
+        new URL("/foliodesk/register?error=Your+session+expired.+Please+refresh+and+try+again.", getBaseUrl(req)),
+        303
+      );
+    }
+
+    if (!isReinstatement) {
+      const limit = await checkRateLimit(getClientIp(req), "register", REGISTER_MAX_ATTEMPTS, REGISTER_WINDOW_SECONDS);
+      if (!limit.allowed) {
+        return NextResponse.redirect(
+          new URL("/foliodesk/register?error=Too+many+submissions.+Please+wait+a+few+minutes+and+try+again.", getBaseUrl(req)),
+          303
+        );
+      }
+    }
 
     const email = String(f.get("email") || "").trim().toLowerCase();
     const password = String(f.get("password") || "");

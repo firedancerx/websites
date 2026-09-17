@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin, getBaseUrl } from "../../../../../lib/auth";
 import { db } from "../../../../../lib/db";
+import { validateCsrfFromForm } from "../../../../../lib/csrf";
 
 const allowed = new Set([
   "UNDER_REVIEW",
@@ -21,6 +22,14 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const { id } = await params;
   const f = await req.formData();
   const decision = String(f.get("decision"));
+
+  // T-510 (F-15): CSRF synchronizer-token check. Must run before any mutation below.
+  if (!(await validateCsrfFromForm(f, admin.session_csrf_hash))) {
+    return NextResponse.redirect(
+      new URL(`/foliodesk/admin?error=Your+session+expired.+Please+try+again.`, getBaseUrl(req)),
+      303
+    );
+  }
   if (!allowed.has(decision)) return NextResponse.redirect(new URL("/foliodesk/admin", getBaseUrl(req)), 303);
 
   const [rows] = await db().execute<DatabaseRow[]>("SELECT user_id, status, affiliate_code FROM affiliate_applications WHERE id=?", [id]);

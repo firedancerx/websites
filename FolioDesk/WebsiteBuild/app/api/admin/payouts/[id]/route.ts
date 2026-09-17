@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin, getBaseUrl } from "../../../../../lib/auth";
 import { db } from "../../../../../lib/db";
+import { validateCsrfFromForm } from "../../../../../lib/csrf";
 
 // T-402 (plan §7.3(2)): SETTLE_PAYOUT no longer writes payout_status='PAID'
 // directly. It submits a maker_checker_requests row capturing the exact
@@ -30,6 +31,14 @@ export async function POST(
   const action = String(f.get("action") || "SETTLE_PAYOUT");
   const manualBankTxRef = String(f.get("manualBankTxRef") || "").trim();
   const payoutNotes = String(f.get("payoutNotes") || "").trim();
+
+  // T-510 (F-15): CSRF synchronizer-token check. Must run before any mutation below.
+  if (!(await validateCsrfFromForm(f, admin.session_csrf_hash))) {
+    return NextResponse.redirect(
+      new URL(`/foliodesk/admin/payouts?error=Your+session+expired.+Please+try+again.`, getBaseUrl(req)),
+      303
+    );
+  }
 
   if (action === "SETTLE_PAYOUT") {
     if (!manualBankTxRef) {

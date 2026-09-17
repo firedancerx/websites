@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback } from "react";
 import ToggleTestModeButton from "../ToggleTestModeButton";
+import { CSRF_FIELD } from "../../../lib/csrf-shared";
 
 export interface AdviceItem {
   id: number;
@@ -36,8 +37,10 @@ export interface AdviceItem {
 
 export default function PayoutsView({
   advices,
+  csrfToken,
 }: {
   advices: AdviceItem[];
+  csrfToken: string;
 }) {
   const [adviceStatusFilter, setAdviceStatusFilter] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -447,6 +450,7 @@ export default function PayoutsView({
               method="post"
               onSubmit={handleDisburseSubmit}
             >
+              <input type="hidden" name={CSRF_FIELD} value={csrfToken} />
               <input type="hidden" name="action" value="SETTLE_PAYOUT" />
 
               <div style={{ background: "#ede9fe", border: "1px solid #ddd6fe", padding: 12, borderRadius: 8, fontSize: 13, color: "#5b21b6", marginBottom: 14 }}>

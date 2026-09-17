@@ -1,14 +1,40 @@
 import { NextResponse } from "next/server";
-import { hashPassword, getBaseUrl } from "../../../lib/auth";
+import { randomBytes, createHash } from "node:crypto";
+import { getBaseUrl } from "../../../lib/auth";
 import { db } from "../../../lib/db";
+import { validateCsrfFromForm } from "../../../lib/csrf";
+import { checkRateLimit, getClientIp } from "../../../lib/rate-limit";
+import { sendEmail } from "../../../lib/mailer";
+
+// T-510 follow-on fix (new finding, not one of the original three T-510
+// items): this route previously took an email + new password directly with
+// zero identity verification -- anyone who knew a user's email could take
+// over their account. It now only issues a single-use, 30-minute reset
+// token by email (see lib/mailer.ts); the actual password change happens in
+// app/api/reset-password/route.ts once the token is presented back.
+//
+// Deliberately does not reveal whether an account exists for the submitted
+// email (same generic success message either way) -- the previous version's
+// "No account found with that email address" response let anyone enumerate
+// registered emails.
+const RESET_MAX_ATTEMPTS = 5;
+const RESET_WINDOW_SECONDS = 900;
+const RESET_TOKEN_TTL_MINUTES = 30;
 
 export async function POST(req: Request) {
   const f = await req.formData();
   const email = String(f.get("email") || "").trim().toLowerCase();
-  const newPassword = String(f.get("newPassword") || "");
-  const confirmPassword = String(f.get("confirmPassword") || "");
-
   const forgotPasswordPath = "/foliodesk/forgot-password";
+  const genericSuccess = `${forgotPasswordPath}?success=${encodeURIComponent(
+    "If an account exists for that email address, a password reset link has been sent. It expires in 30 minutes."
+  )}`;
+
+  if (!(await validateCsrfFromForm(f))) {
+    return NextResponse.redirect(
+      new URL(`${forgotPasswordPath}?error=Your+session+expired.+Please+try+again.`, getBaseUrl(req)),
+      303
+    );
+  }
 
   if (!email || !email.includes("@")) {
     return NextResponse.redirect(
@@ -17,16 +43,12 @@ export async function POST(req: Request) {
     );
   }
 
-  if (newPassword !== confirmPassword) {
+  const ip = getClientIp(req);
+  const ipLimit = await checkRateLimit(ip, "forgot-password", RESET_MAX_ATTEMPTS, RESET_WINDOW_SECONDS);
+  const pairLimit = await checkRateLimit(`${ip}:${email}`, "forgot-password", RESET_MAX_ATTEMPTS, RESET_WINDOW_SECONDS);
+  if (!ipLimit.allowed || !pairLimit.allowed) {
     return NextResponse.redirect(
-      new URL(`${forgotPasswordPath}?error=Passwords+do+not+match`, getBaseUrl(req)),
-      303
-    );
-  }
-
-  if (newPassword.length < 12) {
-    return NextResponse.redirect(
-      new URL(`${forgotPasswordPath}?error=Password+must+be+at+least+12+characters`, getBaseUrl(req)),
+      new URL(`${forgotPasswordPath}?error=Too+many+requests.+Please+wait+a+few+minutes+and+try+again.`, getBaseUrl(req)),
       303
     );
   }
@@ -37,33 +59,29 @@ export async function POST(req: Request) {
   );
   const u = rows[0];
 
-  if (!u) {
-    return NextResponse.redirect(
-      new URL(`${forgotPasswordPath}?error=No+account+found+with+that+email+address`, getBaseUrl(req)),
-      303
+  // Same redirect whether or not the account exists or is suspended --
+  // don't let this endpoint be used to enumerate accounts or their status.
+  if (u && u.status !== "SUSPENDED") {
+    const token = randomBytes(32).toString("hex");
+    const tokenHash = createHash("sha256").update(token).digest("hex");
+
+    await db().execute(
+      "INSERT INTO password_resets (user_id, token_hash, expires_at, requested_ip) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL ? MINUTE), ?)",
+      [u.id, tokenHash, RESET_TOKEN_TTL_MINUTES, ip]
     );
+    await db().execute(
+      "INSERT INTO audit_events (actor_user_id, action, entity_type, entity_id) VALUES (?, 'PASSWORD_RESET_REQUESTED', 'user', ?)",
+      [u.id, String(u.id)]
+    );
+
+    const resetUrl = new URL(`/foliodesk/reset-password?token=${token}`, getBaseUrl(req)).toString();
+    await sendEmail({
+      to: email,
+      subject: "Reset your FolioDesk password",
+      text: `We received a request to reset your FolioDesk password.\n\nReset your password: ${resetUrl}\n\nThis link expires in ${RESET_TOKEN_TTL_MINUTES} minutes. If you did not request this, you can safely ignore this email -- your password has not been changed.`,
+      html: `<p>We received a request to reset your FolioDesk password.</p><p><a href="${resetUrl}">Reset your password</a></p><p>This link expires in ${RESET_TOKEN_TTL_MINUTES} minutes. If you did not request this, you can safely ignore this email -- your password has not been changed.</p>`,
+    });
   }
 
-  if (u.status === "SUSPENDED") {
-    return NextResponse.redirect(
-      new URL(`${forgotPasswordPath}?error=This+account+is+suspended.+Please+contact+support.`, getBaseUrl(req)),
-      303
-    );
-  }
-
-  const newHash = hashPassword(newPassword);
-  await db().execute("UPDATE users SET password_hash=? WHERE id=?", [newHash, u.id]);
-
-  // Invalidate previous sessions upon password reset for security
-  await db().execute("DELETE FROM sessions WHERE user_id=?", [u.id]);
-
-  await db().execute(
-    "INSERT INTO audit_events (actor_user_id, action, entity_type, entity_id) VALUES (?, 'PASSWORD_RESET', 'user', ?)",
-    [u.id, String(u.id)]
-  );
-
-  return NextResponse.redirect(
-    new URL("/foliodesk/login?error=&registered=&success=Password+reset+successfully.+Please+sign+in+with+your+new+password.", getBaseUrl(req)),
-    303
-  );
+  return NextResponse.redirect(new URL(genericSuccess, getBaseUrl(req)), 303);
 }

@@ -4,6 +4,7 @@ import { useState } from "react";
 import type { DealRecord, FunnelStepRecord, ClosureLogRecord, CollectionRecord, StepReviewStatus } from "../../../../lib/funnel";
 import ToggleTestModeButton from "../../ToggleTestModeButton";
 import InvoiceDocumentModal from "../../../components/InvoiceDocumentModal";
+import { CSRF_FIELD } from "../../../../lib/csrf-shared";
 
 export default function DealDetailView({
   deal,
@@ -13,6 +14,7 @@ export default function DealDetailView({
   daysRemaining,
   isOverdue,
   deadlineDateStr,
+  csrfToken,
 }: {
   deal: DealRecord;
   steps: FunnelStepRecord[];
@@ -20,6 +22,7 @@ export default function DealDetailView({
   collections: CollectionRecord[];
   closurePeriodDays: number;
   daysRemaining: number;
+  csrfToken: string;
   isOverdue: boolean;
   deadlineDateStr: string;
 }) {
@@ -569,6 +572,7 @@ export default function DealDetailView({
             </p>
 
             <form action={`/foliodesk/api/admin/deals/${deal.id}/closure`} method="post">
+              <input type="hidden" name={CSRF_FIELD} value={csrfToken} />
               <input type="hidden" name="action" value="EXTEND_DIRECT" />
 
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -617,6 +621,7 @@ export default function DealDetailView({
             </p>
 
             <form action={`/foliodesk/api/admin/deals/${deal.id}/closure`} method="post">
+              <input type="hidden" name={CSRF_FIELD} value={csrfToken} />
               <input type="hidden" name="action" value="FORCE_CLOSE" />
 
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -661,6 +666,7 @@ export default function DealDetailView({
             </div>
 
             <form action={`/foliodesk/api/admin/deals/${deal.id}/closure`} method="post" onSubmit={() => setIsSubmittingAppeal(true)}>
+              <input type="hidden" name={CSRF_FIELD} value={csrfToken} />
               <input type="hidden" name="action" value="ADJUDICATE_APPEAL" />
 
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>

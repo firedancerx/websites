@@ -2,6 +2,7 @@ import RegistrationForm, { type ExistingApp } from "./RegistrationForm";
 import { getCountries, getStates } from "../../lib/db-locations";
 import { currentUser } from "../../lib/auth";
 import { db } from "../../lib/db";
+import { ensureCsrfCookie } from "../../lib/csrf";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Affiliate application", robots: { index: false, follow: false } };
@@ -12,6 +13,7 @@ export default async function Register({
   searchParams: Promise<{ error?: string; success?: string; ref?: string; upline?: string; ref_id?: string; reinstatement?: string }>;
 }) {
   const q = await searchParams;
+  const csrfToken = await ensureCsrfCookie();
   const countries = await getCountries();
   const states = await getStates();
 
@@ -62,6 +64,7 @@ export default async function Register({
             error={q.error}
             existingUser={user ? { id: user.id, email: user.email, full_name: user.full_name } : null}
             existingApp={existingApp}
+            csrfToken={csrfToken}
           />
         </div>
         <aside className="side-panel">

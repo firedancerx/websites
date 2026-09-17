@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { currentUser } from "../../../lib/auth";
+import { ensureCsrfCookie, CSRF_FIELD } from "../../../lib/csrf";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Change password", robots: { index: false, follow: false } };
@@ -9,6 +10,7 @@ export default async function ChangePasswordPage({ searchParams }: { searchParam
   const q = await searchParams;
   const user = await currentUser();
   if (!user) redirect("/login");
+  const csrfToken = await ensureCsrfCookie();
 
   return (
     <section className="login-wrap">
@@ -20,6 +22,7 @@ export default async function ChangePasswordPage({ searchParams }: { searchParam
         {q.error && <p className="notice error">{q.error}</p>}
 
         <form action="/foliodesk/api/change-password" method="post">
+          <input type="hidden" name={CSRF_FIELD} value={csrfToken} />
           <div className="field">
             <label htmlFor="currentPassword">Current password</label>
             <input id="currentPassword" name="currentPassword" type="password" required />

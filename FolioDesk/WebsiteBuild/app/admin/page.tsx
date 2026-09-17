@@ -4,6 +4,7 @@ import { db } from "../../lib/db";
 import { getAdminDataMode } from "../../lib/settings";
 import AdminNav from "./AdminNav";
 import AdminNetworkView, { type AffiliateItem } from "./AdminNetworkView";
+import { ensureCsrfCookie } from "../../lib/csrf";
 
 export const dynamic = "force-dynamic";
 export const metadata = {
@@ -16,6 +17,7 @@ export default async function Admin() {
   if (!user) redirect("/login");
 
   const dataMode = await getAdminDataMode();
+  const csrfToken = await ensureCsrfCookie();
   let whereClause = "";
   if (dataMode === "TEST") {
     whereClause = "WHERE a.is_test = 1";
@@ -51,7 +53,7 @@ export default async function Admin() {
 
       <AdminNav currentDataMode={dataMode} />
 
-      <AdminNetworkView initialApps={sanitizedApps as AffiliateItem[]} />
+      <AdminNetworkView initialApps={sanitizedApps as AffiliateItem[]} csrfToken={csrfToken} />
     </section>
   );
 }

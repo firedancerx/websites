@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin, getBaseUrl } from "../../../../../../lib/auth";
 import { rejectDealCollection } from "../../../../../../lib/funnel";
 import { errorMessage } from "../../../../../../lib/errors";
+import { validateCsrfFromForm } from "../../../../../../lib/csrf";
 
 export async function POST(
   req: Request,
@@ -17,6 +18,14 @@ export async function POST(
 
   const f = await req.formData();
   const approvalRemarks = String(f.get("approvalRemarks") || "").trim();
+
+  // T-510 (F-15): CSRF synchronizer-token check. Must run before any mutation below.
+  if (!(await validateCsrfFromForm(f, admin.session_csrf_hash))) {
+    return NextResponse.redirect(
+      new URL(`/foliodesk/admin/collections?error=Your+session+expired.+Please+try+again.`, getBaseUrl(req)),
+      303
+    );
+  }
 
   if (!approvalRemarks) {
     return NextResponse.redirect(

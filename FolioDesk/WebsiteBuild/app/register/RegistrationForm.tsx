@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import type { CountryItem, StateItem } from "../../lib/db-locations";
+import { CSRF_FIELD } from "../../lib/csrf-shared";
 
 export interface ExistingApp {
   id: number;
@@ -45,6 +46,7 @@ export default function RegistrationForm({
   error,
   existingUser,
   existingApp,
+  csrfToken,
 }: {
   countries: CountryItem[];
   states: StateItem[];
@@ -52,6 +54,7 @@ export default function RegistrationForm({
   error?: string;
   existingUser?: ExistingUser | null;
   existingApp?: ExistingApp | null;
+  csrfToken: string;
 }) {
   const isReinstatement = Boolean(
     existingApp && (existingApp.status === "RETRACTED" || existingApp.status === "RETRACTION_ACKNOWLEDGED")
@@ -192,6 +195,7 @@ export default function RegistrationForm({
 
   return (
     <form action="/foliodesk/api/register" method="post" encType="multipart/form-data" className="form-grid">
+      <input type="hidden" name={CSRF_FIELD} value={csrfToken} />
       {/* HIDDEN REINSTATEMENT FLAG */}
       {isReinstatement && (
         <>

@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { createHash, randomBytes, pbkdf2Sync, timingSafeEqual } from "node:crypto";
 import { db } from "./db";
+import { issueSessionCsrfToken } from "./csrf";
 
 export function hashPassword(password:string, salt=randomBytes(16).toString("hex")) {
   const hash=pbkdf2Sync(password,salt,210000,32,"sha512").toString("hex");
@@ -13,14 +14,26 @@ export function verifyPassword(password:string, stored:string) {
 }
 export async function createSession(userId:number){
   const token=randomBytes(32).toString("hex"), tokenHash=createHash("sha256").update(token).digest("hex");
-  await db().execute("INSERT INTO sessions (user_id, token_hash, expires_at) VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 7 DAY))",[userId,tokenHash]);
+  // T-510 (F-15): each session gets its own CSRF synchronizer token, whose hash
+  // is stored alongside the session row and validated by lib/csrf.ts's
+  // validateCsrf() on every authenticated state-changing request.
+  const { hash: csrfTokenHash } = await issueSessionCsrfToken();
+  await db().execute("INSERT INTO sessions (user_id, token_hash, csrf_token_hash, expires_at) VALUES (?, ?, ?, DATE_ADD(NOW(), INTERVAL 7 DAY))",[userId,tokenHash,csrfTokenHash]);
   const jar=await cookies(); jar.set("fd_session",token,{httpOnly:true,sameSite:"lax",secure:process.env.NODE_ENV==="production",path:"/",maxAge:604800});
 }
 export async function currentUser(){
   const token=(await cookies()).get("fd_session")?.value; if(!token) return null;
   const hash=createHash("sha256").update(token).digest("hex");
-  const [rows]=await db().execute<DatabaseRow[]>("SELECT u.id,u.email,u.full_name,u.role,u.status FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=? AND s.expires_at>NOW() LIMIT 1",[hash]);
+  const [rows]=await db().execute<DatabaseRow[]>("SELECT u.id,u.email,u.full_name,u.role,u.status,s.csrf_token_hash AS session_csrf_hash FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=? AND s.expires_at>NOW() LIMIT 1",[hash]);
   return rows[0]||null;
+}
+// T-510 (F-15): invalidates every session belonging to a user, including the
+// one that is currently active. Called on password change (self-service and
+// forced reset) so a compromised or stale session can't outlive a credential
+// rotation. Callers that need the requester to stay logged in must call
+// createSession() again afterward to issue a fresh one.
+export async function revokeAllSessions(userId:number){
+  await db().execute("DELETE FROM sessions WHERE user_id=?",[userId]);
 }
 export async function requireAdmin(){const user=await currentUser(); return user?.role==="ADMIN"?user:null;}
 // T-301 (plan §7.1): parallel helper to requireAdmin(), scoped to the new MANAGEMENT role.

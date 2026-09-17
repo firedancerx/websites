@@ -89,10 +89,34 @@ CREATE TABLE IF NOT EXISTS sessions (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
   user_id BIGINT UNSIGNED NOT NULL,
   token_hash CHAR(64) NOT NULL UNIQUE,
+  csrf_token_hash CHAR(64) NOT NULL DEFAULT '',
   expires_at TIMESTAMP NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_session_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   INDEX idx_session_expiry (expires_at)
+);
+-- T-510 (F-15): fixed-window rate-limit counters, MySQL-backed (see lib/rate-limit.ts).
+CREATE TABLE IF NOT EXISTS rate_limit_attempts (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  identifier VARCHAR(255) NOT NULL,
+  route VARCHAR(64) NOT NULL,
+  window_start TIMESTAMP NOT NULL,
+  attempt_count INT UNSIGNED NOT NULL DEFAULT 1,
+  UNIQUE KEY uq_rate_limit_window (identifier, route, window_start),
+  INDEX idx_rate_limit_window_start (window_start)
+);
+-- T-510 follow-on fix: single-use, time-limited password reset tokens
+-- (see app/api/forgot-password/route.ts, app/api/reset-password/route.ts).
+CREATE TABLE IF NOT EXISTS password_resets (
+  id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id BIGINT UNSIGNED NOT NULL,
+  token_hash CHAR(64) NOT NULL UNIQUE,
+  expires_at TIMESTAMP NOT NULL,
+  used_at TIMESTAMP NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  requested_ip VARCHAR(64) NULL,
+  CONSTRAINT fk_password_reset_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_password_reset_expiry (expires_at)
 );
 CREATE TABLE IF NOT EXISTS audit_events (
   id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,

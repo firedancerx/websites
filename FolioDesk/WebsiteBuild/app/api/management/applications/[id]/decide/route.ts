@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { randomBytes } from "node:crypto";
 import { requireManagement, getBaseUrl } from "../../../../../../lib/auth";
 import { db } from "../../../../../../lib/db";
+import { validateCsrfFromForm } from "../../../../../../lib/csrf";
 
 // T-403 (plan §7.3(3), §7.4, §7.6): Management's decision endpoint for an
 // APPLICATION_APPROVAL request. MANAGEMENT-only.
@@ -34,6 +35,14 @@ export async function POST(
   const f = await req.formData();
   const decision = String(f.get("decision") || "").toUpperCase(); // "APPROVE" | "REJECT"
   const decisionNotes = String(f.get("decisionNotes") || "").trim();
+
+  // T-510 (F-15): CSRF synchronizer-token check. Must run before any mutation below.
+  if (!(await validateCsrfFromForm(f, management.session_csrf_hash))) {
+    return NextResponse.redirect(
+      new URL(`/foliodesk/management/queue?error=Your+session+expired.+Please+try+again.`, getBaseUrl(req)),
+      303
+    );
+  }
 
   try {
     const [reqRows] = await db().execute<any[]>(

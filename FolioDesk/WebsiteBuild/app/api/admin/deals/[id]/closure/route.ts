@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin, getBaseUrl } from "../../../../../../lib/auth";
 import { db } from "../../../../../../lib/db";
 import { forceCloseDeal, extendDealDirectly } from "../../../../../../lib/funnel";
+import { validateCsrfFromForm } from "../../../../../../lib/csrf";
 
 export async function POST(
   req: Request,
@@ -20,6 +21,14 @@ export async function POST(
   const reason = String(f.get("reason") || "").trim();
   const daysExtended = parseInt(String(f.get("daysExtended") || "30"), 10);
   const isAppealApproved = f.get("isAppealApproved") === "1";
+
+  // T-510 (F-15): CSRF synchronizer-token check. Must run before any mutation below.
+  if (!(await validateCsrfFromForm(f, admin.session_csrf_hash))) {
+    return NextResponse.redirect(
+      new URL(`/foliodesk/admin/deals/${dealId}?error=Your+session+expired.+Please+try+again.`, getBaseUrl(req)),
+      303
+    );
+  }
 
   try {
     if (action === "FORCE_CLOSE") {

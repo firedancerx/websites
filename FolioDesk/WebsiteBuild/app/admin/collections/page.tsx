@@ -5,6 +5,7 @@ import { getAdminDataMode } from "../../../lib/settings";
 import AdminNav from "../AdminNav";
 import CollectionsApprovalView from "./CollectionsApprovalView";
 import type { CollectionRecord } from "../../../lib/funnel";
+import { ensureCsrfCookie } from "../../../lib/csrf";
 
 export const dynamic = "force-dynamic";
 export const metadata = {
@@ -22,6 +23,7 @@ export default async function AdminCollectionsPage({
 
   const q = await searchParams;
   const dataMode = await getAdminDataMode();
+  const csrfToken = await ensureCsrfCookie();
 
   let whereClause = "";
   if (dataMode === "TEST") {
@@ -73,7 +75,7 @@ export default async function AdminCollectionsPage({
       )}
       {q.error && <div className="notice error" style={{ marginBottom: 20 }}>⚠️ {q.error}</div>}
 
-      <CollectionsApprovalView collections={sanitizedCollections as CollectionRecord[]} />
+      <CollectionsApprovalView collections={sanitizedCollections as CollectionRecord[]} csrfToken={csrfToken} />
     </section>
   );
 }

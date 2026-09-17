@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin, getBaseUrl } from "../../../../../lib/auth";
 import { db } from "../../../../../lib/db";
+import { validateCsrfFromForm } from "../../../../../lib/csrf";
 
 // T-402 (plan §7.3(2)): batch disbursement no longer calls
 // settleConsolidatedPayout() directly. It snapshots the exact set of
@@ -22,6 +23,14 @@ export async function POST(req: Request) {
   const bankName = String(f.get("bankName") || "").trim();
   const bankAccountNumber = String(f.get("bankAccountNumber") || "").trim();
   const payoutNotes = String(f.get("payoutNotes") || "").trim();
+
+  // T-510 (F-15): CSRF synchronizer-token check. Must run before any mutation below.
+  if (!(await validateCsrfFromForm(f, admin.session_csrf_hash))) {
+    return NextResponse.redirect(
+      new URL(`/foliodesk/admin/payouts?error=Your+session+expired.+Please+try+again.`, getBaseUrl(req)),
+      303
+    );
+  }
 
   if (!affiliateId || !manualBankTxRef) {
     return NextResponse.redirect(

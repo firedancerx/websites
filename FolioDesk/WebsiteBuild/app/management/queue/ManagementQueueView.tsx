@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { CSRF_FIELD } from "../../../lib/csrf-shared";
 
 // T-405 (plan §7.5): the unified Management inbox. Renders every PENDING
 // maker_checker_requests row (across all four request types) as a card and
@@ -52,9 +53,11 @@ function formatMyr(n?: number) {
 export default function ManagementQueueView({
   items,
   currentManagementId,
+  csrfToken,
 }: {
   items: QueueItem[];
   currentManagementId: number;
+  csrfToken: string;
 }) {
   const [typeFilter, setTypeFilter] = useState<string>("ALL");
   const [decisionModal, setDecisionModal] = useState<{ item: QueueItem; decision: "APPROVE" | "REJECT" } | null>(
@@ -280,6 +283,7 @@ export default function ManagementQueueView({
             </div>
 
             <form action={decisionModal.item.decideAction} method="post">
+              <input type="hidden" name={CSRF_FIELD} value={csrfToken} />
               <input type="hidden" name="decision" value={decisionModal.decision} />
               {decisionModal.item.decideField === "requestId" && (
                 <input type="hidden" name="requestId" value={decisionModal.item.mcId} />

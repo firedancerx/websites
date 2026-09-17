@@ -6,6 +6,7 @@ import { getCommissionSettings } from "../../../../lib/settings";
 import { calculateClosureDeadline, type ClosureLogRecord, type CollectionRecord, type DealRecord, type FunnelStepRecord } from "../../../../lib/funnel";
 import AdminNav from "../../AdminNav";
 import DealDetailView from "./DealDetailView";
+import { ensureCsrfCookie } from "../../../../lib/csrf";
 
 export const dynamic = "force-dynamic";
 export const metadata = {
@@ -25,6 +26,7 @@ export default async function AdminDealDetailPage({
 
   const { id } = await params;
   const dealId = Number(id);
+  const csrfToken = await ensureCsrfCookie();
 
   const [deals] = await db().execute<DatabaseResultRow<DealRecord>[]>(
     `SELECT dp.*,
@@ -112,6 +114,7 @@ export default async function AdminDealDetailPage({
         daysRemaining={deadline.daysRemaining}
         isOverdue={deadline.isOverdue}
         deadlineDateStr={deadline.deadlineDate.toLocaleDateString("en-MY", { dateStyle: "medium" })}
+        csrfToken={csrfToken}
       />
     </section>
   );

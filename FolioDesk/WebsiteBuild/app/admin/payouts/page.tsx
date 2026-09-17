@@ -4,6 +4,7 @@ import { db } from "../../../lib/db";
 import { getAdminDataMode } from "../../../lib/settings";
 import AdminNav from "../AdminNav";
 import PayoutsView, { type AdviceItem } from "./PayoutsView";
+import { ensureCsrfCookie } from "../../../lib/csrf";
 
 export const dynamic = "force-dynamic";
 export const metadata = {
@@ -21,6 +22,7 @@ export default async function AdminPayoutsPage({
 
   const q = await searchParams;
   const dataMode = await getAdminDataMode();
+  const csrfToken = await ensureCsrfCookie();
 
   let adviceWhere = "";
   if (dataMode === "TEST") {
@@ -76,7 +78,7 @@ export default async function AdminPayoutsPage({
       )}
       {q.error && <div className="notice error" style={{ marginBottom: 20 }}>⚠️ {q.error}</div>}
 
-      <PayoutsView advices={sanitizedAdvices as AdviceItem[]} />
+      <PayoutsView advices={sanitizedAdvices as AdviceItem[]} csrfToken={csrfToken} />
     </section>
   );
 }

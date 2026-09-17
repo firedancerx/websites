@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { currentUser } from "../../lib/auth";
+import { ensureCsrfCookie, CSRF_FIELD } from "../../lib/csrf";
 
 export const dynamic = "force-dynamic";
 export const metadata = {
@@ -8,6 +9,11 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
+// T-510 follow-on fix: step 1 of 2. Previously this page also collected the
+// new password directly, alongside only an email address -- no proof the
+// submitter owned that inbox. It now only collects the email; the emailed
+// link (see app/api/forgot-password/route.ts) carries a single-use token to
+// /reset-password, which is where the new password is actually set.
 export default async function ForgotPasswordPage({
   searchParams,
 }: {
@@ -17,6 +23,7 @@ export default async function ForgotPasswordPage({
   if (user) redirect("/portal");
 
   const q = await searchParams;
+  const csrfToken = await ensureCsrfCookie();
 
   return (
     <section className="login-wrap">
@@ -24,7 +31,7 @@ export default async function ForgotPasswordPage({
         <div className="eyebrow">ACCOUNT RECOVERY</div>
         <h1>Reset password</h1>
         <p>
-          Enter your registered account email address along with your new password to reset your access.
+          Enter your registered account email address. If it matches an account, we&apos;ll email you a link to reset your password.
         </p>
 
         {q.error && <p className="notice error">{q.error}</p>}
@@ -42,6 +49,7 @@ export default async function ForgotPasswordPage({
         )}
 
         <form action="/foliodesk/api/forgot-password" method="post">
+          <input type="hidden" name={CSRF_FIELD} value={csrfToken} />
           <div className="field">
             <label htmlFor="email">Registered email address</label>
             <input
@@ -53,33 +61,9 @@ export default async function ForgotPasswordPage({
             />
           </div>
 
-          <div className="field">
-            <label htmlFor="newPassword">New password</label>
-            <input
-              id="newPassword"
-              name="newPassword"
-              type="password"
-              placeholder="At least 12 characters"
-              minLength={12}
-              required
-            />
-          </div>
-
-          <div className="field">
-            <label htmlFor="confirmPassword">Confirm new password</label>
-            <input
-              id="confirmPassword"
-              name="confirmPassword"
-              type="password"
-              placeholder="Re-enter new password"
-              minLength={12}
-              required
-            />
-          </div>
-
           <div style={{ display: "flex", gap: "12px", marginTop: "16px" }}>
             <button className="button primary submit" type="submit" style={{ flex: 1 }}>
-              Reset password
+              Send reset link
             </button>
             <Link
               className="button secondary"

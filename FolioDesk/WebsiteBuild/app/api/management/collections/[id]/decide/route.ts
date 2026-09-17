@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireManagement, getBaseUrl } from "../../../../../../lib/auth";
 import { db } from "../../../../../../lib/db";
 import { approveDealCollection, rejectDealCollection } from "../../../../../../lib/funnel";
+import { validateCsrfFromForm } from "../../../../../../lib/csrf";
 
 // T-401 (plan §7.3(1), §7.6): Management's decision endpoint for a
 // COLLECTION_APPROVAL request. MANAGEMENT-only. Approves-as-submitted or
@@ -24,6 +25,14 @@ export async function POST(
   const f = await req.formData();
   const decision = String(f.get("decision") || "").toUpperCase(); // "APPROVE" | "REJECT"
   const decisionNotes = String(f.get("decisionNotes") || "").trim();
+
+  // T-510 (F-15): CSRF synchronizer-token check. Must run before any mutation below.
+  if (!(await validateCsrfFromForm(f, management.session_csrf_hash))) {
+    return NextResponse.redirect(
+      new URL(`/foliodesk/management/queue?error=Your+session+expired.+Please+try+again.`, getBaseUrl(req)),
+      303
+    );
+  }
 
   try {
     const [reqRows] = await db().execute<any[]>(

@@ -3,11 +3,14 @@
 import { useState, useMemo } from "react";
 import type { CollectionRecord } from "../../../lib/funnel";
 import ToggleTestModeButton from "../ToggleTestModeButton";
+import { CSRF_FIELD } from "../../../lib/csrf-shared";
 
 export default function CollectionsApprovalView({
   collections,
+  csrfToken,
 }: {
   collections: CollectionRecord[];
+  csrfToken: string;
 }) {
   const [activeTab, setActiveTab] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -360,6 +363,7 @@ export default function CollectionsApprovalView({
             </p>
 
             <form action={`/foliodesk/api/admin/collections/${approveCollection.id}/approve`} method="post" onSubmit={() => setIsSubmitting(true)}>
+              <input type="hidden" name={CSRF_FIELD} value={csrfToken} />
               <div style={{ background: "#f0fdf4", padding: 14, borderRadius: 8, border: "1.5px solid #bbf7d0", marginBottom: 16 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
@@ -417,6 +421,7 @@ export default function CollectionsApprovalView({
             </p>
 
             <form action={`/foliodesk/api/admin/collections/${rejectCollection.id}/reject`} method="post" onSubmit={() => setIsSubmitting(true)}>
+              <input type="hidden" name={CSRF_FIELD} value={csrfToken} />
               <div>
                 <label style={{ fontWeight: 600, fontSize: 13 }}>Reason for Rejection *</label>
                 <textarea

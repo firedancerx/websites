@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
-import { currentUser, verifyPassword, hashPassword, getBaseUrl } from "../../../lib/auth";
+import { cookies } from "next/headers";
+import { currentUser, verifyPassword, hashPassword, getBaseUrl, revokeAllSessions } from "../../../lib/auth";
 import { db } from "../../../lib/db";
+import { validateCsrfFromForm } from "../../../lib/csrf";
 
 export async function POST(req: Request) {
   const user = await currentUser();
@@ -13,8 +15,14 @@ export async function POST(req: Request) {
   const newPassword = String(f.get("newPassword") || "");
   const confirmPassword = String(f.get("confirmPassword") || "");
 
-  const redirectPath = user.role === "ADMIN" ? "/foliodesk/admin" : "/foliodesk/portal";
   const changePasswordPagePath = "/foliodesk/portal/change-password";
+
+  if (!(await validateCsrfFromForm(f, user.session_csrf_hash))) {
+    return NextResponse.redirect(
+      new URL(`${changePasswordPagePath}?error=Your+session+expired.+Please+try+again.`, getBaseUrl(req)),
+      303
+    );
+  }
 
   if (newPassword !== confirmPassword) {
     return NextResponse.redirect(
@@ -47,8 +55,15 @@ export async function POST(req: Request) {
     [user.id, String(user.id)]
   );
 
+  // T-510 (F-15, scoping decision: "all sessions everywhere"): a password
+  // change invalidates every session for this user, including the one that
+  // just made the change -- the requester is signed out here too and must
+  // log back in with the new password, same as every other device.
+  await revokeAllSessions(user.id);
+  (await cookies()).delete("fd_session");
+
   return NextResponse.redirect(
-    new URL(`${redirectPath}?success=Password+changed+successfully`, getBaseUrl(req)),
+    new URL("/foliodesk/login?success=Password+changed.+Please+sign+in+again+with+your+new+password.", getBaseUrl(req)),
     303
   );
 }

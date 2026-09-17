@@ -3,6 +3,7 @@ import { requireManagement } from "../../../lib/auth";
 import { db } from "../../../lib/db";
 import ManagementNav from "../ManagementNav";
 import ManagementQueueView, { type QueueItem } from "./ManagementQueueView";
+import { ensureCsrfCookie } from "../../../lib/csrf";
 
 // T-405 (plan §7.5): unified Management inbox. All four decide endpoints
 // (T-401..T-404) redirect back to this page on success or error. Queries
@@ -26,6 +27,7 @@ export default async function ManagementQueuePage({
   if (!management) redirect("/login");
 
   const q = await searchParams;
+  const csrfToken = await ensureCsrfCookie();
 
   const [pending] = await db().execute<any[]>(
     `SELECT mcr.*, u.full_name AS submitter_name
@@ -222,7 +224,7 @@ export default async function ManagementQueuePage({
       )}
       {q.error && <div className="notice error" style={{ marginBottom: 20 }}>⚠️ {q.error}</div>}
 
-      <ManagementQueueView items={JSON.parse(JSON.stringify(items))} currentManagementId={management.id} />
+      <ManagementQueueView items={JSON.parse(JSON.stringify(items))} currentManagementId={management.id} csrfToken={csrfToken} />
     </section>
   );
 }

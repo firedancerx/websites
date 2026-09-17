@@ -1,5 +1,7 @@
 "use client";
 
+import { CSRF_FIELD } from "../../lib/csrf-shared";
+
 import Link from "next/link";
 import { useState, useMemo } from "react";
 import ToggleTestModeButton from "./ToggleTestModeButton";
@@ -158,7 +160,7 @@ function filterTree(nodes: TreeNode[], q: string): TreeNode[] {
   return result;
 }
 
-export default function AdminNetworkView({ initialApps }: { initialApps: AffiliateItem[] }) {
+export default function AdminNetworkView({ initialApps, csrfToken }: { initialApps: AffiliateItem[]; csrfToken: string }) {
   const [searchQuery, setSearchQuery] = useState("");
 
   // T-406 (plan §7.5, F-11): per-row double-submit guard for the decision form,
@@ -492,6 +494,7 @@ export default function AdminNetworkView({ initialApps }: { initialApps: Affilia
                     style={{ display: "inline-flex", gap: 4 }}
                     onSubmit={() => setSubmittingId(node.id)}
                   >
+                    <input type="hidden" name={CSRF_FIELD} value={csrfToken} />
                     <fieldset
                       disabled={submittingId === node.id}
                       style={{ display: "inline-flex", gap: 4, border: "none", margin: 0, padding: 0, opacity: submittingId === node.id ? 0.6 : 1 }}
