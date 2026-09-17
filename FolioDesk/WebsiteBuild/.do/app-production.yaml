@@ -11,13 +11,13 @@ services:
       branch: main
       deploy_on_push: false
     source_dir: /FolioDesk/WebsiteBuild
-    build_command: corepack enable && pnpm install --frozen-lockfile && pnpm run build
-    run_command: pnpm run start
+    build_command: npm ci && npm run build
+    run_command: npm run start
     http_port: 8080
-    instance_count: 2
+    instance_count: 1
     instance_size_slug: apps-s-1vcpu-1gb
     health_check:
-      http_path: /foliodesk/api/health
+      http_path: /api/health
       initial_delay_seconds: 20
       period_seconds: 10
       timeout_seconds: 5
@@ -40,7 +40,7 @@ services:
         value: "20"
         scope: RUN_TIME
       - key: SESSION_SECRET
-        value: REPLACE_WITH_PRODUCTION_SECRET
+        value: e8aa68496d9503e0aec1b7ec4b5aad26b07c10963f13358b33c353d4a835d89
         scope: RUN_TIME
         type: SECRET
       - key: NEXT_PUBLIC_SITE_URL
@@ -50,20 +50,20 @@ services:
         value: spaces
         scope: RUN_TIME
       - key: SPACES_ENDPOINT
-        value: https://sgp1.digitaloceanspaces.com
+        value: https://tor1.digitaloceanspaces.com
         scope: RUN_TIME
       - key: SPACES_REGION
-        value: sgp1
+        value: tor1
         scope: RUN_TIME
       - key: SPACES_BUCKET
-        value: REPLACE_WITH_PRODUCTION_BUCKET
+        value: flameaters-spaces-02
         scope: RUN_TIME
       - key: SPACES_ACCESS_KEY
-        value: REPLACE_WITH_PRODUCTION_ACCESS_KEY
+        value: DO801HZ7EG4RZH3VTF3Q9Q
         scope: RUN_TIME
         type: SECRET
       - key: SPACES_SECRET_KEY
-        value: REPLACE_WITH_PRODUCTION_SECRET_KEY
+        value: olgyLpTp/PYrXdmGuwNjaYvYlxlEth86YWLb40dOOJM
         scope: RUN_TIME
         type: SECRET
 jobs:
@@ -75,8 +75,8 @@ jobs:
       branch: main
       deploy_on_push: false
     source_dir: /FolioDesk/WebsiteBuild
-    build_command: corepack enable && pnpm install --frozen-lockfile --ignore-scripts
-    run_command: pnpm run db:migrate && pnpm run db:verify
+    build_command: npm ci --ignore-scripts
+    run_command: npm run db:migrate && npm run db:verify
     instance_count: 1
     instance_size_slug: basic-xxs
     envs:
@@ -98,6 +98,6 @@ databases:
     engine: MYSQL
     version: "8.4"
     production: true
-    cluster_name: REPLACE_WITH_PRODUCTION_MYSQL_CLUSTER
-    db_name: foliodesk_production
-    db_user: foliodesk_production_app
+    cluster_name: foliodesk-marketing-db
+    db_name: foliodesk
+    db_user: doadmin
